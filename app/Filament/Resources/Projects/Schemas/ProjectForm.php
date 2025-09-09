@@ -6,6 +6,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use App\Models\User;
 
 class ProjectForm
 {
@@ -15,7 +16,6 @@ class ProjectForm
             ->components([
                 TextInput::make('pmo_id')
                     ->required(),
-                TextInput::make('phase_cr'),
                 TextInput::make('project_name')
                     ->required(),
                 Select::make('status')
@@ -41,9 +41,19 @@ class ProjectForm
                         'PENDING DEV' => 'PENDING DEV',
                         'PENTEST' => 'PENTEST',
                     ]),
-                TextInput::make('tech_lead'),
-                TextInput::make('pic_1'),
-                TextInput::make('pic_2'),
+                Select::make('tech_lead')
+                    ->label('Tech Lead')
+                    ->options(fn () => User::pluck('name', 'id'))
+                    ->searchable()
+                    ->required(),
+                Select::make('pic_1')
+                    ->label('PIC 1')
+                    ->options(fn () => User::pluck('name', 'id'))
+                    ->searchable(),
+                Select::make('pic_2')
+                    ->label('PIC 2')
+                    ->options(fn () => User::pluck('name', 'id'))
+                    ->searchable(),
                 DatePicker::make('start_date'),
                 DatePicker::make('end_date'),
                 TextInput::make('days')

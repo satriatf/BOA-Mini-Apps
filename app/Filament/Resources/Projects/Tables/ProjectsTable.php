@@ -16,17 +16,18 @@ class ProjectsTable
             ->columns([
                 TextColumn::make('pmo_id')
                     ->searchable(),
-                TextColumn::make('phase_cr')
-                    ->searchable(),
                 TextColumn::make('project_name')
                     ->searchable(),
                 TextColumn::make('status')
                     ->searchable(),
-                TextColumn::make('tech_lead')
+                TextColumn::make('techLead.name')
+                    ->label('Tech Lead')
                     ->searchable(),
-                TextColumn::make('pic_1')
+                TextColumn::make('pic1.name')
+                    ->label('PIC 1')
                     ->searchable(),
-                TextColumn::make('pic_2')
+                TextColumn::make('pic2.name')
+                    ->label('PIC 2')
                     ->searchable(),
                 TextColumn::make('start_date')
                     ->date()

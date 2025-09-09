@@ -17,13 +17,10 @@ return new class extends Migration
             // PMO ID
             $table->string('pmo_id')->index();
 
-            // PHASE / CR
-            $table->string('phase_cr', 50)->nullable();
-
             // PROJECT NAME
             $table->string('project_name');
 
-            // STATUS (kita filter di resource agar tidak bisa isi GO LIVE, PENDING, DROP)
+            // STATUS
             $table->string('status')->index();
 
             // TECH LEAD

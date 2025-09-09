@@ -38,4 +38,7 @@ class Project extends Model
             // TIDAK ada perhitungan days otomatis lagi.
         });
     }
+    public function techLead() { return $this->belongsTo(\App\Models\User::class, 'tech_lead'); }
+    public function pic1() { return $this->belongsTo(\App\Models\User::class, 'pic_1'); }
+    public function pic2() { return $this->belongsTo(\App\Models\User::class, 'pic_2'); }
 }
