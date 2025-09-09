@@ -22,6 +22,8 @@ class ProjectResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'project_name';
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Tasks';
+
     public static function form(Schema $schema): Schema
     {
         return ProjectForm::configure($schema);

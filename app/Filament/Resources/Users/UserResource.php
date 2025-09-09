@@ -22,6 +22,11 @@ class UserResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    protected static ?string $navigationLabel = 'Employees';
+    protected static ?string $pluralLabel = 'Employees';
+    protected static ?string $label = 'Employee';
+    protected static string|\UnitEnum|null $navigationGroup = null; // Untuk grouping menu
+
     public static function form(Schema $schema): Schema
     {
         return UserForm::configure($schema);
@@ -42,9 +47,9 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListUsers::route('/'),
-            'create' => CreateUser::route('/create'),
-            'edit' => EditUser::route('/{record}/edit'),
+            'index' => Pages\ListUsers::route('/'),
+            'create' => Pages\CreateUser::route('/create'),
+            'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
 }
