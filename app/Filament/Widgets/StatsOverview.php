@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\User;
 use App\Models\Project;
+use App\Models\Mtc;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -17,6 +18,9 @@ class StatsOverview extends BaseWidget
 
             Stat::make('Projects', Project::count())
                 ->icon('heroicon-o-briefcase'),
+            
+            Stat::make('MTC', Mtc::count())
+                ->icon('heroicon-o-wrench-screwdriver'),
         ];
     }
 }

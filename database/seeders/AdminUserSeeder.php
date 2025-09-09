@@ -14,13 +14,13 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'name' => 'Satria',
-            'email' => 'v.satria.ferdiansyah@adira.co.id',
-            'nik' => '51223639',
+            'name' => 'Zestado Mahesa Yudha',
+            'email' => 'zestado.yudha@adira.co.id',
+            'nik' => '12233344',
             'is_active' => 'Active',
             'join_date' => now(),
             'end_date' => null,
-            'password' => Hash::make('51223639'), 
+            'password' => Hash::make('12345'), 
         ]);
     }
 }
