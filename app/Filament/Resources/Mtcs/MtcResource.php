@@ -20,6 +20,8 @@ class MtcResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
+    protected static ?string $navigationLabel = 'MTC Tickets';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
     protected static string|\UnitEnum|null $navigationGroup  = 'Tasks';
 

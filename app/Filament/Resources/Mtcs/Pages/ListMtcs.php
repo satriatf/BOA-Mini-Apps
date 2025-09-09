@@ -10,6 +10,8 @@ class ListMtcs extends ListRecords
 {
     protected static string $resource = MtcResource::class;
 
+    protected static ?string $title = 'MTC Tickets';
+
     protected function getHeaderActions(): array
     {
         return [
