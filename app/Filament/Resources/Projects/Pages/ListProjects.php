@@ -14,13 +14,12 @@ class ListProjects extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make() ->label('Tambah Project'),
+            CreateAction::make()->label('New Project'),
         ];
     }
 
     public function table(Table $table): Table
     {
-        return $table
-            ->emptyStateHeading('Belum ada project');
+        return $table->emptyStateHeading('No projects yet');
     }
 }

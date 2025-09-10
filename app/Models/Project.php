@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class Project extends Model
 {
@@ -15,8 +16,7 @@ class Project extends Model
         'project_name',
         'status',
         'tech_lead',
-        'pic_1',
-        'pic_2',
+        'pics',          // JSON array of user IDs
         'start_date',
         'end_date',
         'days',
@@ -26,19 +26,42 @@ class Project extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date'   => 'date',
+        'pics'       => 'array',   // Laravel decode JSON -> array
     ];
 
-    // Clamp percent_done ke 0..100
     protected static function booted(): void
     {
         static::saving(function (Project $p) {
             if ($p->percent_done !== null) {
                 $p->percent_done = max(0, min(100, (int) $p->percent_done));
             }
-            // TIDAK ada perhitungan days otomatis lagi.
         });
     }
-    public function techLead() { return $this->belongsTo(\App\Models\User::class, 'tech_lead'); }
-    public function pic1() { return $this->belongsTo(\App\Models\User::class, 'pic_1'); }
-    public function pic2() { return $this->belongsTo(\App\Models\User::class, 'pic_2'); }
+
+    public function techLead()
+    {
+        return $this->belongsTo(User::class, 'tech_lead');
+    }
+
+    /**
+     * Semua user PIC berdasarkan array ID di kolom `pics`.
+     * Selalu return Collection (tidak pernah null) agar aman dipakai di tabel.
+     */
+    public function getPicUsersAttribute(): Collection
+    {
+        $ids = is_array($this->pics) ? $this->pics : [];
+        if (empty($ids)) {
+            return collect();
+        }
+
+        return User::whereIn('id', $ids)->get();
+    }
+
+    /**
+     * (Opsional) Nama-nama PIC dalam bentuk array sederhana.
+     */
+    public function getPicNamesAttribute(): array
+    {
+        return $this->pic_users->pluck('name')->all();
+    }
 }
