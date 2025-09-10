@@ -22,7 +22,7 @@ class MtcResource extends Resource
 
     protected static ?string $navigationLabel = 'Non-Projects';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
     protected static string|\UnitEnum|null $navigationGroup  = 'Tasks';
 
     protected static ?int $navigationSort = 2;
