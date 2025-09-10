@@ -12,32 +12,32 @@ class CreateProject extends CreateRecord
 
     public function getTitle(): string
     {
-        return 'Tambah Project';
+        return 'Add Project';
     }
 
     public function getBreadcrumb(): string
     {
-    return 'Tambah Project';
+    return 'Add Project';
     }
 
     protected function getCreateFormAction(): Action
     {
         return Action::make('create')
-            ->label('Simpan') // ubah "Create" jadi "Simpan"
+            ->label('Create') // ubah "Create" jadi "Simpan"
             ->submit('create');
     }
 
     protected function getCreateAnotherFormAction(): Action
     {
         return Action::make('createAnother')
-            ->label('Simpan & Tambah Lagi')
+            ->label('Save and Create Another')
             ->submit('createAnother');
     }
 
     protected function getCancelFormAction(): Action
     {
         return Action::make('cancel')
-            ->label('Batal')
+            ->label('Cancel')
             ->url($this->getResource()::getUrl('index'));
     }
 }

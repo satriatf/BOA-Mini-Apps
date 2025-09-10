@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->foreignId('created_by_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('resolver_id')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->string('title')->unique();
+            $table->string('No. Tiket')->unique();
             $table->text('deskripsi');
             $table->string('type', 32)->index(); // MTC/PRJ/INCIDENT/SERVICE REQUEST/SUPPORT UAT
             $table->text('solusi')->nullable();

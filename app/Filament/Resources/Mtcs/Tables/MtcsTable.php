@@ -25,11 +25,11 @@ class MtcsTable
                     ->sortable(),
 
                 TextColumn::make('deskripsi')
-                    ->label('Deskripsi')
+                    ->label('Description')
                     ->limit(60),
 
                 TextColumn::make('type')
-                    ->label('Type')
+                    ->label('Ticket Type')
                     ->searchable()
                     ->sortable(),
 
@@ -39,16 +39,16 @@ class MtcsTable
                     ->sortable(),
 
                 TextColumn::make('solusi')
-                    ->label('Solusi')
+                    ->label('Solution')
                     ->limit(60),
 
                 TextColumn::make('application')
-                    ->label('Aplikasi')
+                    ->label('Application')
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('tanggal')
-                    ->label('Tanggal')
+                    ->label('Date')
                     ->date()
                     ->sortable(),
 

@@ -20,7 +20,7 @@ class MtcResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
-    protected static ?string $navigationLabel = 'MTC Tickets';
+    protected static ?string $navigationLabel = 'Non-Projects';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
     protected static string|\UnitEnum|null $navigationGroup  = 'Tasks';
@@ -39,7 +39,7 @@ class MtcResource extends Resource
 
     public static function getPluralModelLabel(): string
     {
-        return 'MTC Tickets';     
+        return 'Non-Projects';     
     }
 
     public static function getRelations(): array

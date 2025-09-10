@@ -18,7 +18,7 @@ class MtcForm
         return $schema->components([
             // Created By → dropdown User
             Select::make('created_by_id')
-                ->label('Created By')
+                ->label('Created by who?')
                 ->options(fn () => User::pluck('name', 'id'))
                 ->searchable()
                 ->preload()
@@ -26,18 +26,18 @@ class MtcForm
                 ->required(),
 
             TextInput::make('title')
-                ->label('Title')
+                ->label('Ticket Number')
                 ->required()->unique(ignoreRecord: true)
-                ->maxLength(150),
+                ->maxLength(15),
 
             Textarea::make('deskripsi')
-                ->label('Deskripsi')
+                ->label('Description')
                 ->required()
                 ->rows(3),
 
             // Type → 5 opsi
             Select::make('type')
-                ->label('Type')
+                ->label('Ticket Type')
                 ->options(Mtc::TYPE_OPTIONS)
                 ->searchable()
                 ->native(false)
@@ -52,18 +52,19 @@ class MtcForm
                 ->native(false),
 
             Textarea::make('solusi')
-                ->label('Solusi')
+                ->label('Solution')
                 ->rows(3),
 
             // Aplikasi → dropdown sesuai Excel
             Select::make('application')
-                ->label('Aplikasi')
+                ->label('Application')
                 ->options(Mtc::APP_OPTIONS)
                 ->searchable()
                 ->native(false)
                 ->required(),
 
-            DatePicker::make('tanggal'),
+            DatePicker::make('Date')
+            ->displayFormat('d/m/Y'),
 
             // Attachments = ANGKA
             FileUpload::make('attachments')
@@ -71,7 +72,7 @@ class MtcForm
             ->multiple() // kalau boleh upload banyak file
             ->directory('attachments') // simpan di storage/app/attachments
             ->maxSize(10240) // max 10 MB
-            ->acceptedFileTypes(['application/pdf', 'image/*']) // file yang diterima
+            ->acceptedFileTypes(['application/pdf', 'image/*', 'excel/xlc']) // file yang diterima
             ->required(),
         ]);
     }

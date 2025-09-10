@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Mtc extends Model
 {
     public const TYPE_OPTIONS = [
-        'MTC'             => 'MTC',
-        'PRJ'             => 'PRJ',
+        'PROBLEM'             => 'PROBLEM',
+        'REQUEST DATA'             => 'REQUEST DATA',
         'INCIDENT'        => 'INCIDENT',
         'SERVICE REQUEST' => 'SERVICE REQUEST',
         'SUPPORT UAT'     => 'SUPPORT UAT',
