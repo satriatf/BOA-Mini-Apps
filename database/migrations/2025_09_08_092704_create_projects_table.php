@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             // PMO ID
-            $table->string('pmo_id')->index();
+            $table->string('pmo_id')->unique();
 
             // PROJECT NAME
             $table->string('project_name');

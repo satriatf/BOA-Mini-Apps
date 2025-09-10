@@ -26,7 +26,7 @@ class MtcForm
 
             TextInput::make('title')
                 ->label('Title')
-                ->required()
+                ->required()->unique(ignoreRecord: true)
                 ->maxLength(150),
 
             Textarea::make('deskripsi')

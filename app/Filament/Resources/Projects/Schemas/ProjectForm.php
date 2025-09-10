@@ -14,13 +14,9 @@ class ProjectForm
     {
         return $schema
             ->components([
-                TextInput::make('pmo_id')
-                    ->required(),
-                TextInput::make('project_name')
-                    ->required(),
-                Select::make('status')
-                    ->required()
-                    ->options([
+                TextInput::make('pmo_id')->required()->unique(ignoreRecord: true),
+                TextInput::make('project_name')->required(),
+                Select::make('status')->required()->options([
                         'PEMBAHASAN' => 'PEMBAHASAN',
                         'TASKLIST' => 'TASKLIST',
                         'SIGN-OFF' => 'SIGN-OFF',
