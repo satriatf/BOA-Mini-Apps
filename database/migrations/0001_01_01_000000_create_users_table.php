@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
-            $table->string('nik')->unique();
+            $table->integer('nik')->unique();
             $table->enum('is_active', ['Active', 'Inactive'])->default('Active');
             $table->date('join_date')->nullable();
             $table->date('end_date')->nullable();

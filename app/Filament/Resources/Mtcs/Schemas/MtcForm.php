@@ -8,6 +8,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Schema;
 
 class MtcForm
@@ -65,12 +66,13 @@ class MtcForm
             DatePicker::make('tanggal'),
 
             // Attachments = ANGKA
-            TextInput::make('attachments_count')
-                ->label('Attachments')
-                ->numeric()
-                ->minValue(0)
-                ->default(0)
-                ->required(),
+            FileUpload::make('attachments')
+            ->label('Attachments')
+            ->multiple() // kalau boleh upload banyak file
+            ->directory('attachments') // simpan di storage/app/attachments
+            ->maxSize(10240) // max 10 MB
+            ->acceptedFileTypes(['application/pdf', 'image/*']) // file yang diterima
+            ->required(),
         ]);
     }
 }
