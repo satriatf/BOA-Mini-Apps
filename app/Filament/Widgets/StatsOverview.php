@@ -18,8 +18,8 @@ class StatsOverview extends BaseWidget
 
             Stat::make('Projects', Project::count())
                 ->icon('heroicon-o-briefcase'),
-            
-            Stat::make('MTC', Mtc::count())
+
+            Stat::make('MTC Tickets', Mtc::count())
                 ->icon('heroicon-o-wrench-screwdriver'),
         ];
     }

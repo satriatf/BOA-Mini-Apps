@@ -37,6 +37,11 @@ class MtcResource extends Resource
         return MtcsTable::configure($table);
     }
 
+    public static function getPluralModelLabel(): string
+    {
+        return 'MTC Tickets';     
+    }
+
     public static function getRelations(): array
     {
         return [];
