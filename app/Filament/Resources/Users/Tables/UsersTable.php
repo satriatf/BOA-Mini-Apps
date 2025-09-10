@@ -15,7 +15,8 @@ class UsersTable
         return $table
             ->columns([
                 TextColumn::make('nik')->label('NIK')->searchable(),
-                TextColumn::make('name')->label('Nama')->searchable(),
+                TextColumn::make('name')->label('Name')->searchable(),
+                TextColumn::make('level')->label('Level')->badge(),
                 TextColumn::make('is_active')->label('Is Active')->badge(),
                 TextColumn::make('join_date')->label('Join Date')->date(),
                 TextColumn::make('end_date')->label('End Date')->date(),

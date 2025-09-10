@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'nik',
         'is_active',
+        'level',
         'join_date',
         'end_date',
         'password',

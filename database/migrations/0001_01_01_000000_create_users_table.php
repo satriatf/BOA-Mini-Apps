@@ -21,6 +21,7 @@ return new class extends Migration
             $table->timestamps();
             $table->integer('nik')->unique();
             $table->enum('is_active', ['Active', 'Inactive'])->default('Active');
+            $table->enum('level', ['Manager', 'Asmen', 'SH', 'Staff', 'Intern'])->default('Staff');
             $table->date('join_date')->nullable();
             $table->date('end_date')->nullable();
         });
