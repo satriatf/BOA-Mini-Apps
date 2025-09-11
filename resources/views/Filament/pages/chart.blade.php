@@ -80,5 +80,71 @@
         .fc-theme-standard .fc-scrollgrid,
         .fc-theme-standard td,
         .fc-theme-standard th { border-color: rgba(107,114,128,.2); }
+
+        /* Dark mode overrides for FullCalendar */
+        html.dark #calendar,
+        html.dark .fc,
+        html.dark .fc-theme-standard {
+            background: #18181b !important; /* dark bg */
+            color: #f3f4f6 !important; /* light text */
+        }
+        html.dark .fc .fc-toolbar,
+        html.dark .fc .fc-toolbar-title,
+        html.dark .fc .fc-button,
+        html.dark .fc .fc-button-primary {
+            background: #23272f !important;
+            color: #f3f4f6 !important;
+            border-color: #374151 !important;
+        }
+        html.dark .fc .fc-button-primary:not(:disabled):hover,
+        html.dark .fc .fc-button-primary:focus {
+            background: #374151 !important;
+        }
+        html.dark .fc-theme-standard .fc-scrollgrid,
+        html.dark .fc-theme-standard td,
+        html.dark .fc-theme-standard th {
+            background: #23272f !important;
+            border-color: rgba(243,244,246,0.12) !important; /* light border */
+        }
+        html.dark .fc-daygrid-day-number,
+        html.dark .fc-col-header-cell-cushion {
+            color: #f3f4f6 !important;
+        }
+        html.dark .fc-daygrid-day.fc-day-today {
+            background: #334155 !important;
+        }
+        html.dark .fc-event {
+            background: #3b82f6 !important;
+            color: #fff !important;
+            border: none !important;
+        }
+        html.dark .fc-event.fc-event-mtc {
+            background: #f59e0b !important;
+            color: #1f2937 !important;
+        }
+        html.dark .fc-popover {
+            background: #23272f !important;
+            color: #f3f4f6 !important;
+        }
+        html.dark .fc .fc-daygrid-day-frame {
+            background: transparent !important;
+        }
+        html.dark .fc .fc-daygrid-day {
+            background: #23272f !important;
+        }
+        html.dark .fc .fc-col-header-cell {
+            background: #23272f !important;
+        }
+        html.dark .fc .fc-scrollgrid-section-header td {
+            background: #23272f !important;
+        }
+        html.dark .fc .fc-scrollgrid-section-body td {
+            background: #23272f !important;
+        }
+        html.dark .fc .fc-daygrid-day.fc-day-other {
+            background: #18181b !important;
+            color: #6b7280 !important;
+        }
+        /* End dark mode overrides */
     </style>
 </x-filament-panels::page>
