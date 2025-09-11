@@ -19,8 +19,8 @@ class MtcsTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('title')
-                    ->label('Title')
+                TextColumn::make('no_tiket')
+                    ->label('No. Ticket')
                     ->searchable()
                     ->sortable(),
 
@@ -29,7 +29,7 @@ class MtcsTable
                     ->limit(60),
 
                 TextColumn::make('type')
-                    ->label('Ticket Type')
+                    ->label('Type')
                     ->searchable()
                     ->sortable(),
 
@@ -52,20 +52,47 @@ class MtcsTable
                     ->date()
                     ->sortable(),
 
-                TextColumn::make('attachments_count')
+                TextColumn::make('attachments')
                     ->label('Attachments')
-                    ->numeric()
-                    ->sortable(),
+                    ->state(function ($record) {
+                        $files = $record->attachments;
+
+                        if (is_string($files)) {
+                            $decoded = json_decode($files, true);
+                            $files = is_array($decoded) ? $decoded : [$files];
+                        } elseif (!is_array($files)) {
+                            $files = [];
+                        }
+
+                        if (empty($files)) {
+                            return '0'; 
+                        }
+
+                        $lines = collect($files)->map(function ($item) {
+                            $path = is_array($item) && isset($item['path'])
+                                ? $item['path']
+                                : (is_string($item) ? $item : null);
+
+                            if (!$path) return null;
+
+                            $name = basename($path);
+                            $safe = e($name);
+                            $safe = str_replace(' ', '&nbsp;', $safe);
+
+                            return '<span class="whitespace-nowrap">'.$safe.'</span>';
+                        })->filter()->values();
+
+                        return $lines->implode('<br>');
+                    })
+                    ->html(), 
             ])
-            ->filters([
-                // optional: tambahkan filter kalau perlu
-            ])
+            ->filters([])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->label('Edit'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('Delete Selected'),
                 ]),
             ]);
     }

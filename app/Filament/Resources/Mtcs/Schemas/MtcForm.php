@@ -16,64 +16,58 @@ class MtcForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            // Created By → dropdown User
             Select::make('created_by_id')
-                ->label('Created by who?')
-                ->options(fn () => User::pluck('name', 'id'))
-                ->searchable()
-                ->preload()
-                ->native(false)
-                ->required(),
+                ->label('Created By')
+                ->options(fn () => User::whereIn('level', ['SH', 'Staff'])->pluck('name', 'id'))
+                ->searchable()->preload()->native(false)->required(),
 
-            TextInput::make('title')
-                ->label('Ticket Number')
-                ->required()->unique(ignoreRecord: true)
-                ->maxLength(15),
+            TextInput::make('no_tiket')
+                ->label('No. Ticket')
+                ->required()
+                ->unique(ignoreRecord: true)
+                ->maxLength(50),
 
             Textarea::make('deskripsi')
                 ->label('Description')
                 ->required()
                 ->rows(3),
 
-            // Type → 5 opsi
             Select::make('type')
-                ->label('Ticket Type')
+                ->label('Type')
                 ->options(Mtc::TYPE_OPTIONS)
-                ->searchable()
-                ->native(false)
-                ->required(),
+                ->searchable()->native(false)->required(),
 
-            // Resolver PIC → dropdown User
             Select::make('resolver_id')
                 ->label('Resolver PIC')
-                ->options(fn () => User::pluck('name', 'id'))
-                ->searchable()
-                ->preload()
-                ->native(false),
+                ->options(fn () => User::whereIn('level', ['SH', 'Staff'])->pluck('name', 'id'))
+                ->searchable()->preload()->native(false),
 
             Textarea::make('solusi')
                 ->label('Solution')
                 ->rows(3),
 
-            // Aplikasi → dropdown sesuai Excel
             Select::make('application')
                 ->label('Application')
                 ->options(Mtc::APP_OPTIONS)
-                ->searchable()
+                ->searchable()->native(false)->required(),
+
+            DatePicker::make('tanggal')
+                ->label('Date')
                 ->native(false)
+                ->displayFormat('d/m/Y')
                 ->required(),
 
-            DatePicker::make('Date')
-            ->displayFormat('d/m/Y'),
-
-            // Attachments = ANGKA
             FileUpload::make('attachments')
-            ->label('Attachments')
-            ->multiple() // kalau boleh upload banyak file
-            ->directory('attachments') // simpan di storage/app/attachments
-            ->maxSize(10240) // max 10 MB
-            ->acceptedFileTypes(['application/pdf', 'image/*', 'excel/xlc']) // file yang diterima
-            ->required(),
+                ->label('Attachments')
+                ->multiple()
+                ->disk('public')
+                ->directory('mtc_attachments')
+                ->maxSize(10240)
+                ->preserveFilenames()
+                ->downloadable()
+                ->openable()
+                ->reorderable()
+                ->helperText('Upload multiple files (PDF, images, docs).'),
         ]);
     }
 }

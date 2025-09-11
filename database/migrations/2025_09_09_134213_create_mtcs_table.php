@@ -12,12 +12,15 @@ return new class extends Migration {
             $table->foreignId('created_by_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('resolver_id')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->string('No. Tiket')->unique();
+            $table->string('no_tiket')->unique();
+
             $table->text('deskripsi');
-            $table->string('type', 32)->index(); // MTC/PRJ/INCIDENT/SERVICE REQUEST/SUPPORT UAT
+            $table->string('type', 32)->index(); 
             $table->text('solusi')->nullable();
             $table->string('application')->index();
             $table->date('tanggal');
+
+            $table->json('attachments')->nullable();
 
             $table->unsignedSmallInteger('attachments_count')->default(0);
 
@@ -25,5 +28,7 @@ return new class extends Migration {
         });
     }
 
-    public function down(): void { Schema::dropIfExists('mtcs'); }
+    public function down(): void {
+        Schema::dropIfExists('mtcs');
+    }
 };
