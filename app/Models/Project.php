@@ -40,7 +40,7 @@ class Project extends Model
 
     public function techLead()
     {
-        return $this->belongsTo(User::class, 'tech_lead');
+        return $this->belongsTo(related: User::class, foreignKey: 'tech_lead');
     }
 
     /**
