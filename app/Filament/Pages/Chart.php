@@ -64,63 +64,67 @@ class Chart extends Page
         $projects = Project::query()
             ->where(function ($q) {
                 $q->whereNotNull('start_date')
-                  ->orWhereNotNull('end_date');
+                    ->orWhereNotNull('end_date');
             })
             ->with(['techLead']) // hindari N+1 untuk tooltip
             ->orderBy('start_date')
             ->get();
 
-foreach ($projects as $p) {
-    $start = $p->start_date ? \Carbon\Carbon::parse($p->start_date)->startOfDay() : null;
-    $end   = $p->end_date   ? \Carbon\Carbon::parse($p->end_date)->endOfDay()   : null;
+        foreach ($projects as $p) {
+            $start = $p->start_date ? \Carbon\Carbon::parse($p->start_date)->startOfDay() : null;
+            $end   = $p->end_date   ? \Carbon\Carbon::parse($p->end_date)->endOfDay()   : null;
 
-    if (!$start && !$end) {
-        continue; // tidak ada tanggal sama sekali
-    }
+            if (!$start && !$end) {
+                continue; // tidak ada tanggal sama sekali
+            }
 
-    // Jika salah satu null → anggap single-day (untuk kalender saja)
-    if ($start && !$end) { $end = $start->clone(); }
-    if (!$start && $end)  { $start = $end->clone(); }
+            // Jika salah satu null → anggap single-day (untuk kalender saja)
+            if ($start && !$end) {
+                $end = $start->clone();
+            }
+            if (!$start && $end) {
+                $start = $end->clone();
+            }
 
-    // Cek overlap dengan tahun yang dipilih
-    $overlaps = $end->gte($startOfYear) && $start->lte($endOfYear);
-    if (! $overlaps) {
-        continue;
-    }
+            // Cek overlap dengan tahun yang dipilih
+            $overlaps = $end->gte($startOfYear) && $start->lte($endOfYear);
+            if (! $overlaps) {
+                continue;
+            }
 
-    // Clamp ke batas tahun agar event tidak keluar range kalender
-    $startClamped = $start->clone()->max($startOfYear);
-    $endClamped   = $end->clone()->min($endOfYear);
+            // Clamp ke batas tahun agar event tidak keluar range kalender
+            $startClamped = $start->clone()->max($startOfYear);
+            $endClamped   = $end->clone()->min($endOfYear);
 
-    // ✅ Days ambil dari form/DB saja
-    $daysFromForm = $p->days; // biarkan apa adanya (0, null, dsb)
+            // ✅ Days ambil dari form/DB saja
+            $daysFromForm = $p->days; // biarkan apa adanya (0, null, dsb)
 
-    $detail = implode("\n", array_filter([
-        'Project: '   . ($p->project_name ?? '—'),
-        'Status: '    . ($p->status ?? '—'),
-        'Tech Lead: ' . ($p->techLead->name ?? '—'),
-        'Start: '     . $start?->toDateString(),
-        'End: '       . $end?->toDateString(),
-        // Tampilkan hanya jika ada/is_numeric
-        is_numeric($daysFromForm) ? ('Days: ' . $daysFromForm) : null,
-        isset($p->percent_done) ? ('% Done: ' . $p->percent_done . '%') : null,
-    ]));
+            $detail = implode("\n", array_filter([
+                'Project: '   . ($p->project_name ?? '—'),
+                'Status: '    . ($p->status ?? '—'),
+                'Tech Lead: ' . ($p->techLead->name ?? '—'),
+                'Start: '     . $start?->toDateString(),
+                'End: '       . $end?->toDateString(),
+                // Tampilkan hanya jika ada/is_numeric
+                is_numeric($daysFromForm) ? ('Days: ' . $daysFromForm) : null,
+                isset($p->percent_done) ? ('% Done: ' . $p->percent_done . '%') : null,
+            ]));
 
-    $url = \App\Filament\Resources\Projects\ProjectResource::getUrl('edit', ['record' => $p]);
+            $url = \App\Filament\Resources\Projects\ProjectResource::getUrl('edit', ['record' => $p]);
 
-    $events[] = [
-        'title'   => (string) ($p->project_name ?? ('Project #'.$p->id)),
-        'start'   => $startClamped->toDateString(),
-        'end'     => $endClamped->clone()->addDay()->toDateString(), // FullCalendar end exclusive
-        'allDay'  => true,
-        'display' => 'block',
-        'extendedProps' => [
-            'type'    => 'project',
-            'details' => $detail,
-            'url'     => $url,
-        ],
-    ];
-}
+            $events[] = [
+                'title'   => (string) ($p->project_name ?? ('Project #' . $p->id)),
+                'start'   => $startClamped->toDateString(),
+                'end'     => $endClamped->clone()->addDay()->toDateString(), // FullCalendar end exclusive
+                'allDay'  => true,
+                'display' => 'block',
+                'extendedProps' => [
+                    'type'    => 'project',
+                    'details' => $detail,
+                    'url'     => $url,
+                ],
+            ];
+        }
 
         // ======================
         // NON-PROJECTS / MTC (1 hari)
@@ -137,7 +141,7 @@ foreach ($projects as $p) {
             $date = Carbon::parse($t->tanggal)->toDateString();
 
             $title = trim(implode(' – ', array_filter([
-                $t->no_tiket ? '#'.$t->no_tiket : null,
+                $t->no_tiket ? '#' . $t->no_tiket : null,
                 $t->application ?? null,
                 $t->type ?? null,
             ])));
@@ -145,10 +149,12 @@ foreach ($projects as $p) {
             $detail = implode("\n", array_filter([
                 'Ticket: '     . ($t->no_tiket ?? '—'),
                 'Type: '       . ($t->type ?? '—'),
-                'Application: '. ($t->application ?? '—'),
+                'Application: ' . ($t->application ?? '—'),
                 'Date: '       . $date,
                 'Created By: ' . ($t->createdBy->name ?? '—'),
                 'Resolver: '   . ($t->resolver->name ?? '—'),
+                'Description: ' . ($t->deskripsi ?? '—'),
+                'Solution: '    . ($t->solusi ?? '—'),
             ]));
 
             $url = MtcResource::getUrl('edit', ['record' => $t]);
