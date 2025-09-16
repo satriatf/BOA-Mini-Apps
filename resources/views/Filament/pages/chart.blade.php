@@ -10,141 +10,109 @@
         <x-filament::button type="submit">Apply</x-filament::button>
     </form>
 
-    {{-- FullCalendar CDN --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    {{-- FullCalendar (CORE + MultiMonth) --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/multimonth@6.1.19/index.global.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/multimonth@6.1.19/index.global.min.js"></script>
 
     <div id="calendar" class="rounded-lg border bg-white dark:bg-gray-900 p-2"></div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const calendarEl = document.getElementById('calendar');
+        document.addEventListener('DOMContentLoaded', function() {
+            const el = document.getElementById('calendar');
 
-            // Ambil warna dari theme Filament
+            // warna mengikuti theme Filament
             const root = getComputedStyle(document.documentElement);
             const cssVar = (name, fallback) => (root.getPropertyValue(name).trim() || fallback);
-
-            // Warna mengikuti theme: primary utk Projects, warning utk MTC
             const colorProject = cssVar('--fi-color-primary-600', '#3b82f6');
-            const colorMtc     = cssVar('--fi-color-warning-600', '#f59e0b');
+            const colorMtc = cssVar('--fi-color-warning-600', '#f59e0b');
 
-            const events = @json($events);
-
-            // Set warna berdasarkan tipe
-            const coloredEvents = events.map(e => {
+            const events = @json($events).map(e => {
                 const type = e.extendedProps?.type;
                 if (type === 'project') {
                     e.color = colorProject;
                     e.textColor = '#ffffff';
-                } else if (type === 'mtc') {
+                }
+                if (type === 'mtc') {
                     e.color = colorMtc;
-                    e.textColor = '#1f2937'; // gray-800
+                    e.textColor = '#1f2937';
                 }
                 return e;
             });
 
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                initialDate: '{{ $year }}-01-01',
+            const Y = {{ (int) $year }};
+
+            const calendar = new FullCalendar.Calendar(el, {
+                initialView: 'multiMonthYear',
+                multiMonthMaxColumns: 3, // opsional
                 height: 'auto',
                 dayMaxEvents: true,
+
+                // ✅ hanya judul tahun di tengah, tanpa tombol
+                headerToolbar: {
+                    left: '',
+                    center: 'title',
+                    right: ''
+                },
+
+                validRange: {
+                    start: `${Y}-01-01`,
+                    end: `${Y + 1}-01-01`
+                },
+                locale: 'id',
+                firstDay: 1,
                 fixedWeekCount: false,
                 expandRows: true,
-                headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
-                validRange: {
-                    start: '{{ $year }}-01-01',
-                    end:   '{{ $year + 1 }}-01-01', // exclusive
-                },
-                events: coloredEvents,
 
-                // Tooltip ringan via title attribute
+                events,
                 eventDidMount(info) {
                     const details = info.event.extendedProps?.details;
                     if (details) info.el.title = details;
                 },
-
-                // Klik event → buka halaman Edit resource
                 eventClick(info) {
                     const url = info.event.extendedProps?.url;
                     if (url) window.open(url, '_blank');
                 },
             });
 
+
             calendar.render();
         });
     </script>
 
+    {{-- Dark mode (opsional, boleh kamu pertahankan/ubah) --}}
     <style>
-        #calendar { width: 100%; }
-        .fc .fc-toolbar-title { font-weight: 700; }
+        #calendar {
+            width: 100%;
+        }
+
+        .fc .fc-toolbar-title {
+            font-weight: 700;
+        }
+
         .fc-theme-standard .fc-scrollgrid,
         .fc-theme-standard td,
-        .fc-theme-standard th { border-color: rgba(107,114,128,.2); }
+        .fc-theme-standard th {
+            border-color: rgba(107, 114, 128, .2);
+        }
 
-        /* Dark mode overrides for FullCalendar */
         html.dark #calendar,
         html.dark .fc,
         html.dark .fc-theme-standard {
-            background: #18181b !important; /* dark bg */
-            color: #f3f4f6 !important; /* light text */
-        }
-        html.dark .fc .fc-toolbar,
-        html.dark .fc .fc-toolbar-title,
-        html.dark .fc .fc-button,
-        html.dark .fc .fc-button-primary {
-            background: #23272f !important;
+            background: #18181b !important;
             color: #f3f4f6 !important;
-            border-color: #374151 !important;
         }
-        html.dark .fc .fc-button-primary:not(:disabled):hover,
-        html.dark .fc .fc-button-primary:focus {
-            background: #374151 !important;
-        }
+
         html.dark .fc-theme-standard .fc-scrollgrid,
         html.dark .fc-theme-standard td,
         html.dark .fc-theme-standard th {
             background: #23272f !important;
-            border-color: rgba(243,244,246,0.12) !important; /* light border */
+            border-color: rgba(243, 244, 246, 0.12) !important;
         }
-        html.dark .fc-daygrid-day-number,
-        html.dark .fc-col-header-cell-cushion {
-            color: #f3f4f6 !important;
-        }
+
         html.dark .fc-daygrid-day.fc-day-today {
             background: #334155 !important;
         }
-        html.dark .fc-event {
-            background: #3b82f6 !important;
-            color: #fff !important;
-            border: none !important;
-        }
-        html.dark .fc-event.fc-event-mtc {
-            background: #f59e0b !important;
-            color: #1f2937 !important;
-        }
-        html.dark .fc-popover {
-            background: #23272f !important;
-            color: #f3f4f6 !important;
-        }
-        html.dark .fc .fc-daygrid-day-frame {
-            background: transparent !important;
-        }
-        html.dark .fc .fc-daygrid-day {
-            background: #23272f !important;
-        }
-        html.dark .fc .fc-col-header-cell {
-            background: #23272f !important;
-        }
-        html.dark .fc .fc-scrollgrid-section-header td {
-            background: #23272f !important;
-        }
-        html.dark .fc .fc-scrollgrid-section-body td {
-            background: #23272f !important;
-        }
-        html.dark .fc .fc-daygrid-day.fc-day-other {
-            background: #18181b !important;
-            color: #6b7280 !important;
-        }
-        /* End dark mode overrides */
     </style>
 </x-filament-panels::page>

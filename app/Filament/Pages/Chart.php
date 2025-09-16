@@ -14,13 +14,8 @@ class Chart extends Page
     // v4: non-static untuk $view
     protected string $view = 'filament.pages.chart';
 
-    // Ikon nav → BackedEnum|string|null
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calendar';
-
-    // Muncul DI LUAR grouping (bukan di bawah “Tasks” dsb)
     protected static string|\UnitEnum|null $navigationGroup = null;
-
-    // Atur posisi di sidebar (sesuaikan selera)
     protected static ?int $navigationSort = 15;
 
     /** Filter tahun */
@@ -29,7 +24,6 @@ class Chart extends Page
     /** Event untuk FullCalendar */
     public array $events = [];
 
-    // Label & title via method (lebih aman lintas versi)
     public static function getNavigationLabel(): string
     {
         return 'Chart';
@@ -42,7 +36,14 @@ class Chart extends Page
 
     public function mount(): void
     {
-        $this->year = (int) request()->query('year', now()->year);
+        // ✅ validasi year supaya tidak 0000
+        $raw = request()->query('year');
+        $y   = is_numeric($raw) ? (int) $raw : null;
+        if (empty($y) || $y < 1900 || $y > 2100) {
+            $y = now()->year;
+        }
+
+        $this->year   = $y;
         $this->events = $this->buildEvents($this->year);
     }
 
@@ -59,45 +60,33 @@ class Chart extends Page
         $endOfYear   = Carbon::create($year, 12, 31)->endOfDay();
 
         // ======================
-        // PROJECTS (cek overlap di PHP → paling aman)
+        // PROJECTS (cek overlap)
         // ======================
         $projects = Project::query()
             ->where(function ($q) {
                 $q->whereNotNull('start_date')
-                    ->orWhereNotNull('end_date');
+                  ->orWhereNotNull('end_date');
             })
-            ->with(['techLead']) // hindari N+1 untuk tooltip
+            ->with(['techLead'])
             ->orderBy('start_date')
             ->get();
 
         foreach ($projects as $p) {
-            $start = $p->start_date ? \Carbon\Carbon::parse($p->start_date)->startOfDay() : null;
-            $end   = $p->end_date   ? \Carbon\Carbon::parse($p->end_date)->endOfDay()   : null;
+            $start = $p->start_date ? Carbon::parse($p->start_date)->startOfDay() : null;
+            $end   = $p->end_date   ? Carbon::parse($p->end_date)->endOfDay()   : null;
 
-            if (!$start && !$end) {
-                continue; // tidak ada tanggal sama sekali
-            }
+            if (!$start && !$end) continue;
 
-            // Jika salah satu null → anggap single-day (untuk kalender saja)
-            if ($start && !$end) {
-                $end = $start->clone();
-            }
-            if (!$start && $end) {
-                $start = $end->clone();
-            }
+            if ($start && !$end) $end = $start->clone();
+            if (!$start && $end) $start = $end->clone();
 
-            // Cek overlap dengan tahun yang dipilih
             $overlaps = $end->gte($startOfYear) && $start->lte($endOfYear);
-            if (! $overlaps) {
-                continue;
-            }
+            if (!$overlaps) continue;
 
-            // Clamp ke batas tahun agar event tidak keluar range kalender
             $startClamped = $start->clone()->max($startOfYear);
             $endClamped   = $end->clone()->min($endOfYear);
 
-            // ✅ Days ambil dari form/DB saja
-            $daysFromForm = $p->days; // biarkan apa adanya (0, null, dsb)
+            $daysFromForm = $p->days;
 
             $detail = implode("\n", array_filter([
                 'Project: '   . ($p->project_name ?? '—'),
@@ -105,17 +94,16 @@ class Chart extends Page
                 'Tech Lead: ' . ($p->techLead->name ?? '—'),
                 'Start: '     . $start?->toDateString(),
                 'End: '       . $end?->toDateString(),
-                // Tampilkan hanya jika ada/is_numeric
                 is_numeric($daysFromForm) ? ('Days: ' . $daysFromForm) : null,
                 isset($p->percent_done) ? ('% Done: ' . $p->percent_done . '%') : null,
             ]));
 
-            $url = \App\Filament\Resources\Projects\ProjectResource::getUrl('edit', ['record' => $p]);
+            $url = ProjectResource::getUrl('edit', ['record' => $p]);
 
             $events[] = [
                 'title'   => (string) ($p->project_name ?? ('Project #' . $p->id)),
                 'start'   => $startClamped->toDateString(),
-                'end'     => $endClamped->clone()->addDay()->toDateString(), // FullCalendar end exclusive
+                'end'     => $endClamped->clone()->addDay()->toDateString(), // end exclusive
                 'allDay'  => true,
                 'display' => 'block',
                 'extendedProps' => [
@@ -147,12 +135,12 @@ class Chart extends Page
             ])));
 
             $detail = implode("\n", array_filter([
-                'Ticket: '     . ($t->no_tiket ?? '—'),
-                'Type: '       . ($t->type ?? '—'),
+                'Ticket: '      . ($t->no_tiket ?? '—'),
+                'Type: '        . ($t->type ?? '—'),
                 'Application: ' . ($t->application ?? '—'),
-                'Date: '       . $date,
-                'Created By: ' . ($t->createdBy->name ?? '—'),
-                'Resolver: '   . ($t->resolver->name ?? '—'),
+                'Date: '        . $date,
+                'Created By: '  . ($t->createdBy->name ?? '—'),
+                'Resolver: '    . ($t->resolver->name ?? '—'),
                 'Description: ' . ($t->deskripsi ?? '—'),
                 'Solution: '    . ($t->solusi ?? '—'),
             ]));
