@@ -18,11 +18,6 @@ class EditMtc extends EditRecord
         ];
     }
 
-    protected function getSaveFormAction(): Action
-    {
-        return parent::getSaveFormAction()->label('Save Changes');
-    }
-
     protected function getCancelFormAction(): Action
     {
         return parent::getCancelFormAction()->label('Cancel');
@@ -34,4 +29,10 @@ class EditMtc extends EditRecord
         $data['attachments_count'] = is_array($files) ? count($files) : 0;
         return $data;
     }
+
+    public function getRedirectUrl(): ?string
+    {
+        return static::getResource()::getUrl('index');
+    }
+    // ...existing code...
 }
