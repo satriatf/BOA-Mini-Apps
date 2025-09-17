@@ -4,8 +4,9 @@ namespace App\Filament\Resources\Mtcs\Pages;
 
 use App\Filament\Resources\Mtcs\MtcResource;
 use Filament\Actions\DeleteAction;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Actions\Action;
+use Filament\Resources\Pages\EditRecord;
+use Illuminate\Contracts\Support\Htmlable;
 
 class EditMtc extends EditRecord
 {
@@ -13,9 +14,7 @@ class EditMtc extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            DeleteAction::make()->label('Delete'),
-        ];
+        return [ DeleteAction::make()->label('Delete') ];
     }
 
     protected function getCancelFormAction(): Action
@@ -34,5 +33,21 @@ class EditMtc extends EditRecord
     {
         return static::getResource()::getUrl('index');
     }
-    // ...existing code...
+
+    /* ====== Judul & breadcrumb ====== */
+    public function getHeading(): string|Htmlable
+    {
+        $app = $this->getRecord()?->application;
+        return $app ? ('Edit ' . $app) : 'Edit Non-Project';
+    }
+
+    public function getTitle(): string|Htmlable
+    {
+        return $this->getHeading();
+    }
+
+    public function getBreadcrumb(): string
+    {
+        return 'Edit';
+    }
 }

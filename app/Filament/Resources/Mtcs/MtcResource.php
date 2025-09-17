@@ -18,13 +18,11 @@ class MtcResource extends Resource
 {
     protected static ?string $model = Mtc::class;
 
-    protected static ?string $recordTitleAttribute = 'title';
+    protected static ?string $recordTitleAttribute = 'application';
 
     protected static ?string $navigationLabel = 'Non-Projects';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
     protected static string|\UnitEnum|null $navigationGroup  = 'Tasks';
-
     protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
@@ -37,9 +35,14 @@ class MtcResource extends Resource
         return MtcsTable::configure($table);
     }
 
+    public static function getModelLabel(): string
+    {
+        return 'Non-Project';
+    }
+
     public static function getPluralModelLabel(): string
     {
-        return 'Non-Projects';     
+        return 'Non-Projects';
     }
 
     public static function getRelations(): array
