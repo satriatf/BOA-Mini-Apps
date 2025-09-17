@@ -21,7 +21,7 @@ class Mtc extends Model
         'Ad1Forflow'        => 'Ad1Forflow',
         'BPKBLib'           => 'BPKBLib',
         'Ihtisar Asuransi'  => 'Ihtisar Asuransi',
-        'Ad1Primajaga'      => 'Ad1Primajaga',
+        'Primajaga'         => 'Primajaga',
     ];
 
     protected $fillable = [
