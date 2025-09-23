@@ -28,16 +28,16 @@ class CreateUser extends CreateRecord
     {
         return [
             // Tombol Submit default (tetap pakai bawaan, hanya ganti label)
-            $this->getCreateFormAction()->label('Submit'),
+            $this->getCreateFormAction()
+                ->label('Submit')
+                ->action(function () {
+                    $this->create();
+                    $this->redirect(static::getResource()::getUrl('index'));
+                }),
 
             Actions\Action::make('draft')
                 ->label('Draft')
                 ->action(function () {
-
-                    $data = $this->form->getState();
-                    $data['is_active'] = 'Inactive';
-                    $this->form->fill($data);
-
                     $this->create();
 
                     Notification::make()

@@ -27,6 +27,17 @@ class UserResource extends Resource
     protected static ?string $label = 'Employee';
     protected static string|\UnitEnum|null $navigationGroup = null; // Untuk grouping menu
 
+    public static function getNavigationLabel(): string
+    {
+        $activeCount = User::where('is_active', 'Active')->count();
+        return "Employees";
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) User::where('is_active', 'Active')->count();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return UserForm::configure($schema);

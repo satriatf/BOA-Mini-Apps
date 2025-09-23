@@ -48,7 +48,7 @@ class ProjectTimeline extends Page
          * ========================= */
         foreach (
             Project::query()
-                ->select(['id','pmo_id','project_name','status','tech_lead','start_date','end_date','percent_done'])
+                ->select(['sk_project','project_ticket_no','project_name','project_status','technical_lead','start_date','end_date','percent_done'])
                 ->get() as $p
         ) {
             if (!$p->start_date && !$p->end_date) continue;
@@ -59,17 +59,17 @@ class ProjectTimeline extends Page
             $s = $ps->max($yearStart);
             $e = $pe->min($yearEnd);
 
-            $title = trim(($p->pmo_id ? "{$p->pmo_id} " : '') . ($p->project_name ?? "Project #{$p->id}"));
-            $leadUser = $p->tech_lead ? User::find($p->tech_lead) : null;
-            $lead     = $leadUser?->name ?? '—';
+            $title = trim(($p->project_ticket_no ? "{$p->project_ticket_no} " : '') . ($p->project_name ?? "Project #{$p->sk_project}"));
+            $leadUser = $p->technical_lead ? User::find($p->technical_lead) : null;
+            $lead     = $leadUser?->employee_name ?? '—';
             $done     = isset($p->percent_done) ? "{$p->percent_done}%" : '—';
 
             $detailsHtml = "
                 <table style='width:100%;border-collapse:collapse' cellpadding='6'>
                     <tr><td style='width:140px'><b>Type</b></td><td>Project</td></tr>
-                    <tr><td><b>PMO</b></td><td>" . e($p->pmo_id ?? '—') . "</td></tr>
-                    <tr><td><b>Name</b></td><td>" . e($p->project_name ?? "Project #{$p->id}") . "</td></tr>
-                    <tr><td><b>Status</b></td><td>" . e($p->status ?? '—') . "</td></tr>
+                    <tr><td><b>Ticket No</b></td><td>" . e($p->project_ticket_no ?? '—') . "</td></tr>
+                    <tr><td><b>Name</b></td><td>" . e($p->project_name ?? "Project #{$p->sk_project}") . "</td></tr>
+                    <tr><td><b>Status</b></td><td>" . e($p->project_status ?? '—') . "</td></tr>
                     <tr><td><b>Lead</b></td><td>" . e($lead) . "</td></tr>
                     <tr><td><b>Start</b></td><td>{$ps->toDateString()}</td></tr>
                     <tr><td><b>End</b></td><td>{$pe->toDateString()}</td></tr>
@@ -78,7 +78,7 @@ class ProjectTimeline extends Page
             ";
 
             $events[] = [
-                'id'    => "project-{$p->id}",
+                'id'    => "project-{$p->sk_project}",
                 'title' => $title,
                 'start' => $s->toDateString(),
                 'end'   => $e->copy()->addDay()->toDateString(), // end exclusive
@@ -96,7 +96,7 @@ class ProjectTimeline extends Page
         foreach (
             Mtc::query()
                 ->whereYear('tanggal', $year)
-                ->with(['createdBy:id,name','resolver:id,name'])
+                ->with(['createdBy:sk_user,employee_name','resolver:sk_user,employee_name'])
                 ->get() as $t
         ) {
             $d = Carbon::parse($t->tanggal)->startOfDay();
@@ -110,8 +110,8 @@ class ProjectTimeline extends Page
                     <tr><td><b>Application</b></td><td>" . e($t->application) . "</td></tr>
                     <tr><td><b>Category</b></td><td>" . e($t->type) . "</td></tr>
                     <tr><td><b>Date</b></td><td>{$d->toDateString()}</td></tr>
-                    <tr><td><b>Created By</b></td><td>" . e(optional($t->createdBy)->name ?? '—') . "</td></tr>
-                    <tr><td><b>Resolver</b></td><td>" . e(optional($t->resolver)->name ?? '—') . "</td></tr>
+                    <tr><td><b>Created By</b></td><td>" . e(optional($t->createdBy)->employee_name ?? '—') . "</td></tr>
+                    <tr><td><b>Resolver</b></td><td>" . e(optional($t->resolver)->employee_name ?? '—') . "</td></tr>
                     <tr><td><b>Description</b></td><td>" . nl2br(e($t->deskripsi)) . "</td></tr>
                     <tr><td><b>Solution</b></td><td>" . nl2br(e($t->solusi ?? '—')) . "</td></tr>
                 </table>

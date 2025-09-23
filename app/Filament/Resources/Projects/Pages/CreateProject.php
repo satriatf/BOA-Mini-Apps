@@ -20,15 +20,13 @@ class CreateProject extends CreateRecord
         return static::getResource()::getUrl('index');
     }
 
-    /** Map virtual field 'pics' -> pic_1 & pic_2 sebelum create */
+    /** Ensure pics data is properly formatted */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $pics = $this->form->getState()['pics'] ?? [];
-        $pics = array_values(array_unique(array_map('intval', (array) $pics)));
-
-        // Simpan ke kolom lama
-        $data['pic_1'] = $pics[0] ?? null;
-        $data['pic_2'] = implode(',', array_slice($pics, 1));
+        // Ensure pics is an array of user IDs
+        if (isset($data['pics'])) {
+            $data['pics'] = is_array($data['pics']) ? $data['pics'] : [];
+        }
 
         return $data;
     }
@@ -50,7 +48,10 @@ class CreateProject extends CreateRecord
                 ->action(function () {
                     $this->create();
 
-                    Notification::make()->title('Saved as draft')->success()->send();
+                    Notification::make()
+                        ->title('Saved as draftt')
+                        ->success()
+                        ->send();
 
                     $this->redirect(
                         static::getResource()::getUrl('edit', ['record' => $this->record])

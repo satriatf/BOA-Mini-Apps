@@ -18,7 +18,7 @@ class MtcForm
         return $schema->components([
             Select::make('created_by_id')
                 ->label('Created By')
-                ->options(fn () => User::whereIn('level', ['SH', 'Staff'])->pluck('name', 'id'))
+                ->options(fn () => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'SH'])->pluck('employee_name', 'sk_user'))
                 ->searchable()->preload()->native(false)->required(),
 
             TextInput::make('no_tiket')
@@ -39,7 +39,7 @@ class MtcForm
 
             Select::make('resolver_id')
                 ->label('Resolver PIC')
-                ->options(fn () => User::whereIn('level', ['SH', 'Staff'])->pluck('name', 'id'))
+                ->options(fn () => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'SH'])->pluck('employee_name', 'sk_user'))
                 ->searchable()->preload()->native(false),
 
             Textarea::make('solusi')
@@ -64,10 +64,12 @@ class MtcForm
                 ->directory('mtc_attachments')
                 ->maxSize(10240)
                 ->preserveFilenames()
-                ->downloadable()
-                ->openable()
                 ->reorderable()
-                ->helperText('Upload multiple files (PDF, images, docs).'),
+                ->helperText('Upload multiple files (PDF, images, docs).')
+                ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
+                ->previewable(false)
+                ->downloadable()
+                ->openable(),
         ]);
     }
 }

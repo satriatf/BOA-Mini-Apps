@@ -14,7 +14,7 @@ class MtcsTable
     {
         return $table
             ->columns([
-                TextColumn::make('createdBy.name')
+                TextColumn::make('createdBy.employee_name')
                     ->label('Created By')
                     ->searchable()
                     ->sortable(),
@@ -33,7 +33,7 @@ class MtcsTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('resolver.name')
+                TextColumn::make('resolver.employee_name')
                     ->label('Resolver PIC')
                     ->searchable()
                     ->sortable(),

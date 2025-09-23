@@ -14,13 +14,16 @@ class UsersTable
     {
         return $table
             ->columns([
-                TextColumn::make('nik')->label('NIK')->searchable(),
-                TextColumn::make('name')->label('Name')->searchable(),
+                TextColumn::make('employee_nik')->label('Employee NIK')->searchable(),
+                TextColumn::make('employee_name')->label('Employee Name')->searchable(),
+                TextColumn::make('employee_email')->label('Employee Email')->searchable(),
                 TextColumn::make('level')->label('Level')->badge(),
-                TextColumn::make('is_active')->label('Is Active')->badge(),
+                TextColumn::make('is_active')
+                    ->label('Is Active')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'Active' ? 'success' : 'danger'),
                 TextColumn::make('join_date')->label('Join Date')->date(),
                 TextColumn::make('end_date')->label('End Date')->date(),
-                TextColumn::make('email')->label('Email')->searchable(),
             ])
             ->filters([
                 //

@@ -14,9 +14,10 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'name' => 'Zestado Mahesa Yudha',
-            'email' => 'zestado.yudha@adira.co.id',
-            'nik' => '12233344',
+            'employee_name' => 'Zestado Mahesa Yudha',
+            'employee_email' => 'zestado.yudha@adira.co.id',
+            'employee_nik' => '12233344',
+            'level' => 'Manager',
             'is_active' => 'Active',
             'join_date' => now(),
             'end_date' => null,

@@ -14,40 +14,51 @@ class ProjectsTable
     {
         return $table
             ->columns([
-                TextColumn::make('pmo_id')
-                    ->label('PMO ID')
+                TextColumn::make('project_ticket_no')
+                    ->label('Project Ticket No')
                     ->searchable(),
 
                 TextColumn::make('project_name')
                     ->label('Project Name')
                     ->searchable(),
 
-                TextColumn::make('status')
-                    ->label('Status')
+                TextColumn::make('project_status')
+                    ->label('Project Status')
                     ->searchable(),
 
-                TextColumn::make('techLead.name')
-                    ->label('Tech Lead'),
+                TextColumn::make('techLead.employee_name')
+                    ->label('Technical Lead'),
 
                 TextColumn::make('pics')
                     ->label('PIC')
                     ->state(function ($record) {
-                        $names = $record->pic_users->pluck('name')->values()->all();
+                        if (empty($record->pics)) {
+                            return '-';
+                        }
+                        
+                        // Get user names based on IDs in pics array
+                        $userIds = is_array($record->pics) ? $record->pics : [];
+                        if (empty($userIds)) {
+                            return '-';
+                        }
+                        
+                        $users = \App\Models\User::whereIn('sk_user', $userIds)->get();
+                        $names = $users->pluck('employee_name')->values()->all();
+                        
                         if (empty($names)) {
                             return '-';
                         }
 
                         $lines = [];
                         foreach ($names as $i => $name) {
-                            // gabungkan nomor + nama, lalu ubah spasi jadi non-breaking space
+                            // Format: "1. Nama PIC"
                             $full = ($i + 1) . '. ' . $name;
                             $safe = e($full);
                             $safe = str_replace(' ', '&nbsp;', $safe);
-
                             $lines[] = $safe;
                         }
 
-                        // tiap nama dipisah <br> → tampil ke bawah
+                        // Join with <br> for line breaks
                         return implode('<br>', $lines);
                     })
                     ->html()
@@ -63,8 +74,8 @@ class ProjectsTable
                     ->date()
                     ->sortable(),
 
-                TextColumn::make('days')
-                    ->label('Days')
+                TextColumn::make('total_day')
+                    ->label('Total Days')
                     ->numeric()
                     ->sortable(),
 

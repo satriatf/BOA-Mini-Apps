@@ -13,14 +13,20 @@ class UserForm
     public static function configure(Schema $schema): Schema
     {
 return $schema->components([
-    TextInput::make('nik')
-        ->label('NIK')
+    TextInput::make('employee_nik')
+        ->label('Employee NIK')
         ->required()
         ->unique(ignoreRecord: true),
 
-    TextInput::make('name')
-        ->label('Name')
+    TextInput::make('employee_name')
+        ->label('Employee Name')
         ->required(),
+
+    TextInput::make('employee_email')
+        ->label('Employee Email')
+        ->email()
+        ->required()
+        ->unique(ignoreRecord: true),
 
     Select::make('level') 
         ->label('Level')
@@ -40,6 +46,8 @@ return $schema->components([
             'Active' => 'Active',
             'Inactive' => 'Inactive',
         ])
+        ->placeholder('Select status')
+        ->dehydrated() // Ensure this field is always included in form data
         ->required(),
 
     DatePicker::make('join_date')
@@ -52,19 +60,11 @@ return $schema->components([
         ->native(false)
         ->displayFormat('d/m/Y'),
 
-    TextInput::make('email')
-        ->label('Email')
-        ->email()
-        ->required()
-        ->unique(ignoreRecord: true),
-
     TextInput::make('password')
         ->label('Password')
         ->password()
         ->revealable()
-
         ->required(fn (string $operation) => $operation === 'create')
-
         ->dehydrated(fn ($state) => filled($state))
 ]);
     }

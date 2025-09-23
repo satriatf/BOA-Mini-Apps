@@ -90,8 +90,8 @@ class Chart extends Page
 
             $detail = implode("\n", array_filter([
                 'Project: '   . ($p->project_name ?? '—'),
-                'Status: '    . ($p->status ?? '—'),
-                'Tech Lead: ' . ($p->techLead->name ?? '—'),
+                'Status: '    . ($p->project_status ?? '—'),
+                'Tech Lead: ' . ($p->techLead->employee_name ?? '—'),
                 'Start: '     . $start?->toDateString(),
                 'End: '       . $end?->toDateString(),
                 is_numeric($daysFromForm) ? ('Days: ' . $daysFromForm) : null,
@@ -101,7 +101,7 @@ class Chart extends Page
             $url = ProjectResource::getUrl('edit', ['record' => $p]);
 
             $events[] = [
-                'title'   => (string) ($p->project_name ?? ('Project #' . $p->id)),
+                'title'   => (string) ($p->project_name ?? ('Project #' . $p->sk_project)),
                 'start'   => $startClamped->toDateString(),
                 'end'     => $endClamped->clone()->addDay()->toDateString(), // end exclusive
                 'allDay'  => true,
@@ -139,8 +139,8 @@ class Chart extends Page
                 'Type: '        . ($t->type ?? '—'),
                 'Application: ' . ($t->application ?? '—'),
                 'Date: '        . $date,
-                'Created By: '  . ($t->createdBy->name ?? '—'),
-                'Resolver: '    . ($t->resolver->name ?? '—'),
+                'Created By: '  . ($t->createdBy->employee_name ?? '—'),
+                'Resolver: '    . ($t->resolver->employee_name ?? '—'),
                 'Description: ' . ($t->deskripsi ?? '—'),
                 'Solution: '    . ($t->solusi ?? '—'),
             ]));

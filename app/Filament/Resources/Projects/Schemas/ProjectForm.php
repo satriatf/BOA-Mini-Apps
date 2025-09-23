@@ -13,8 +13,8 @@ class ProjectForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('pmo_id')
-                ->label('PMO ID')
+            TextInput::make('project_ticket_no')
+                ->label('Project Ticket No')
                 ->required()
                 ->unique(ignoreRecord: true),
 
@@ -22,8 +22,8 @@ class ProjectForm
                 ->label('Project Name')
                 ->required(),
 
-            Select::make('status')
-                ->label('Status')
+            Select::make('project_status')
+                ->label('Project Status')
                 ->required()
                 ->options([
                     'PEMBAHASAN' => 'PEMBAHASAN',
@@ -49,9 +49,9 @@ class ProjectForm
                 ->native(false)
                 ->searchable(),
 
-            Select::make('tech_lead')
-                ->label('Tech Lead')
-                ->options(fn () => User::where('level', 'SH')->pluck('name', 'id'))
+            Select::make('technical_lead')
+                ->label('Technical Lead')
+                ->options(fn () => User::where('is_active', 'Active')->where('level', 'SH')->pluck('employee_name', 'sk_user'))
                 ->searchable()
                 ->preload()
                 ->native(false)
@@ -59,13 +59,13 @@ class ProjectForm
 
             Select::make('pics')
                 ->label('PIC')
-                ->options(fn () => User::where('level', 'Staff')->pluck('name', 'id'))
+                ->options(fn () => User::where('is_active', 'Active')->where('level', 'Staff')->pluck('employee_name', 'sk_user'))
                 ->multiple()
                 ->searchable()
                 ->preload()
                 ->native(false)         
                 ->placeholder('Select PIC')
-                ->helperText('Select one or more PICs (Staff level).'),
+                ->helperText('Select one or more PICs (Staff level only).'),
 
             DatePicker::make('start_date')
                 ->label('Start Date')
@@ -77,8 +77,8 @@ class ProjectForm
                 ->native(false)
                 ->displayFormat('d/m/Y'),
 
-            TextInput::make('days')
-                ->label('Days')
+            TextInput::make('total_day')
+                ->label('Total Days')
                 ->numeric()
                 ->default(0)
                 ->required(),

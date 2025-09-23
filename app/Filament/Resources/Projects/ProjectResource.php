@@ -24,6 +24,11 @@ class ProjectResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Tasks';
 
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) Project::where('is_delete', false)->count();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ProjectForm::configure($schema);

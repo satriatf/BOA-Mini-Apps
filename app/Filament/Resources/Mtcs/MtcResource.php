@@ -7,6 +7,7 @@ use App\Filament\Resources\Mtcs\Pages\EditMtc;
 use App\Filament\Resources\Mtcs\Pages\ListMtcs;
 use App\Filament\Resources\Mtcs\Schemas\MtcForm;
 use App\Filament\Resources\Mtcs\Tables\MtcsTable;
+use App\Filament\Resources\Mtcs\Actions\ViewAttachment;
 use App\Models\Mtc;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -24,6 +25,11 @@ class MtcResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
     protected static string|\UnitEnum|null $navigationGroup  = 'Tasks';
     protected static ?int $navigationSort = 2;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) Mtc::where('is_delete', false)->count();
+    }
 
     public static function form(Schema $schema): Schema
     {
