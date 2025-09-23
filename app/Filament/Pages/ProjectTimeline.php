@@ -32,7 +32,7 @@ class ProjectTimeline extends Page
         $this->year = $y;
     }
 
-    public static function getNavigationLabel(): string { return 'Timeline'; }
+    public static function getNavigationLabel(): string { return 'Yearly'; }
     public function getTitle(): string { return 'Project Timeline'; }
 
     /** Ambil semua event Project + MTC */

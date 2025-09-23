@@ -26,7 +26,7 @@ class Chart extends Page
 
     public static function getNavigationLabel(): string
     {
-        return 'Chart';
+        return 'Monthly';
     }
 
     public function getTitle(): string
