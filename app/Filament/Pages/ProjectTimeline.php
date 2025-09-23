@@ -14,7 +14,8 @@ class ProjectTimeline extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon  = 'heroicon-o-calendar-days';
     protected static ?string $navigationLabel = 'Timeline';
-    protected static ?int    $navigationSort  = 14;
+    protected static ?int    $navigationSort  = 1;
+    protected static string|\UnitEnum|null $navigationGroup = 'Calendar';
 
     protected string $view = 'filament.pages.project-timeline';
 

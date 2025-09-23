@@ -15,8 +15,8 @@ class Chart extends Page
     protected string $view = 'filament.pages.chart';
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calendar';
-    protected static string|\UnitEnum|null $navigationGroup = null;
-    protected static ?int $navigationSort = 15;
+    protected static string|\UnitEnum|null $navigationGroup = 'Calendar';
+    protected static ?int $navigationSort = 1;
 
     /** Filter tahun */
     public int $year;
