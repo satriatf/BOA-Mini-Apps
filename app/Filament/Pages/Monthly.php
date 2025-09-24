@@ -14,15 +14,13 @@ class Monthly extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon  = 'heroicon-o-calendar-days';
     protected static string|\UnitEnum|null   $navigationGroup = 'Calendar';
-    protected static ?int                    $navigationSort  = 1; // Monthly di atas
+    protected static ?int                    $navigationSort  = 1;
 
     protected static ?string $slug = 'monthly';
     protected string $view = 'filament.pages.monthly';
 
-    /** Tahun aktif */
     public ?int $year = null;
 
-    /** Label & Title sama persis */
     public static function getNavigationLabel(): string { return 'Monthly'; }
     public function getTitle(): string { return static::getNavigationLabel(); }
 
@@ -33,7 +31,6 @@ class Monthly extends Page
         $this->year = (! $y || $y < 1900 || $y > 2100) ? now()->year : $y;
     }
 
-    /** Ambil semua event Project + MTC (dari ProjectTimeline kamu) */
     public function getEvents(): array
     {
         $year = $this->year ?? now()->year;
@@ -42,7 +39,7 @@ class Monthly extends Page
 
         $events = [];
 
-        // PROJECTS (rentang penuh)
+        // ---------------- PROJECTS ----------------
         foreach (
             Project::query()
                 ->select(['sk_project','project_ticket_no','project_name','project_status','technical_lead','start_date','end_date','percent_done'])
@@ -56,7 +53,11 @@ class Monthly extends Page
             $s = $ps->max($yearStart);
             $e = $pe->min($yearEnd);
 
-            $title = trim(($p->project_ticket_no ? "{$p->project_ticket_no} " : '') . ($p->project_name ?? "Project #{$p->sk_project}"));
+            // Judul: Project Name [TIKET] / [NO TIKET] (tanpa #)
+            $name   = trim($p->project_name ?? "Project {$p->sk_project}");
+            $ticket = trim((string) ($p->project_ticket_no ?? ''));
+            $title  = $ticket !== '' ? "{$name} [{$ticket}]" : "{$name} [NO TIKET]";
+
             $leadUser = $p->technical_lead ? User::find($p->technical_lead) : null;
             $lead     = $leadUser?->employee_name ?? '—';
             $done     = isset($p->percent_done) ? "{$p->percent_done}%" : '—';
@@ -65,7 +66,7 @@ class Monthly extends Page
                 <table style='width:100%;border-collapse:collapse' cellpadding='6'>
                     <tr><td style='width:140px'><b>Type</b></td><td>Project</td></tr>
                     <tr><td><b>Ticket No</b></td><td>" . e($p->project_ticket_no ?? '—') . "</td></tr>
-                    <tr><td><b>Name</b></td><td>" . e($p->project_name ?? "Project #{$p->sk_project}") . "</td></tr>
+                    <tr><td><b>Name</b></td><td>" . e($p->project_name ?? "Project {$p->sk_project}") . "</td></tr>
                     <tr><td><b>Status</b></td><td>" . e($p->project_status ?? '—') . "</td></tr>
                     <tr><td><b>Lead</b></td><td>" . e($lead) . "</td></tr>
                     <tr><td><b>Start</b></td><td>{$ps->toDateString()}</td></tr>
@@ -83,31 +84,36 @@ class Monthly extends Page
                 'url'   => ProjectResource::getUrl('edit', ['record' => $p]),
                 'backgroundColor' => '#3b82f6',
                 'textColor'       => '#ffffff',
-                'extendedProps'   => ['details' => $detailsHtml],
+                'extendedProps'   => ['type' => 'project', 'details' => $detailsHtml],
             ];
         }
 
-        // MTC / NON-PROJECT (1 hari)
+        // ---------------- MTC (NON-PROJECT) ----------------
         foreach (
             Mtc::query()
                 ->whereYear('tanggal', $year)
                 ->with(['createdBy:sk_user,employee_name','resolver:sk_user,employee_name'])
                 ->get() as $t
         ) {
+            if (!$t->tanggal) continue;
+
             $d = Carbon::parse($t->tanggal)->startOfDay();
 
-            $title = trim(($t->no_tiket ? "#{$t->no_tiket} " : '') . ($t->application ?? 'Non-Project'));
+            // Judul: Application [TIKET] / [NO TIKET] (tanpa #)
+            $app   = trim($t->application ?? 'Non-Project');
+            $no    = trim((string) ($t->no_tiket ?? ''));
+            $title = $no !== '' ? "{$app} [{$no}]" : "{$app} [NO TIKET]";
 
             $detailsHtml = "
                 <table style='width:100%;border-collapse:collapse' cellpadding='6'>
                     <tr><td style='width:140px'><b>Type</b></td><td>Non-Project</td></tr>
-                    <tr><td><b>No Ticket</b></td><td>" . e($t->no_tiket) . "</td></tr>
-                    <tr><td><b>Application</b></td><td>" . e($t->application) . "</td></tr>
-                    <tr><td><b>Category</b></td><td>" . e($t->type) . "</td></tr>
+                    <tr><td><b>No Ticket</b></td><td>" . e($t->no_tiket ?? '—') . "</td></tr>
+                    <tr><td><b>Application</b></td><td>" . e($t->application ?? '—') . "</td></tr>
+                    <tr><td><b>Category</b></td><td>" . e($t->type ?? '—') . "</td></tr>
                     <tr><td><b>Date</b></td><td>{$d->toDateString()}</td></tr>
                     <tr><td><b>Created By</b></td><td>" . e(optional($t->createdBy)->employee_name ?? '—') . "</td></tr>
                     <tr><td><b>Resolver</b></td><td>" . e(optional($t->resolver)->employee_name ?? '—') . "</td></tr>
-                    <tr><td><b>Description</b></td><td>" . nl2br(e($t->deskripsi)) . "</td></tr>
+                    <tr><td><b>Description</b></td><td>" . nl2br(e($t->deskripsi ?? '—')) . "</td></tr>
                     <tr><td><b>Solution</b></td><td>" . nl2br(e($t->solusi ?? '—')) . "</td></tr>
                 </table>
             ";
@@ -121,7 +127,7 @@ class Monthly extends Page
                 'url'   => MtcResource::getUrl('edit', ['record' => $t]),
                 'backgroundColor' => '#f59e0b',
                 'textColor'       => '#1f2937',
-                'extendedProps'   => ['details' => $detailsHtml],
+                'extendedProps'   => ['type' => 'mtc', 'details' => $detailsHtml],
             ];
         }
 

@@ -2,10 +2,9 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Resources\Mtcs\MtcResource;
-use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\Mtc;
 use App\Models\Project;
+use App\Models\User;
 use Carbon\Carbon;
 use Filament\Pages\Page;
 
@@ -13,16 +12,13 @@ class Yearly extends Page
 {
     protected string $view = 'filament.pages.yearly';
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calendar';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
     protected static string|\UnitEnum|null   $navigationGroup = 'Calendar';
-    protected static ?int                    $navigationSort  = 2; // Yearly di bawah
+    protected static ?int                    $navigationSort  = 2;
 
     protected static ?string $slug = 'yearly';
 
-    /** Filter tahun */
     public int $year;
-
-    /** Event untuk FullCalendar */
     public array $events = [];
 
     public static function getNavigationLabel(): string { return 'Yearly'; }
@@ -38,17 +34,18 @@ class Yearly extends Page
         $this->events = $this->buildEvents($this->year);
     }
 
-    /** Build events (dari Chart kamu) */
     protected function buildEvents(int $year): array
     {
         $events = [];
         $startOfYear = Carbon::create($year, 1, 1)->startOfDay();
         $endOfYear   = Carbon::create($year, 12, 31)->endOfDay();
 
-        // PROJECTS (cek overlap)
+        /* =========================
+         * PROJECTS (rentang, clamp ke tahun)
+         * ========================= */
         $projects = Project::query()
             ->where(fn($q) => $q->whereNotNull('start_date')->orWhereNotNull('end_date'))
-            ->with(['techLead'])
+            ->with(['techLead']) // untuk Lead
             ->orderBy('start_date')
             ->get();
 
@@ -63,78 +60,86 @@ class Yearly extends Page
             $overlaps = $end->gte($startOfYear) && $start->lte($endOfYear);
             if (!$overlaps) continue;
 
-            $startClamped = $start->clone()->max($startOfYear);
-            $endClamped   = $end->clone()->min($endOfYear);
+            $s = $start->clone()->max($startOfYear);
+            $e = $end->clone()->min($endOfYear);
 
-            $daysFromForm = $p->days;
+            // Judul: Project Name [TIKET] / [NO TIKET]
+            $name   = trim($p->project_name ?? "Project {$p->sk_project}");
+            $ticket = trim((string) ($p->project_ticket_no ?? ''));
+            $title  = $ticket !== '' ? "{$name} [{$ticket}]" : "{$name} [NO TIKET]";
 
-            $detail = implode("\n", array_filter([
-                'Project: '   . ($p->project_name ?? '—'),
-                'Status: '    . ($p->project_status ?? '—'),
-                'Tech Lead: ' . ($p->techLead->employee_name ?? '—'),
-                'Start: '     . $start?->toDateString(),
-                'End: '       . $end?->toDateString(),
-                is_numeric($daysFromForm) ? ('Days: ' . $daysFromForm) : null,
-                isset($p->percent_done) ? ('% Done: ' . $p->percent_done . '%') : null,
-            ]));
+            $lead = $p->techLead->employee_name ?? '—';
+            $done = isset($p->percent_done) ? "{$p->percent_done}%" : '—';
 
-            $url = ProjectResource::getUrl('edit', ['record' => $p]);
+            // HTML detail (sama seperti Monthly)
+            $detailsHtml = "
+                <table style='width:100%;border-collapse:collapse' cellpadding='6'>
+                    <tr><td style='width:140px'><b>Type</b></td><td>Project</td></tr>
+                    <tr><td><b>Ticket No</b></td><td>" . e($p->project_ticket_no ?? '—') . "</td></tr>
+                    <tr><td><b>Name</b></td><td>" . e($p->project_name ?? '—') . "</td></tr>
+                    <tr><td><b>Status</b></td><td>" . e($p->project_status ?? '—') . "</td></tr>
+                    <tr><td><b>Lead</b></td><td>" . e($lead) . "</td></tr>
+                    <tr><td><b>Start</b></td><td>" . e($start?->toDateString()) . "</td></tr>
+                    <tr><td><b>End</b></td><td>" . e($end?->toDateString()) . "</td></tr>
+                    <tr><td><b>% Done</b></td><td>" . e($done) . "</td></tr>
+                </table>
+            ";
 
             $events[] = [
-                'title'   => (string) ($p->project_name ?? ('Project #' . $p->sk_project)),
-                'start'   => $startClamped->toDateString(),
-                'end'     => $endClamped->clone()->addDay()->toDateString(), // end exclusive
+                'title'   => $title,
+                'start'   => $s->toDateString(),
+                'end'     => $e->clone()->addDay()->toDateString(), // end exclusive utk FC
                 'allDay'  => true,
                 'display' => 'block',
                 'extendedProps' => [
                     'type'    => 'project',
-                    'details' => $detail,
-                    'url'     => $url,
+                    'details' => $detailsHtml,
                 ],
             ];
         }
 
-        // NON-PROJECTS / MTC
+        /* =========================
+         * MTC / NON-PROJECT (1 hari)
+         * ========================= */
         $mtcs = Mtc::query()
             ->whereYear('tanggal', $year)
-            ->with(['resolver', 'createdBy'])
+            ->with(['createdBy:sk_user,employee_name','resolver:sk_user,employee_name'])
             ->orderBy('tanggal')
             ->get();
 
         foreach ($mtcs as $t) {
             if (!$t->tanggal) continue;
 
-            $date = Carbon::parse($t->tanggal)->toDateString();
+            $d = Carbon::parse($t->tanggal)->startOfDay();
 
-            $title = trim(implode(' – ', array_filter([
-                $t->no_tiket ? '#' . $t->no_tiket : null,
-                $t->application ?? null,
-                $t->type ?? null,
-            ])));
+            // Judul: Application [TIKET] / [NO TIKET]
+            $app   = trim($t->application ?? 'Non-Project');
+            $no    = trim((string) ($t->no_tiket ?? ''));
+            $title = $no !== '' ? "{$app} [{$no}]" : "{$app} [NO TIKET]";
 
-            $detail = implode("\n", array_filter([
-                'Ticket: '      . ($t->no_tiket ?? '—'),
-                'Type: '        . ($t->type ?? '—'),
-                'Application: ' . ($t->application ?? '—'),
-                'Date: '        . $date,
-                'Created By: '  . ($t->createdBy->employee_name ?? '—'),
-                'Resolver: '    . ($t->resolver->employee_name ?? '—'),
-                'Description: ' . ($t->deskripsi ?? '—'),
-                'Solution: '    . ($t->solusi ?? '—'),
-            ]));
-
-            $url = MtcResource::getUrl('edit', ['record' => $t]);
+            $detailsHtml = "
+                <table style='width:100%;border-collapse:collapse' cellpadding='6'>
+                    <tr><td style='width:140px'><b>Type</b></td><td>Non-Project</td></tr>
+                    <tr><td><b>No Ticket</b></td><td>" . e($t->no_tiket ?? '—') . "</td></tr>
+                    <tr><td><b>Application</b></td><td>" . e($t->application ?? '—') . "</td></tr>
+                    <tr><td><b>Category</b></td><td>" . e($t->type ?? '—') . "</td></tr>
+                    <tr><td><b>Date</b></td><td>" . e($d->toDateString()) . "</td></tr>
+                    <tr><td><b>Created By</b></td><td>" . e(optional($t->createdBy)->employee_name ?? '—') . "</td></tr>
+                    <tr><td><b>Resolver</b></td><td>" . e(optional($t->resolver)->employee_name ?? '—') . "</td></tr>
+                    <tr><td><b>Description</b></td><td>" . nl2br(e($t->deskripsi ?? '—')) . "</td></tr>
+                    <tr><td><b>Solution</b></td><td>" . nl2br(e($t->solusi ?? '—')) . "</td></tr>
+                </table>
+            ";
 
             $events[] = [
-                'title'   => $title ?: 'Non-Project',
-                'start'   => $date,
-                'end'     => Carbon::parse($date)->addDay()->toDateString(),
+                'title'   => $title,
+                'start'   => $d->toDateString(),
+                'end'     => $d->copy()->addDay()->toDateString(),
                 'allDay'  => true,
                 'display' => 'block',
                 'extendedProps' => [
                     'type'    => 'mtc',
-                    'details' => $detail,
-                    'url'     => $url,
+                    'details' => $detailsHtml,
                 ],
             ];
         }

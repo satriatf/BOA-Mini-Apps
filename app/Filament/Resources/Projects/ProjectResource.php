@@ -23,7 +23,7 @@ class ProjectResource extends Resource
     protected static ?string $recordTitleAttribute = 'project_name';
 
     protected static string|\UnitEnum|null $navigationGroup = 'Tasks';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
     public static function getNavigationBadge(): ?string
     {
