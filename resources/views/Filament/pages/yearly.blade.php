@@ -1,5 +1,4 @@
 <x-filament-panels::page>
-    {{-- Filter Tahun --}}
     <form method="GET" class="mb-4 flex items-center gap-3">
         <label class="text-sm font-medium">Year</label>
         <select name="year" class="fi-input block rounded-md border-gray-300 text-sm">
@@ -10,7 +9,6 @@
         <x-filament::button type="submit">Apply</x-filament::button>
     </form>
 
-    {{-- FullCalendar (CORE + MultiMonth) --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/multimonth@6.1.19/index.global.min.css">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
@@ -22,22 +20,15 @@
         document.addEventListener('DOMContentLoaded', function() {
             const el = document.getElementById('calendar');
 
-            // warna mengikuti theme Filament
             const root = getComputedStyle(document.documentElement);
             const cssVar = (name, fallback) => (root.getPropertyValue(name).trim() || fallback);
             const colorProject = cssVar('--fi-color-primary-600', '#3b82f6');
-            const colorMtc = cssVar('--fi-color-warning-600', '#f59e0b');
+            const colorMtc     = cssVar('--fi-color-warning-600', '#f59e0b');
 
             const events = @json($events).map(e => {
                 const type = e.extendedProps?.type;
-                if (type === 'project') {
-                    e.color = colorProject;
-                    e.textColor = '#ffffff';
-                }
-                if (type === 'mtc') {
-                    e.color = colorMtc;
-                    e.textColor = '#1f2937';
-                }
+                if (type === 'project') { e.color = colorProject; e.textColor = '#ffffff'; }
+                if (type === 'mtc')     { e.color = colorMtc;     e.textColor = '#1f2937'; }
                 return e;
             });
 
@@ -45,26 +36,15 @@
 
             const calendar = new FullCalendar.Calendar(el, {
                 initialView: 'multiMonthYear',
-                multiMonthMaxColumns: 3, // opsional
+                multiMonthMaxColumns: 3,
                 height: 'auto',
                 dayMaxEvents: true,
-
-                // ✅ hanya judul tahun di tengah, tanpa tombol
-                headerToolbar: {
-                    left: '',
-                    center: 'title',
-                    right: ''
-                },
-
-                validRange: {
-                    start: `${Y}-01-01`,
-                    end: `${Y + 1}-01-01`
-                },
+                headerToolbar: { left: '', center: 'title', right: '' },
+                validRange: { start: `${Y}-01-01`, end: `${Y + 1}-01-01` },
                 locale: 'id',
                 firstDay: 1,
                 fixedWeekCount: false,
                 expandRows: true,
-
                 events,
                 eventDidMount(info) {
                     const details = info.event.extendedProps?.details;
@@ -76,43 +56,15 @@
                 },
             });
 
-
             calendar.render();
         });
     </script>
 
-    {{-- Dark mode (opsional, boleh kamu pertahankan/ubah) --}}
     <style>
-        #calendar {
-            width: 100%;
-        }
-
-        .fc .fc-toolbar-title {
-            font-weight: 700;
-        }
-
+        #calendar { width: 100%; }
+        .fc .fc-toolbar-title { font-weight: 700; }
         .fc-theme-standard .fc-scrollgrid,
         .fc-theme-standard td,
-        .fc-theme-standard th {
-            border-color: rgba(107, 114, 128, .2);
-        }
-
-        html.dark #calendar,
-        html.dark .fc,
-        html.dark .fc-theme-standard {
-            background: #18181b !important;
-            color: #f3f4f6 !important;
-        }
-
-        html.dark .fc-theme-standard .fc-scrollgrid,
-        html.dark .fc-theme-standard td,
-        html.dark .fc-theme-standard th {
-            background: #23272f !important;
-            border-color: rgba(243, 244, 246, 0.12) !important;
-        }
-
-        html.dark .fc-daygrid-day.fc-day-today {
-            background: #334155 !important;
-        }
+        .fc-theme-standard th { border-color: rgba(107,114,128,.2); }
     </style>
 </x-filament-panels::page>

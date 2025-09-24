@@ -10,32 +10,30 @@ use App\Models\User;
 use Carbon\Carbon;
 use Filament\Pages\Page;
 
-class ProjectTimeline extends Page
+class Monthly extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon  = 'heroicon-o-calendar-days';
-    protected static ?string $navigationLabel = 'Timeline';
-    protected static ?int    $navigationSort  = 1;
-    protected static string|\UnitEnum|null $navigationGroup = 'Calendar';
+    protected static string|\UnitEnum|null   $navigationGroup = 'Calendar';
+    protected static ?int                    $navigationSort  = 1; // Monthly di atas
 
-    protected string $view = 'filament.pages.project-timeline';
+    protected static ?string $slug = 'monthly';
+    protected string $view = 'filament.pages.monthly';
 
     /** Tahun aktif */
     public ?int $year = null;
+
+    /** Label & Title sama persis */
+    public static function getNavigationLabel(): string { return 'Monthly'; }
+    public function getTitle(): string { return static::getNavigationLabel(); }
 
     public function mount(): void
     {
         $raw = request()->query('year');
         $y   = is_numeric($raw) ? (int) $raw : null;
-        if (empty($y) || $y < 1900 || $y > 2100) {
-            $y = now()->year;
-        }
-        $this->year = $y;
+        $this->year = (! $y || $y < 1900 || $y > 2100) ? now()->year : $y;
     }
 
-    public static function getNavigationLabel(): string { return 'Yearly'; }
-    public function getTitle(): string { return 'Project Timeline'; }
-
-    /** Ambil semua event Project + MTC */
+    /** Ambil semua event Project + MTC (dari ProjectTimeline kamu) */
     public function getEvents(): array
     {
         $year = $this->year ?? now()->year;
@@ -44,9 +42,7 @@ class ProjectTimeline extends Page
 
         $events = [];
 
-        /* =========================
-         * PROJECTS (rentang full, bar menyambung)
-         * ========================= */
+        // PROJECTS (rentang penuh)
         foreach (
             Project::query()
                 ->select(['sk_project','project_ticket_no','project_name','project_status','technical_lead','start_date','end_date','percent_done'])
@@ -91,9 +87,7 @@ class ProjectTimeline extends Page
             ];
         }
 
-        /* =========================
-         * MTC / NON-PROJECT (1 hari)
-         * ========================= */
+        // MTC / NON-PROJECT (1 hari)
         foreach (
             Mtc::query()
                 ->whereYear('tanggal', $year)

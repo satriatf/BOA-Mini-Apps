@@ -9,14 +9,15 @@ use App\Models\Project;
 use Carbon\Carbon;
 use Filament\Pages\Page;
 
-class Chart extends Page
+class Yearly extends Page
 {
-    // v4: non-static untuk $view
-    protected string $view = 'filament.pages.chart';
+    protected string $view = 'filament.pages.yearly';
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calendar';
-    protected static string|\UnitEnum|null $navigationGroup = 'Calendar';
-    protected static ?int $navigationSort = 1;
+    protected static string|\UnitEnum|null   $navigationGroup = 'Calendar';
+    protected static ?int                    $navigationSort  = 2; // Yearly di bawah
+
+    protected static ?string $slug = 'yearly';
 
     /** Filter tahun */
     public int $year;
@@ -24,49 +25,29 @@ class Chart extends Page
     /** Event untuk FullCalendar */
     public array $events = [];
 
-    public static function getNavigationLabel(): string
-    {
-        return 'Monthly';
-    }
-
-    public function getTitle(): string
-    {
-        return 'Chart';
-    }
+    public static function getNavigationLabel(): string { return 'Yearly'; }
+    public function getTitle(): string { return static::getNavigationLabel(); }
 
     public function mount(): void
     {
-        // ✅ validasi year supaya tidak 0000
         $raw = request()->query('year');
         $y   = is_numeric($raw) ? (int) $raw : null;
-        if (empty($y) || $y < 1900 || $y > 2100) {
-            $y = now()->year;
-        }
+        if (empty($y) || $y < 1900 || $y > 2100) $y = now()->year;
 
         $this->year   = $y;
         $this->events = $this->buildEvents($this->year);
     }
 
-    /**
-     * Build events (projects + mtcs) utk tahun tertentu.
-     * - Projects → rentang start_date..end_date
-     * - MTC      → 1 hari (tanggal)
-     */
+    /** Build events (dari Chart kamu) */
     protected function buildEvents(int $year): array
     {
         $events = [];
-
         $startOfYear = Carbon::create($year, 1, 1)->startOfDay();
         $endOfYear   = Carbon::create($year, 12, 31)->endOfDay();
 
-        // ======================
         // PROJECTS (cek overlap)
-        // ======================
         $projects = Project::query()
-            ->where(function ($q) {
-                $q->whereNotNull('start_date')
-                  ->orWhereNotNull('end_date');
-            })
+            ->where(fn($q) => $q->whereNotNull('start_date')->orWhereNotNull('end_date'))
             ->with(['techLead'])
             ->orderBy('start_date')
             ->get();
@@ -74,7 +55,6 @@ class Chart extends Page
         foreach ($projects as $p) {
             $start = $p->start_date ? Carbon::parse($p->start_date)->startOfDay() : null;
             $end   = $p->end_date   ? Carbon::parse($p->end_date)->endOfDay()   : null;
-
             if (!$start && !$end) continue;
 
             if ($start && !$end) $end = $start->clone();
@@ -114,9 +94,7 @@ class Chart extends Page
             ];
         }
 
-        // ======================
-        // NON-PROJECTS / MTC (1 hari)
-        // ======================
+        // NON-PROJECTS / MTC
         $mtcs = Mtc::query()
             ->whereYear('tanggal', $year)
             ->with(['resolver', 'createdBy'])
@@ -150,7 +128,7 @@ class Chart extends Page
             $events[] = [
                 'title'   => $title ?: 'Non-Project',
                 'start'   => $date,
-                'end'     => Carbon::parse($date)->addDay()->toDateString(), // exclusive
+                'end'     => Carbon::parse($date)->addDay()->toDateString(),
                 'allDay'  => true,
                 'display' => 'block',
                 'extendedProps' => [
