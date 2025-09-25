@@ -10,18 +10,18 @@ use Filament\Pages\Page;
 
 class EmployeeGantt extends Page
 {
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-table-cells';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
     protected static string|\UnitEnum|null $navigationGroup = 'Calendar';
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $slug = 'gantt';
+    protected static ?string $slug = 'project-timeline';
     protected string $view = 'filament.pages.employee-gantt';
 
     public int $year;
 
     public static function getNavigationLabel(): string
     {
-        return 'Gantt';
+        return 'Project Timeline';
     }
 
     public function getTitle(): string

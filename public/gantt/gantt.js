@@ -177,7 +177,14 @@ function renderGantt(container, rows, year) {
     if (!rows || rows.length === 0) {
         const emptyDiv = document.createElement('div');
         emptyDiv.className = 'gantt-empty';
-        emptyDiv.textContent = 'Tidak ada data';
+        emptyDiv.innerHTML = `
+            <div style="text-align: center; padding: 3rem 1rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">📅</div>
+                <h3 style="color: #6b7280; margin-bottom: 0.5rem; font-weight: 600;">No Projects Found</h3>
+                <p style="color: #9ca3af; margin-bottom: 1rem;">No project or non-project tasks found for ${year}.</p>
+                <p style="color: #9ca3af; font-size: 0.875rem;">Try selecting a different year or add some projects and tasks.</p>
+            </div>
+        `;
         container.appendChild(emptyDiv);
         return;
     }
@@ -387,7 +394,7 @@ function renderGantt(container, rows, year) {
  * Initialize the Gantt chart when DOM is loaded
  */
 document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('gantt-root');
+    const container = document.getElementById('timeline-root');
     const year = window.GANTT_YEAR;
     const data = window.GANTT_DATA;
     
@@ -395,6 +402,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (container && year && data !== undefined) {
         renderGantt(container, data, year);
     } else {
-        console.error('Gantt chart initialization failed: missing data or container');
+        console.error('Project Timeline initialization failed: missing data or container');
     }
 });

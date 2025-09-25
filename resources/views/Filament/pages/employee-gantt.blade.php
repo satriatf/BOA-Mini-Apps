@@ -1,8 +1,8 @@
 <x-filament-panels::page>
     {{-- Filter Tahun --}}
-    <form method="GET" class="mb-4 flex items-center gap-3" id="gantt-year-form">
-        <label for="gantt-year-select" class="text-sm font-medium">Year</label>
-        <select id="gantt-year-select" name="year" class="fi-input block rounded-md border-gray-300 text-sm">
+    <form method="GET" class="mb-4 flex items-center gap-3" id="timeline-year-form">
+        <label for="timeline-year-select" class="text-sm font-medium">Select Year</label>
+        <select id="timeline-year-select" name="year" class="fi-input block rounded-md border-gray-300 text-sm">
             @for ($y = now()->year - 5; $y <= now()->year + 2; $y++)
                 <option value="{{ $y }}" @selected($y == $year)>{{ $y }}</option>
             @endfor
@@ -11,7 +11,7 @@
     </form>
 
 
-    <div id="gantt-root" class="gantt-container"></div>
+    <div id="timeline-root" class="gantt-container"></div>
 
     <link rel="stylesheet" href="{{ asset('gantt/gantt.css') }}">
     <script src="{{ asset('gantt/gantt.js') }}"></script>
