@@ -46,12 +46,12 @@
     background: #f9fafb;
 }
 
-.gantt-table th.week-header {
+.gantt-table th.day-header {
     font-weight: 500;
     color: #6b7280;
     background: #f9fafb;
     font-size: 0.75rem;
-    min-width: 60px;
+    min-width: 20px;
 }
 
 .gantt-table td.employee {
@@ -65,7 +65,9 @@
     min-width: 250px;
     border-right: 2px solid #d1d5db;
     padding: 0.5rem;
+    vertical-align: top;
 }
+
 
 .gantt-table tbody tr:nth-child(even) td.employee {
     background: #f9fafb;
@@ -75,13 +77,34 @@
     background: #f9fafb;
 }
 
+/* Group rows by employee - every 2 rows should have same background */
+.gantt-table tbody tr:nth-child(4n+1) td.employee,
+.gantt-table tbody tr:nth-child(4n+2) td.employee {
+    background: #ffffff;
+}
+
+.gantt-table tbody tr:nth-child(4n+3) td.employee,
+.gantt-table tbody tr:nth-child(4n+4) td.employee {
+    background: #f9fafb;
+}
+
+.gantt-table tbody tr:nth-child(4n+1) td:not(.employee),
+.gantt-table tbody tr:nth-child(4n+2) td:not(.employee) {
+    background: #ffffff;
+}
+
+.gantt-table tbody tr:nth-child(4n+3) td:not(.employee),
+.gantt-table tbody tr:nth-child(4n+4) td:not(.employee) {
+    background: #f9fafb;
+}
+
 .gantt-table td {
     height: 28px;
-    width: 60px;
+    width: 20px;
     padding: 0;
     background: #ffffff;
     transition: background-color 0.2s;
-    min-width: 60px;
+    min-width: 20px;
     text-align: center;
 }
 
@@ -96,24 +119,35 @@
 }
 
 .gantt-table td.project {
-    background: #3b82f6;
-    color: #ffffff;
+    background: #3b82f6 !important;
+    color: #ffffff !important;
     font-weight: 500;
 }
 
 .gantt-table td.project:hover {
-    background: #2563eb;
+    background: #2563eb !important;
     cursor: pointer;
 }
 
 .gantt-table td.mtc {
-    background: #f59e0b;
-    color: #1f2937;
+    background: #f59e0b !important;
+    color: #1f2937 !important;
     font-weight: 500;
 }
 
 .gantt-table td.mtc:hover {
-    background: #d97706;
+    background: #d97706 !important;
+    cursor: pointer;
+}
+
+.gantt-table td.mixed-tasks {
+    background: linear-gradient(to bottom, #3b82f6 50%, #f59e0b 50%);
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.gantt-table td.mixed-tasks:hover {
+    background: linear-gradient(to bottom, #2563eb 50%, #d97706 50%);
     cursor: pointer;
 }
 
@@ -256,4 +290,38 @@
 
 .gantt-btn-gray:hover {
     background: #d1d5db;
+}
+
+/* Legend styles */
+.gantt-legend {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+.gantt-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.gantt-legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.gantt-legend-color.project {
+    background: #3b82f6;
+}
+
+.gantt-legend-color.non-project {
+    background: #f59e0b;
 }

@@ -3,8 +3,8 @@
  * Vanilla JS implementation for employee task visualization
  */
 
-// Indonesian month names
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+// English month names (full names)
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 /**
  * Get number of days in a month for a given year
@@ -14,46 +14,36 @@ function getDaysInMonth(year, month) {
 }
 
 /**
- * Get week buckets for a given month (similar to yearly/monthly)
- * Returns array of week objects with start, end dates and labels
+ * Get all days in a month
+ * Returns array of day objects with date and label
  */
-function getMonthWeeks(year, month) {
-    const weeks = [];
-    const firstDay = new Date(year, month - 1, 1);
-    const lastDay = new Date(year, month, 0);
+function getMonthDays(year, month) {
+    const days = [];
+    const daysInMonth = getDaysInMonth(year, month);
     
-    let currentWeek = 1;
-    let currentDate = new Date(firstDay);
-    
-    while (currentDate <= lastDay && currentWeek <= 5) {
-        const weekStart = new Date(currentDate);
-        const weekEnd = new Date(currentDate);
-        
-        // Calculate week end (7 days later or end of month)
-        weekEnd.setDate(currentDate.getDate() + 6);
-        if (weekEnd > lastDay) {
-            weekEnd.setTime(lastDay.getTime());
-        }
-        
-        weeks.push({
-            start: new Date(weekStart),
-            end: new Date(weekEnd),
-            label: `Week ${currentWeek}`
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month - 1, day);
+        days.push({
+            date: new Date(date),
+            label: day.toString()
         });
-        
-        // Move to next week
-        currentDate.setDate(currentDate.getDate() + 7);
-        currentWeek++;
     }
     
-    return weeks;
+    return days;
 }
 
 /**
  * Check if two date ranges overlap (inclusive)
  */
 function overlaps(aStart, aEnd, bStart, bEnd) {
-    return aStart <= bEnd && bStart <= aEnd;
+    // Normalize dates to start of day to avoid timezone issues
+    const aStartNorm = new Date(aStart.getFullYear(), aStart.getMonth(), aStart.getDate());
+    const aEndNorm = new Date(aEnd.getFullYear(), aEnd.getMonth(), aEnd.getDate());
+    const bStartNorm = new Date(bStart.getFullYear(), bStart.getMonth(), bStart.getDate());
+    const bEndNorm = new Date(bEnd.getFullYear(), bEnd.getMonth(), bEnd.getDate());
+    
+    const result = aStartNorm <= bEndNorm && bStartNorm <= aEndNorm;
+    return result;
 }
 
 /**
@@ -192,6 +182,21 @@ function renderGantt(container, rows, year) {
         return;
     }
     
+    // Create legend
+    const legend = document.createElement('div');
+    legend.className = 'gantt-legend';
+    legend.innerHTML = `
+        <div class="gantt-legend-item">
+            <div class="gantt-legend-color project"></div>
+            <span>Project</span>
+        </div>
+        <div class="gantt-legend-item">
+            <div class="gantt-legend-color non-project"></div>
+            <span>Non-Project</span>
+        </div>
+    `;
+    container.appendChild(legend);
+    
     // Create table
     const table = document.createElement('table');
     table.className = 'gantt-table';
@@ -209,77 +214,87 @@ function renderGantt(container, rows, year) {
     
     // Add month headers with colspan
     for (let month = 1; month <= 12; month++) {
-        const weeks = getMonthWeeks(year, month);
+        const days = getMonthDays(year, month);
         const daysInMonth = getDaysInMonth(year, month);
         const monthHeader = document.createElement('th');
         monthHeader.className = 'month-header';
-        monthHeader.textContent = `${MONTH_NAMES[month - 1]} ${daysInMonth}`;
-        monthHeader.colSpan = weeks.length;
+        monthHeader.textContent = `${MONTH_NAMES[month - 1]} ${year}`;
+        monthHeader.colSpan = days.length;
         monthRow.appendChild(monthHeader);
     }
     
     thead.appendChild(monthRow);
     
-    // Row 2: Week headers
-    const weekRow = document.createElement('tr');
+    // Row 2: Day headers
+    const dayRow = document.createElement('tr');
     for (let month = 1; month <= 12; month++) {
-        const weeks = getMonthWeeks(year, month);
-        weeks.forEach(week => {
-            const weekHeader = document.createElement('th');
-            weekHeader.className = 'week-header';
-            weekHeader.textContent = week.label;
-            weekRow.appendChild(weekHeader);
+        const days = getMonthDays(year, month);
+        days.forEach(day => {
+            const dayHeader = document.createElement('th');
+            dayHeader.className = 'day-header';
+            dayHeader.textContent = day.label;
+            dayRow.appendChild(dayHeader);
         });
     }
     
-    thead.appendChild(weekRow);
+    thead.appendChild(dayRow);
     table.appendChild(thead);
     
     // Create body
     const tbody = document.createElement('tbody');
     
-    // Create rows for each employee
-    rows.forEach(row => {
-        const tr = document.createElement('tr');
+    // Create rows for each employee - create 2 rows per employee (Project and Non-Project)
+    rows.forEach((row, rowIndex) => {
+        // Ensure row has required properties
+        if (!row || typeof row !== 'object') {
+            console.error('Invalid row:', row);
+            return;
+        }
         
-        // Employee name cell
-        const employeeCell = document.createElement('td');
-        employeeCell.className = 'employee';
-        employeeCell.textContent = row.name;
-        tr.appendChild(employeeCell);
+        // Separate tasks by type
+        const projectTasks = (row.tasks || []).filter(task => task.type === 'project');
+        const nonProjectTasks = (row.tasks || []).filter(task => task.type === 'mtc');
         
-        // Create week cells for each month
+        
+        // Create Project row
+        const projectTr = document.createElement('tr');
+        const projectEmployeeCell = document.createElement('td');
+        projectEmployeeCell.className = 'employee';
+        projectEmployeeCell.textContent = row.name || 'Unknown';
+        projectTr.appendChild(projectEmployeeCell);
+        
+        // Create Non-Project row
+        const nonProjectTr = document.createElement('tr');
+        const nonProjectEmployeeCell = document.createElement('td');
+        nonProjectEmployeeCell.className = 'employee';
+        // Always leave second row empty (no employee name)
+        nonProjectTr.appendChild(nonProjectEmployeeCell);
+        
+        // Create day cells for Project row
         for (let month = 1; month <= 12; month++) {
-            const weeks = getMonthWeeks(year, month);
+            const days = getMonthDays(year, month);
             
-            weeks.forEach(week => {
+            days.forEach(day => {
                 const cell = document.createElement('td');
                 
-                // Find overlapping tasks for this week
-                const overlappingTasks = row.tasks.filter(task => {
-                    const taskStart = new Date(task.start);
-                    const taskEnd = new Date(task.end);
-                    return overlaps(taskStart, taskEnd, week.start, week.end);
+                // Find overlapping project tasks for this day
+                const overlappingTasks = projectTasks.filter(task => {
+                    const taskStart = new Date(task.start + 'T00:00:00');
+                    const taskEnd = new Date(task.end + 'T00:00:00');
+                    const dayStart = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                    const dayEnd = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                    
+                    // For single-day tasks, check exact date match
+                    if (taskStart.getTime() === taskEnd.getTime()) {
+                        return taskStart.toDateString() === dayStart.toDateString();
+                    }
+                    
+                    // For multi-day tasks, use overlap function
+                    return overlaps(taskStart, taskEnd, dayStart, dayEnd);
                 });
                 
                 if (overlappingTasks.length > 0) {
-                    // Determine cell class based on task types
-                    // Both Technical Lead and PIC use type 'project' -> blue color
-                    const hasProject = overlappingTasks.some(task => task.type === 'project');
-                    const hasMtc = overlappingTasks.some(task => task.type === 'mtc');
-                    
-                    if (hasProject && hasMtc) {
-                        // Mixed: use project color (blue) as primary
-                        cell.className = 'project';
-                    } else if (hasProject) {
-                        // Technical Lead and PIC both use project color (blue)
-                        cell.className = 'project';
-                    } else if (hasMtc) {
-                        // Resolver and Created By use mtc color (yellow)
-                        cell.className = 'mtc';
-                    } else {
-                        cell.className = 'active';
-                    }
+                    cell.className = 'project';
                     
                     // Add text content for multiple tasks
                     if (overlappingTasks.length > 1) {
@@ -303,11 +318,65 @@ function renderGantt(container, rows, year) {
                     });
                 }
                 
-                tr.appendChild(cell);
+                projectTr.appendChild(cell);
             });
         }
         
-        tbody.appendChild(tr);
+        // Create day cells for Non-Project row
+        for (let month = 1; month <= 12; month++) {
+            const days = getMonthDays(year, month);
+            
+            days.forEach(day => {
+                const cell = document.createElement('td');
+                
+                // Find overlapping non-project tasks for this day
+                const overlappingTasks = nonProjectTasks.filter(task => {
+                    const taskStart = new Date(task.start + 'T00:00:00');
+                    const taskEnd = new Date(task.end + 'T00:00:00');
+                    const dayStart = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                    const dayEnd = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                    
+                    // For single-day tasks, check exact date match
+                    if (taskStart.getTime() === taskEnd.getTime()) {
+                        return taskStart.toDateString() === dayStart.toDateString();
+                    }
+                    
+                    // For multi-day tasks, use overlap function
+                    return overlaps(taskStart, taskEnd, dayStart, dayEnd);
+                });
+                
+                if (overlappingTasks.length > 0) {
+                    cell.className = 'mtc';
+                    
+                    // Add text content for multiple tasks
+                    if (overlappingTasks.length > 1) {
+                        cell.textContent = `${overlappingTasks.length}+`;
+                        cell.style.fontSize = '0.75rem';
+                        cell.style.fontWeight = '600';
+                    }
+                    
+                    // Add tooltip functionality
+                    cell.addEventListener('mouseenter', () => {
+                        showTooltip(tooltip, cell, overlappingTasks);
+                    });
+                    
+                    cell.addEventListener('mouseleave', () => {
+                        hideTooltip(tooltip);
+                    });
+
+                    // Add click functionality for popup detail
+                    cell.addEventListener('click', () => {
+                        showDetailPopup(overlappingTasks);
+                    });
+                }
+                
+                nonProjectTr.appendChild(cell);
+            });
+        }
+        
+        // Add both rows to tbody
+        tbody.appendChild(projectTr);
+        tbody.appendChild(nonProjectTr);
     });
     
     table.appendChild(tbody);
@@ -321,6 +390,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('gantt-root');
     const year = window.GANTT_YEAR;
     const data = window.GANTT_DATA;
+    
     
     if (container && year && data !== undefined) {
         renderGantt(container, data, year);

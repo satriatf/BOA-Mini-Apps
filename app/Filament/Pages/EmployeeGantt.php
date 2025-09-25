@@ -121,6 +121,7 @@ class EmployeeGantt extends Page
             foreach ($project->pics as $picId) {
                 if (!$picId) continue; // Skip empty PIC IDs
                 
+                
                 if (!isset($employeeTasks[$picId])) {
                     $employeeTasks[$picId] = [];
                 }
@@ -188,11 +189,12 @@ class EmployeeGantt extends Page
             }
         }
 
-        // Build final rows array with employee names
+        // Build final rows array with employee names - one row per employee
         $rows = [];
         foreach ($employeeTasks as $employeeId => $tasks) {
             $employee = User::find($employeeId);
             if (!$employee) continue;
+
 
             $rows[] = [
                 'name' => $employee->employee_name,
