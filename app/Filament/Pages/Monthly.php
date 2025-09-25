@@ -12,7 +12,7 @@ use Filament\Pages\Page;
 
 class Monthly extends Page
 {
-    protected static string|\BackedEnum|null $navigationIcon  = 'heroicon-o-calendar-days';
+    protected static string|\BackedEnum|null $navigationIcon  = 'heroicon-o-calendar';
     protected static string|\UnitEnum|null   $navigationGroup = 'Calendar';
     protected static ?int                    $navigationSort  = 1;
 

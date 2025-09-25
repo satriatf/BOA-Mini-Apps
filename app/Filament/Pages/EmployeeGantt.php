@@ -10,7 +10,7 @@ use Filament\Pages\Page;
 
 class EmployeeGantt extends Page
 {
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clock';
     protected static string|\UnitEnum|null $navigationGroup = 'Calendar';
     protected static ?int $navigationSort = 3;
 
