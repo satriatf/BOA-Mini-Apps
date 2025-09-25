@@ -69,7 +69,8 @@ class MtcForm
                 ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
                 ->previewable(false)
                 ->downloadable()
-                ->openable(),
+                ->openable()
+                ->visibility('public'),
         ]);
     }
 }
