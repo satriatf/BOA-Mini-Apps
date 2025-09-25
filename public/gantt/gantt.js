@@ -353,7 +353,7 @@ function renderGantt(container, rows, year) {
                 });
                 
                 if (overlappingTasks.length > 0) {
-                    cell.className = 'mtc';
+                        cell.className = 'mtc';
                     
                     // Add text content for multiple tasks
                     if (overlappingTasks.length > 1) {
