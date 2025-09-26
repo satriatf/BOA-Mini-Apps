@@ -13,11 +13,25 @@ class UsersTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->defaultSort('level', 'asc')
             ->columns([
                 TextColumn::make('employee_nik')->label('Employee NIK')->searchable(),
                 TextColumn::make('employee_name')->label('Employee Name')->searchable(),
                 TextColumn::make('employee_email')->label('Employee Email')->searchable(),
-                TextColumn::make('level')->label('Level')->badge(),
+                TextColumn::make('level')
+                    ->label('Level')
+                    ->badge()
+                    ->sortable(query: function ($query, string $direction) {
+                        // Custom sorting by hierarchy: Manager → Asmen → SH → Staff → Intern
+                        return $query->orderByRaw("CASE 
+                            WHEN level = 'Manager' THEN 1
+                            WHEN level = 'Asmen' THEN 2
+                            WHEN level = 'SH' THEN 3
+                            WHEN level = 'Staff' THEN 4
+                            WHEN level = 'Intern' THEN 5
+                            ELSE 6
+                        END {$direction}");
+                    }),
                 TextColumn::make('is_active')
                     ->label('Is Active')
                     ->badge()
