@@ -7,8 +7,12 @@ Route::get('/', function () {
     return redirect('/admin');
 });
 
-// Route untuk preview dan download file attachments
+// Route untuk preview dan download file attachments - Optimized
 Route::get('/storage/mtc_attachments/{filename}', function ($filename) {
+    // Set execution time limit untuk file access
+    set_time_limit(60);
+    
+    // Cek file di storage
     $filePath = storage_path('app/public/mtc_attachments/' . $filename);
     
     if (!file_exists($filePath)) {
@@ -23,7 +27,7 @@ Route::get('/storage/mtc_attachments/{filename}', function ($filename) {
     
     $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
     
-    // Set MIME types yang benar untuk preview
+    // MIME types sederhana dan cepat
     $mimeTypes = [
         'pdf' => 'application/pdf',
         'jpg' => 'image/jpeg',
@@ -43,27 +47,33 @@ Route::get('/storage/mtc_attachments/{filename}', function ($filename) {
     
     $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
     
-    // File types yang bisa di-preview inline di browser
+    // File yang bisa preview
     $previewableTypes = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'txt'];
     
-    // Tentukan Content-Disposition berdasarkan kemampuan browser untuk preview
     if (in_array($extension, $previewableTypes)) {
         $contentDisposition = 'inline; filename="' . $filename . '"';
     } else {
-        // Untuk Office files yang tidak bisa di-preview, gunakan attachment
         $contentDisposition = 'attachment; filename="' . $filename . '"';
     }
+    
+    // Headers optimasi untuk performa lebih baik
+    $fileSize = filesize($filePath);
     
     return response()->file($filePath, [
         'Content-Type' => $mimeType,
         'Content-Disposition' => $contentDisposition,
-        'Cache-Control' => 'public, max-age=3600',
-        'X-Content-Type-Options' => 'nosniff'
+        'Cache-Control' => 'public, max-age=86400', // Cache 24 jam
+        'Content-Length' => $fileSize,
+        'Accept-Ranges' => 'bytes',
+        'X-Accel-Buffering' => 'no' // Disable buffering untuk streaming
     ]);
 })->where('filename', '.*');
 
-// Route khusus untuk download file attachments (forced download)
+// Route khusus untuk download file attachments (forced download) - Optimized
 Route::get('/storage/mtc_attachments/download/{filename}', function ($filename) {
+    // Set execution time limit untuk file access
+    set_time_limit(60);
+    
     $filePath = storage_path('app/public/mtc_attachments/' . $filename);
     
     if (!file_exists($filePath)) {
@@ -78,7 +88,7 @@ Route::get('/storage/mtc_attachments/download/{filename}', function ($filename) 
     
     $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
     
-    // Set MIME types yang benar untuk download
+    // MIME types sederhana dan cepat
     $mimeTypes = [
         'pdf' => 'application/pdf',
         'jpg' => 'image/jpeg',
@@ -98,10 +108,15 @@ Route::get('/storage/mtc_attachments/download/{filename}', function ($filename) 
     
     $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
     
+    // Headers optimasi untuk performa lebih baik
+    $fileSize = filesize($filePath);
+    
     return response()->file($filePath, [
         'Content-Type' => $mimeType,
         'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        'Cache-Control' => 'public, max-age=3600',
-        'X-Content-Type-Options' => 'nosniff'
+        'Cache-Control' => 'public, max-age=86400', // Cache 24 jam
+        'Content-Length' => $fileSize,
+        'Accept-Ranges' => 'bytes',
+        'X-Accel-Buffering' => 'no' // Disable buffering untuk streaming
     ]);
 })->where('filename', '.*');
