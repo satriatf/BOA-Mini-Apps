@@ -70,6 +70,14 @@ class Yearly extends Page
 
             $lead = $p->techLead->employee_name ?? '—';
             $done = isset($p->percent_done) ? "{$p->percent_done}%" : '—';
+            
+            // Get PIC names
+            $picNames = [];
+            if (is_array($p->pics) && !empty($p->pics)) {
+                $picUsers = User::whereIn('sk_user', $p->pics)->get();
+                $picNames = $picUsers->pluck('employee_name')->toArray();
+            }
+            $pics = !empty($picNames) ? implode(', ', $picNames) : '—';
 
             // HTML detail (sama seperti Monthly)
             $detailsHtml = "
@@ -79,6 +87,7 @@ class Yearly extends Page
                     <tr><td><b>Name</b></td><td>" . e($p->project_name ?? '—') . "</td></tr>
                     <tr><td><b>Status</b></td><td>" . e($p->project_status ?? '—') . "</td></tr>
                     <tr><td><b>Lead</b></td><td>" . e($lead) . "</td></tr>
+                    <tr><td><b>PIC</b></td><td>" . e($pics) . "</td></tr>
                     <tr><td><b>Start</b></td><td>" . e($start?->toDateString()) . "</td></tr>
                     <tr><td><b>End</b></td><td>" . e($end?->toDateString()) . "</td></tr>
                     <tr><td><b>% Done</b></td><td>" . e($done) . "</td></tr>

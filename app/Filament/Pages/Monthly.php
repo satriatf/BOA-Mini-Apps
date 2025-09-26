@@ -42,7 +42,7 @@ class Monthly extends Page
         // ---------------- PROJECTS ----------------
         foreach (
             Project::query()
-                ->select(['sk_project','project_ticket_no','project_name','project_status','technical_lead','start_date','end_date','percent_done'])
+                ->select(['sk_project','project_ticket_no','project_name','project_status','technical_lead','pics','start_date','end_date','percent_done'])
                 ->get() as $p
         ) {
             if (!$p->start_date && !$p->end_date) continue;
@@ -61,6 +61,14 @@ class Monthly extends Page
             $leadUser = $p->technical_lead ? User::find($p->technical_lead) : null;
             $lead     = $leadUser?->employee_name ?? '—';
             $done     = isset($p->percent_done) ? "{$p->percent_done}%" : '—';
+            
+            // Get PIC names
+            $picNames = [];
+            if (is_array($p->pics) && !empty($p->pics)) {
+                $picUsers = User::whereIn('sk_user', $p->pics)->get();
+                $picNames = $picUsers->pluck('employee_name')->toArray();
+            }
+            $pics = !empty($picNames) ? implode(', ', $picNames) : '—';
 
             $detailsHtml = "
                 <table style='width:100%;border-collapse:collapse' cellpadding='6'>
@@ -69,6 +77,7 @@ class Monthly extends Page
                     <tr><td><b>Name</b></td><td>" . e($p->project_name ?? "Project {$p->sk_project}") . "</td></tr>
                     <tr><td><b>Status</b></td><td>" . e($p->project_status ?? '—') . "</td></tr>
                     <tr><td><b>Lead</b></td><td>" . e($lead) . "</td></tr>
+                    <tr><td><b>PIC</b></td><td>" . e($pics) . "</td></tr>
                     <tr><td><b>Start</b></td><td>{$ps->toDateString()}</td></tr>
                     <tr><td><b>End</b></td><td>{$pe->toDateString()}</td></tr>
                     <tr><td><b>% Done</b></td><td>" . e($done) . "</td></tr>
