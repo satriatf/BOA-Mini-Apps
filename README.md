@@ -58,16 +58,6 @@ Aplikasi manajemen tim dengan Laravel dan Filament Admin Panel.
 -   **Applications**: CRUD lengkap
 -   **Holidays**: CRUD lengkap
 
-## 🗄️ Database Tables
-
--   `users` - Data karyawan
--   `projects` - Data proyek
--   `mtcs` - Data tugas non-proyek
--   `master_project_statuses` - Status proyek
--   `master_non_project_types` - Jenis tugas
--   `master_applications` - Daftar aplikasi
--   `holidays` - Hari libur
-
 ## 🎯 Form Features
 
 ### Project Form
@@ -99,7 +89,7 @@ npm install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate
-php artisan db:seed --class=MasterDataSeeder
+php artisan db:seed --class=AdminUserSeeder
 npm run build
 php artisan serve
 ```
