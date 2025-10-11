@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Mtcs\Schemas;
 
 use App\Models\Mtc;
 use App\Models\User;
+use App\Models\MasterNonProjectType;
+use App\Models\MasterApplication;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -18,7 +20,7 @@ class MtcForm
         return $schema->components([
             Select::make('created_by_id')
                 ->label('Created By')
-                ->options(fn () => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'SH'])->pluck('employee_name', 'sk_user'))
+                ->options(fn() => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'SH'])->pluck('employee_name', 'sk_user'))
                 ->searchable()->preload()->native(false)->required(),
 
             TextInput::make('no_tiket')
@@ -34,12 +36,12 @@ class MtcForm
 
             Select::make('type')
                 ->label('Type')
-                ->options(Mtc::TYPE_OPTIONS)
+                ->options(fn() => MasterNonProjectType::pluck('name', 'name'))
                 ->searchable()->native(false)->required(),
 
             Select::make('resolver_id')
                 ->label('Resolver PIC')
-                ->options(fn () => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'SH'])->pluck('employee_name', 'sk_user'))
+                ->options(fn() => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'SH'])->pluck('employee_name', 'sk_user'))
                 ->searchable()->preload()->native(false),
 
             Textarea::make('solusi')
@@ -48,7 +50,7 @@ class MtcForm
 
             Select::make('application')
                 ->label('Application')
-                ->options(Mtc::APP_OPTIONS)
+                ->options(fn() => MasterApplication::pluck('name', 'name'))
                 ->searchable()->native(false)->required(),
 
             DatePicker::make('tanggal')

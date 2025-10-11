@@ -7,6 +7,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use App\Models\User;
+use App\Models\MasterProjectStatus;
 
 class ProjectForm
 {
@@ -25,33 +26,13 @@ class ProjectForm
             Select::make('project_status')
                 ->label('Project Status')
                 ->required()
-                ->options([
-                    'PEMBAHASAN' => 'PEMBAHASAN',
-                    'TASKLIST' => 'TASKLIST',
-                    'SIGN-OFF' => 'SIGN-OFF',
-                    'NEED SCHEDULE' => 'NEED SCHEDULE',
-                    'WTD' => 'WTD',
-                    'DEV' => 'DEV',
-                    'WTQ' => 'WTQ',
-                    'QC' => 'QC',
-                    'WAITING TO UAT' => 'WAITING TO UAT',
-                    'UAT' => 'UAT',
-                    'UAT DONE' => 'UAT DONE',
-                    'READY TO DEPLOY' => 'READY TO DEPLOY',
-                    'GO LIVE' => 'GO LIVE',
-                    'PENDING PEMBAHASAN' => 'PENDING PEMBAHASAN',
-                    'PENDING UAT' => 'PENDING UAT',
-                    'NO IMPACT DEV' => 'NO IMPACT DEV',
-                    'DROP' => 'DROP',
-                    'PENDING DEV' => 'PENDING DEV',
-                    'PENTEST' => 'PENTEST',
-                ])
+                ->options(fn() => MasterProjectStatus::pluck('name', 'name'))
                 ->native(false)
                 ->searchable(),
 
             Select::make('technical_lead')
                 ->label('Technical Lead')
-                ->options(fn () => User::where('is_active', 'Active')->where('level', 'SH')->pluck('employee_name', 'sk_user'))
+                ->options(fn() => User::where('is_active', 'Active')->where('level', 'SH')->pluck('employee_name', 'sk_user'))
                 ->searchable()
                 ->preload()
                 ->native(false)
@@ -59,11 +40,11 @@ class ProjectForm
 
             Select::make('pics')
                 ->label('PIC')
-                ->options(fn () => User::where('is_active', 'Active')->where('level', 'Staff')->pluck('employee_name', 'sk_user'))
+                ->options(fn() => User::where('is_active', 'Active')->where('level', 'Staff')->pluck('employee_name', 'sk_user'))
                 ->multiple()
                 ->searchable()
                 ->preload()
-                ->native(false)         
+                ->native(false)
                 ->placeholder('Select PIC')
                 ->helperText('Select one or more PICs (Staff level only).'),
 
