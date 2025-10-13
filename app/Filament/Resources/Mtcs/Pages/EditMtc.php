@@ -48,6 +48,7 @@ class EditMtc extends EditRecord
 
     public function getBreadcrumb(): string
     {
-        return 'Edit';
+        $description = $this->getRecord()?->description;
+        return $description ?: 'Edit';
     }
 }

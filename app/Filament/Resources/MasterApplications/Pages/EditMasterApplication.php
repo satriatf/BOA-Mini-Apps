@@ -20,7 +20,13 @@ class EditMasterApplication extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Edit Application';
+        $name = $this->getRecord()?->name;
+        return $name ? ('Edit ' . $name) : 'Edit Application';
+    }
+
+    public function getHeading(): string
+    {
+        return $this->getTitle();
     }
 
     protected function getFormActions(): array
@@ -33,5 +39,10 @@ class EditMasterApplication extends EditRecord
                 ->color('gray')
                 ->url(static::getResource()::getUrl('index')),
         ];
+    }
+
+    public function getRedirectUrl(): ?string
+    {
+        return static::getResource()::getUrl('index');
     }
 }

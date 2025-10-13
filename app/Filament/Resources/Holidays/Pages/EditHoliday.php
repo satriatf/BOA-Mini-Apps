@@ -20,7 +20,13 @@ class EditHoliday extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Edit Holiday';
+        $desc = $this->getRecord()?->desc;
+        return $desc ? ('Edit ' . $desc) : 'Edit Holiday';
+    }
+
+    public function getHeading(): string
+    {
+        return $this->getTitle();
     }
 
     protected function getFormActions(): array
@@ -33,5 +39,10 @@ class EditHoliday extends EditRecord
                 ->color('gray')
                 ->url(static::getResource()::getUrl('index')),
         ];
+    }
+
+    public function getRedirectUrl(): ?string
+    {
+        return static::getResource()::getUrl('index');
     }
 }

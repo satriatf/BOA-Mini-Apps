@@ -20,7 +20,13 @@ class EditMasterProjectStatus extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Edit Project Status';
+        $name = $this->getRecord()?->name;
+        return $name ? ('Edit ' . $name) : 'Edit Project Status';
+    }
+
+    public function getHeading(): string
+    {
+        return $this->getTitle();
     }
 
     protected function getFormActions(): array
@@ -33,5 +39,10 @@ class EditMasterProjectStatus extends EditRecord
                 ->color('gray')
                 ->url(static::getResource()::getUrl('index')),
         ];
+    }
+
+    public function getRedirectUrl(): ?string
+    {
+        return static::getResource()::getUrl('index');
     }
 }
