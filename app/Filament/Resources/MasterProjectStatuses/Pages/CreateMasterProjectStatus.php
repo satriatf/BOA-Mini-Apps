@@ -24,26 +24,11 @@ class CreateMasterProjectStatus extends CreateRecord
     protected function getFormActions(): array
     {
         return [
-            // SUBMIT -> simpan lalu ke List
             Action::make('submit')
                 ->label('Submit')
                 ->action(function () {
                     $this->create();
                     $this->redirect(static::getResource()::getUrl('index'));
-                }),
-
-            // DRAFT -> simpan, notif, ke Edit
-            Action::make('draft')
-                ->label('Draft')
-                ->action(function () {
-                    $this->create();
-
-                    Notification::make()
-                        ->title('Saved as draft')
-                        ->success()
-                        ->send();
-
-                    $this->redirect(static::getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
 
             Action::make('cancel')
