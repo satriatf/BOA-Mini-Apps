@@ -36,7 +36,7 @@ class Mtc extends Model
         'solusi',
         'application',
         'tanggal',
-        'attachments',        
+        'attachments',
         'attachments_count',
         'is_delete',
         'create_by',
@@ -53,6 +53,12 @@ class Mtc extends Model
         'is_delete' => 'boolean',
     ];
 
-    public function createdBy(): BelongsTo { return $this->belongsTo(User::class, 'created_by_id', 'sk_user'); }
-    public function resolver(): BelongsTo  { return $this->belongsTo(User::class, 'resolver_id', 'sk_user'); }
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_id', 'sk_user');
+    }
+    public function resolver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'resolver_id', 'sk_user');
+    }
 }
