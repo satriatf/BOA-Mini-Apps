@@ -195,6 +195,22 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
         showNonProject = true;
     }
     
+    // Create filter controls
+    const filterContainer = document.createElement('div');
+    filterContainer.className = 'filter-container';
+    filterContainer.innerHTML = `
+        <span class="filter-label">Filter by Task:</span>
+        <div class="filter-checkbox-group">
+            <input type="checkbox" id="filter-project" class="filter-checkbox" ${showProject ? 'checked' : ''} data-type="project">
+            <label for="filter-project" class="filter-checkbox-label">Project</label>
+        </div>
+        <div class="filter-checkbox-group">
+            <input type="checkbox" id="filter-non-project" class="filter-checkbox" ${showNonProject ? 'checked' : ''} data-type="non-project">
+            <label for="filter-non-project" class="filter-checkbox-label">Non-Project</label>
+        </div>
+    `;
+    container.appendChild(filterContainer);
+    
     // Create legend
     const legend = document.createElement('div');
     legend.className = 'gantt-legend';
@@ -428,6 +444,21 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
     
     table.appendChild(tbody);
     container.appendChild(table);
+    
+    // Add event listeners for the filter checkboxes that were just created
+    const projectFilterCheckbox = container.querySelector('#filter-project');
+    const nonProjectFilterCheckbox = container.querySelector('#filter-non-project');
+    
+    if (projectFilterCheckbox && nonProjectFilterCheckbox) {
+        const updateFilters = () => {
+            const showProjectTasks = projectFilterCheckbox.checked;
+            const showNonProjectTasks = nonProjectFilterCheckbox.checked;
+            renderGantt(container, rows, year, showProjectTasks, showNonProjectTasks);
+        };
+        
+        projectFilterCheckbox.addEventListener('change', updateFilters);
+        nonProjectFilterCheckbox.addEventListener('change', updateFilters);
+    }
 }
 
 /**
@@ -441,23 +472,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (container && year && data !== undefined) {
         // Initial render with both filters enabled
         renderGantt(container, data, year, true, true);
-        
-        // Add event listeners for filter checkboxes
-        const projectCheckbox = document.getElementById('filter-project');
-        const nonProjectCheckbox = document.getElementById('filter-non-project');
-        
-        if (projectCheckbox && nonProjectCheckbox) {
-            // Function to re-render the chart based on current filter state
-            function updateChart() {
-                const showProject = projectCheckbox.checked;
-                const showNonProject = nonProjectCheckbox.checked;
-                renderGantt(container, data, year, showProject, showNonProject);
-            }
-            
-            // Add event listeners
-            projectCheckbox.addEventListener('change', updateChart);
-            nonProjectCheckbox.addEventListener('change', updateChart);
-        }
     } else {
         console.error('Project Timeline initialization failed: missing data or container');
     }
