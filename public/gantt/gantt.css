@@ -69,32 +69,20 @@
 }
 
 
+/* Group rows by employee - alternate background for each row */
+.gantt-table tbody tr:nth-child(odd) td.employee {
+    background: #ffffff;
+}
+
 .gantt-table tbody tr:nth-child(even) td.employee {
     background: #f9fafb;
 }
 
+.gantt-table tbody tr:nth-child(odd) td:not(.employee) {
+    background: #ffffff;
+}
+
 .gantt-table tbody tr:nth-child(even) td:not(.employee) {
-    background: #f9fafb;
-}
-
-/* Group rows by employee - every 2 rows should have same background */
-.gantt-table tbody tr:nth-child(4n+1) td.employee,
-.gantt-table tbody tr:nth-child(4n+2) td.employee {
-    background: #ffffff;
-}
-
-.gantt-table tbody tr:nth-child(4n+3) td.employee,
-.gantt-table tbody tr:nth-child(4n+4) td.employee {
-    background: #f9fafb;
-}
-
-.gantt-table tbody tr:nth-child(4n+1) td:not(.employee),
-.gantt-table tbody tr:nth-child(4n+2) td:not(.employee) {
-    background: #ffffff;
-}
-
-.gantt-table tbody tr:nth-child(4n+3) td:not(.employee),
-.gantt-table tbody tr:nth-child(4n+4) td:not(.employee) {
     background: #f9fafb;
 }
 
@@ -325,4 +313,54 @@
 
 .gantt-legend-color.non-project {
     background: #f59e0b;
+}
+
+/* Filter checkbox styles */
+.filter-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.filter-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-checkbox {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid #d1d5db;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-checkbox:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.filter-checkbox:checked[data-type="non-project"] {
+    background-color: #f59e0b;
+    border-color: #f59e0b;
+}
+
+.filter-checkbox-label {
+    font-size: 0.875rem;
+    color: #374151;
+    cursor: pointer;
+    user-select: none;
 }

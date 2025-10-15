@@ -166,7 +166,7 @@ function showDetailPopup(tasks) {
 /**
  * Render the Gantt chart
  */
-function renderGantt(container, rows, year) {
+function renderGantt(container, rows, year, showProject = true, showNonProject = true) {
     // Clear existing content
     container.innerHTML = '';
     
@@ -187,6 +187,12 @@ function renderGantt(container, rows, year) {
         `;
         container.appendChild(emptyDiv);
         return;
+    }
+    
+    // If both filters are disabled, show all tasks (default behavior)
+    if (!showProject && !showNonProject) {
+        showProject = true;
+        showNonProject = true;
     }
     
     // Create legend
@@ -258,132 +264,166 @@ function renderGantt(container, rows, year) {
             return;
         }
         
-        // Separate tasks by type
+        // Separate tasks by type and apply filters
         const projectTasks = (row.tasks || []).filter(task => task.type === 'project');
         const nonProjectTasks = (row.tasks || []).filter(task => task.type === 'mtc');
         
+        // Check if employee has tasks that match the current filter
+        const hasProjectTasks = projectTasks.length > 0;
+        const hasNonProjectTasks = nonProjectTasks.length > 0;
+        
+        // If both filters are disabled (default), show all employees with tasks
+        if (!showProject && !showNonProject) {
+            const hasAnyTasks = hasProjectTasks || hasNonProjectTasks;
+            if (!hasAnyTasks) {
+                return; // Skip this employee if they have no tasks at all
+            }
+        } else {
+            // If filters are active, only show employees with matching tasks
+            const shouldShowProject = showProject && hasProjectTasks;
+            const shouldShowNonProject = showNonProject && hasNonProjectTasks;
+            
+            if (!shouldShowProject && !shouldShowNonProject) {
+                return; // Skip this employee if they don't have tasks matching the active filters
+            }
+        }
+        
         
         // Create Project row
-        const projectTr = document.createElement('tr');
-        const projectEmployeeCell = document.createElement('td');
-        projectEmployeeCell.className = 'employee';
-        projectEmployeeCell.textContent = row.name || 'Unknown';
-        projectTr.appendChild(projectEmployeeCell);
+        let projectTr = null;
+        if ((showProject && hasProjectTasks) || (!showProject && !showNonProject && hasProjectTasks)) {
+            projectTr = document.createElement('tr');
+            const projectEmployeeCell = document.createElement('td');
+            projectEmployeeCell.className = 'employee';
+            projectEmployeeCell.textContent = row.name || 'Unknown';
+            projectTr.appendChild(projectEmployeeCell);
+        }
         
         // Create Non-Project row
-        const nonProjectTr = document.createElement('tr');
-        const nonProjectEmployeeCell = document.createElement('td');
-        nonProjectEmployeeCell.className = 'employee';
-        // Always leave second row empty (no employee name)
-        nonProjectTr.appendChild(nonProjectEmployeeCell);
-        
-        // Create day cells for Project row
-        for (let month = 1; month <= 12; month++) {
-            const days = getMonthDays(year, month);
-            
-            days.forEach(day => {
-                const cell = document.createElement('td');
-                
-                // Find overlapping project tasks for this day
-                const overlappingTasks = projectTasks.filter(task => {
-                    const taskStart = new Date(task.start + 'T00:00:00');
-                    const taskEnd = new Date(task.end + 'T00:00:00');
-                    const dayStart = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
-                    const dayEnd = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
-                    
-                    // For single-day tasks, check exact date match
-                    if (taskStart.getTime() === taskEnd.getTime()) {
-                        return taskStart.toDateString() === dayStart.toDateString();
-                    }
-                    
-                    // For multi-day tasks, use overlap function
-                    return overlaps(taskStart, taskEnd, dayStart, dayEnd);
-                });
-                
-                if (overlappingTasks.length > 0) {
-                    cell.className = 'project';
-                    
-                    // Add text content for multiple tasks
-                    if (overlappingTasks.length > 1) {
-                        cell.textContent = `${overlappingTasks.length}+`;
-                        cell.style.fontSize = '0.75rem';
-                        cell.style.fontWeight = '600';
-                    }
-                    
-                    // Add tooltip functionality
-                    cell.addEventListener('mouseenter', () => {
-                        showTooltip(tooltip, cell, overlappingTasks);
-                    });
-                    
-                    cell.addEventListener('mouseleave', () => {
-                        hideTooltip(tooltip);
-                    });
-
-                    // Add click functionality for popup detail
-                    cell.addEventListener('click', () => {
-                        showDetailPopup(overlappingTasks);
-                    });
-                }
-                
-                projectTr.appendChild(cell);
-            });
+        let nonProjectTr = null;
+        if ((showNonProject && hasNonProjectTasks) || (!showProject && !showNonProject && hasNonProjectTasks)) {
+            nonProjectTr = document.createElement('tr');
+            const nonProjectEmployeeCell = document.createElement('td');
+            nonProjectEmployeeCell.className = 'employee';
+            nonProjectEmployeeCell.textContent = row.name || 'Unknown';
+            nonProjectTr.appendChild(nonProjectEmployeeCell);
         }
         
-        // Create day cells for Non-Project row
-        for (let month = 1; month <= 12; month++) {
-            const days = getMonthDays(year, month);
-            
-            days.forEach(day => {
-                const cell = document.createElement('td');
+        // Create day cells for Project row (only if project row exists)
+        if (projectTr) {
+            for (let month = 1; month <= 12; month++) {
+                const days = getMonthDays(year, month);
                 
-                // Find overlapping non-project tasks for this day
-                const overlappingTasks = nonProjectTasks.filter(task => {
-                    const taskStart = new Date(task.start + 'T00:00:00');
-                    const taskEnd = new Date(task.end + 'T00:00:00');
-                    const dayStart = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
-                    const dayEnd = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                days.forEach(day => {
+                    const cell = document.createElement('td');
                     
-                    // For single-day tasks, check exact date match
-                    if (taskStart.getTime() === taskEnd.getTime()) {
-                        return taskStart.toDateString() === dayStart.toDateString();
+                    // Find overlapping project tasks for this day
+                    const overlappingTasks = projectTasks.filter(task => {
+                        const taskStart = new Date(task.start + 'T00:00:00');
+                        const taskEnd = new Date(task.end + 'T00:00:00');
+                        const dayStart = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                        const dayEnd = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                        
+                        // For single-day tasks, check exact date match
+                        if (taskStart.getTime() === taskEnd.getTime()) {
+                            return taskStart.toDateString() === dayStart.toDateString();
+                        }
+                        
+                        // For multi-day tasks, use overlap function
+                        return overlaps(taskStart, taskEnd, dayStart, dayEnd);
+                    });
+                    
+                    if (overlappingTasks.length > 0) {
+                        cell.className = 'project';
+                        
+                        // Add text content for multiple tasks
+                        if (overlappingTasks.length > 1) {
+                            cell.textContent = `${overlappingTasks.length}+`;
+                            cell.style.fontSize = '0.75rem';
+                            cell.style.fontWeight = '600';
+                        }
+                        
+                        // Add tooltip functionality
+                        cell.addEventListener('mouseenter', () => {
+                            showTooltip(tooltip, cell, overlappingTasks);
+                        });
+                        
+                        cell.addEventListener('mouseleave', () => {
+                            hideTooltip(tooltip);
+                        });
+
+                        // Add click functionality for popup detail
+                        cell.addEventListener('click', () => {
+                            showDetailPopup(overlappingTasks);
+                        });
                     }
                     
-                    // For multi-day tasks, use overlap function
-                    return overlaps(taskStart, taskEnd, dayStart, dayEnd);
+                    projectTr.appendChild(cell);
                 });
+            }
+        }
+        
+        // Create day cells for Non-Project row (only if non-project row exists)
+        if (nonProjectTr) {
+            for (let month = 1; month <= 12; month++) {
+                const days = getMonthDays(year, month);
                 
-                if (overlappingTasks.length > 0) {
+                days.forEach(day => {
+                    const cell = document.createElement('td');
+                    
+                    // Find overlapping non-project tasks for this day
+                    const overlappingTasks = nonProjectTasks.filter(task => {
+                        const taskStart = new Date(task.start + 'T00:00:00');
+                        const taskEnd = new Date(task.end + 'T00:00:00');
+                        const dayStart = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                        const dayEnd = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                        
+                        // For single-day tasks, check exact date match
+                        if (taskStart.getTime() === taskEnd.getTime()) {
+                            return taskStart.toDateString() === dayStart.toDateString();
+                        }
+                        
+                        // For multi-day tasks, use overlap function
+                        return overlaps(taskStart, taskEnd, dayStart, dayEnd);
+                    });
+                    
+                    if (overlappingTasks.length > 0) {
                         cell.className = 'mtc';
-                    
-                    // Add text content for multiple tasks
-                    if (overlappingTasks.length > 1) {
-                        cell.textContent = `${overlappingTasks.length}+`;
-                        cell.style.fontSize = '0.75rem';
-                        cell.style.fontWeight = '600';
+                        
+                        // Add text content for multiple tasks
+                        if (overlappingTasks.length > 1) {
+                            cell.textContent = `${overlappingTasks.length}+`;
+                            cell.style.fontSize = '0.75rem';
+                            cell.style.fontWeight = '600';
+                        }
+                        
+                        // Add tooltip functionality
+                        cell.addEventListener('mouseenter', () => {
+                            showTooltip(tooltip, cell, overlappingTasks);
+                        });
+                        
+                        cell.addEventListener('mouseleave', () => {
+                            hideTooltip(tooltip);
+                        });
+
+                        // Add click functionality for popup detail
+                        cell.addEventListener('click', () => {
+                            showDetailPopup(overlappingTasks);
+                        });
                     }
                     
-                    // Add tooltip functionality
-                    cell.addEventListener('mouseenter', () => {
-                        showTooltip(tooltip, cell, overlappingTasks);
-                    });
-                    
-                    cell.addEventListener('mouseleave', () => {
-                        hideTooltip(tooltip);
-                    });
-
-                    // Add click functionality for popup detail
-                    cell.addEventListener('click', () => {
-                        showDetailPopup(overlappingTasks);
-                    });
-                }
-                
-                nonProjectTr.appendChild(cell);
-            });
+                    nonProjectTr.appendChild(cell);
+                });
+            }
         }
         
-        // Add both rows to tbody
-        tbody.appendChild(projectTr);
-        tbody.appendChild(nonProjectTr);
+        // Add rows to tbody (only if they exist)
+        if (projectTr) {
+            tbody.appendChild(projectTr);
+        }
+        if (nonProjectTr) {
+            tbody.appendChild(nonProjectTr);
+        }
     });
     
     table.appendChild(tbody);
@@ -398,9 +438,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const year = window.GANTT_YEAR;
     const data = window.GANTT_DATA;
     
-    
     if (container && year && data !== undefined) {
-        renderGantt(container, data, year);
+        // Initial render with both filters enabled
+        renderGantt(container, data, year, true, true);
+        
+        // Add event listeners for filter checkboxes
+        const projectCheckbox = document.getElementById('filter-project');
+        const nonProjectCheckbox = document.getElementById('filter-non-project');
+        
+        if (projectCheckbox && nonProjectCheckbox) {
+            // Function to re-render the chart based on current filter state
+            function updateChart() {
+                const showProject = projectCheckbox.checked;
+                const showNonProject = nonProjectCheckbox.checked;
+                renderGantt(container, data, year, showProject, showNonProject);
+            }
+            
+            // Add event listeners
+            projectCheckbox.addEventListener('change', updateChart);
+            nonProjectCheckbox.addEventListener('change', updateChart);
+        }
     } else {
         console.error('Project Timeline initialization failed: missing data or container');
     }

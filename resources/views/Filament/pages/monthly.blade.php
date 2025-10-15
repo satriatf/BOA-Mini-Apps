@@ -3,7 +3,7 @@
     <form method="GET" class="mb-4 flex items-center gap-3">
         <label class="text-sm font-medium">Year</label>
         <select name="year" class="fi-input rounded-md border-gray-300 text-sm">
-            @for ($y = now()->year - 4; $y <= now()->year + 4; $y++)
+            @for ($y = now()->year - 3; $y <= now()->year + 5; $y++)
                 <option value="{{ $y }}" @selected($y == ($year ?? now()->year))>{{ $y }}</option>
             @endfor
         </select>

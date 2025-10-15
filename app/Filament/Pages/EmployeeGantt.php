@@ -231,7 +231,7 @@ class EmployeeGantt extends Page
 
         return "
             <table style='width:100%;border-collapse:collapse' cellpadding='6'>
-                <tr><td style='width:140px'><b>Type</b></td><td>Project</td></tr>
+                <tr><td style='width:140px'><b>Task</b></td><td>Project</td></tr>
                 <tr><td><b>Ticket No</b></td><td>" . e($project->project_ticket_no ?? '—') . "</td></tr>
                 <tr><td><b>Name</b></td><td>" . e($project->project_name ?? "Project {$project->sk_project}") . "</td></tr>
                 <tr><td><b>Status</b></td><td>" . e($project->project_status ?? '—') . "</td></tr>
@@ -254,10 +254,10 @@ class EmployeeGantt extends Page
 
         return "
             <table style='width:100%;border-collapse:collapse' cellpadding='6'>
-                <tr><td style='width:140px'><b>Type</b></td><td>Non-Project</td></tr>
+                <tr><td style='width:140px'><b>Task</b></td><td>Non-Project</td></tr>
                 <tr><td><b>No Ticket</b></td><td>" . e($mtc->no_tiket ?? '—') . "</td></tr>
                 <tr><td><b>Application</b></td><td>" . e($mtc->application ?? '—') . "</td></tr>
-                <tr><td><b>Category</b></td><td>" . e($mtc->type ?? '—') . "</td></tr>
+                <tr><td><b>Type</b></td><td>" . e($mtc->type ?? '—') . "</td></tr>
                 <tr><td><b>Date</b></td><td>" . e($mtc->tanggal?->toDateString()) . "</td></tr>
                 <tr><td><b>Created By</b></td><td>" . e($createdBy?->employee_name ?? '—') . "</td></tr>
                 <tr><td><b>Resolver</b></td><td>" . e($resolver?->employee_name ?? '—') . "</td></tr>
