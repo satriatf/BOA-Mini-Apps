@@ -13,11 +13,11 @@ class HolidaysTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->searchPlaceholder('Search by description')
             ->columns([
                 TextColumn::make('date')
                     ->label('Holiday Date')
                     ->date()
-                    ->searchable()
                     ->sortable(),
                 TextColumn::make('desc')
                     ->label('Description')
@@ -25,8 +25,7 @@ class HolidaysTable
                     ->sortable(),
                 TextColumn::make('creator.name')
                     ->label('Created By')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->sortable(),
                 TextColumn::make('created_at')
                     ->label('Created Date')
                     ->date()

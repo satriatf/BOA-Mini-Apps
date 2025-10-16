@@ -13,10 +13,10 @@ class MtcsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->searchPlaceholder('Search by no ticket or description')
             ->columns([
                 TextColumn::make('createdBy.employee_name')
                     ->label('Created By')
-                    ->searchable()
                     ->sortable(),
 
                 TextColumn::make('no_tiket')
@@ -26,16 +26,15 @@ class MtcsTable
 
                 TextColumn::make('deskripsi')
                     ->label('Description')
-                    ->limit(60),
+                    ->limit(60)
+                    ->searchable(),
 
                 TextColumn::make('type')
                     ->label('Type')
-                    ->searchable()
                     ->sortable(),
 
                 TextColumn::make('resolver.employee_name')
                     ->label('Resolver PIC')
-                    ->searchable()
                     ->sortable(),
 
                 TextColumn::make('solusi')
@@ -44,7 +43,6 @@ class MtcsTable
 
                 TextColumn::make('application')
                     ->label('Application')
-                    ->searchable()
                     ->sortable(),
 
                 TextColumn::make('tanggal')

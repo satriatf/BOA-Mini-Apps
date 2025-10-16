@@ -13,10 +13,11 @@ class ProjectsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->searchPlaceholder('Search by project name')
             ->columns([
                 TextColumn::make('project_ticket_no')
                     ->label('Project Ticket No')
-                    ->searchable(),
+                    ,
 
                 TextColumn::make('project_name')
                     ->label('Project Name')
@@ -24,10 +25,7 @@ class ProjectsTable
 
                 TextColumn::make('project_status')
                     ->label('Project Status')
-                    ->searchable(),
-
-                TextColumn::make('techLead.employee_name')
-                    ->label('Technical Lead'),
+                    ,
 
                 TextColumn::make('pics')
                     ->label('PIC')
@@ -88,14 +86,12 @@ class ProjectsTable
                 TextColumn::make('created_at')
                     ->label('Created At')
                     ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
 
                 TextColumn::make('updated_at')
                     ->label('Updated At')
                     ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
             ])
             ->filters([])
             ->recordActions([

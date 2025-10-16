@@ -272,7 +272,7 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
     // Create body
     const tbody = document.createElement('tbody');
     
-    // Create rows for each employee - create 2 rows per employee (Project and Non-Project)
+    // Create rows for each employee - create up to 2 rows per employee (Project and Non-Project)
     rows.forEach((row, rowIndex) => {
         // Ensure row has required properties
         if (!row || typeof row !== 'object') {
@@ -305,24 +305,33 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
         }
         
         
-        // Create Project row
+        // Create Project and Non-Project rows
         let projectTr = null;
-        if ((showProject && hasProjectTasks) || (!showProject && !showNonProject && hasProjectTasks)) {
-            projectTr = document.createElement('tr');
-            const projectEmployeeCell = document.createElement('td');
-            projectEmployeeCell.className = 'employee';
-            projectEmployeeCell.textContent = row.name || 'Unknown';
-            projectTr.appendChild(projectEmployeeCell);
-        }
-        
-        // Create Non-Project row
         let nonProjectTr = null;
-        if ((showNonProject && hasNonProjectTasks) || (!showProject && !showNonProject && hasNonProjectTasks)) {
+
+        const shouldShowProjectRow = (showProject && hasProjectTasks) || (!showProject && !showNonProject && hasProjectTasks);
+        const shouldShowNonProjectRow = (showNonProject && hasNonProjectTasks) || (!showProject && !showNonProject && hasNonProjectTasks);
+
+        if (shouldShowProjectRow) {
+            projectTr = document.createElement('tr');
+        }
+        if (shouldShowNonProjectRow) {
             nonProjectTr = document.createElement('tr');
-            const nonProjectEmployeeCell = document.createElement('td');
-            nonProjectEmployeeCell.className = 'employee';
-            nonProjectEmployeeCell.textContent = row.name || 'Unknown';
-            nonProjectTr.appendChild(nonProjectEmployeeCell);
+        }
+
+        // Build employee cell: if both rows exist, use one cell with rowspan=2 centered vertically
+        if (projectTr && nonProjectTr) {
+            const employeeCell = document.createElement('td');
+            employeeCell.className = 'employee';
+            employeeCell.textContent = row.name || 'Unknown';
+            employeeCell.rowSpan = 2;
+            projectTr.appendChild(employeeCell);
+        } else if (projectTr || nonProjectTr) {
+            const targetRow = projectTr || nonProjectTr;
+            const employeeCell = document.createElement('td');
+            employeeCell.className = 'employee';
+            employeeCell.textContent = row.name || 'Unknown';
+            targetRow.appendChild(employeeCell);
         }
         
         // Create day cells for Project row (only if project row exists)

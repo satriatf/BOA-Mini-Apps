@@ -14,10 +14,11 @@ class UsersTable
     {
         return $table
             ->defaultSort('level', 'asc')
+            ->searchPlaceholder('Search by name')
             ->columns([
-                TextColumn::make('employee_nik')->label('Employee NIK')->searchable(),
+                TextColumn::make('employee_nik')->label('Employee NIK'),
                 TextColumn::make('employee_name')->label('Employee Name')->searchable(),
-                TextColumn::make('employee_email')->label('Employee Email')->searchable(),
+                TextColumn::make('employee_email')->label('Employee Email'),
                 TextColumn::make('level')
                     ->label('Level')
                     ->badge()
