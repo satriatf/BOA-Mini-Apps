@@ -27,6 +27,13 @@ class ProjectsTable
                     ->label('Project Status')
                     ,
 
+                TextColumn::make('techLead.employee_name')
+                    ->label('Technical Lead')
+                    ->state(function ($record) {
+                        return optional($record->techLead)->employee_name ?? '-';
+                    })
+                    ,
+
                 TextColumn::make('pics')
                     ->label('PIC')
                     ->state(function ($record) {
