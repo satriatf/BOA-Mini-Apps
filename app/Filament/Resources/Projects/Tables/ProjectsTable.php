@@ -83,15 +83,6 @@ class ProjectsTable
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . '%'),
 
-                TextColumn::make('created_at')
-                    ->label('Created At')
-                    ->dateTime()
-                    ->sortable(),
-
-                TextColumn::make('updated_at')
-                    ->label('Updated At')
-                    ->dateTime()
-                    ->sortable(),
             ])
             ->filters([])
             ->recordActions([
