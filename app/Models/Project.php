@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 class Project extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $primaryKey = 'sk_project';
     protected $keyType = 'string';
@@ -31,6 +33,7 @@ class Project extends Model
         'create_date',
         'modified_by',
         'modified_date',
+        'deleted_at',
     ];
 
     protected $casts = [
@@ -47,6 +50,9 @@ class Project extends Model
         static::creating(function (Project $project) {
             if (empty($project->sk_project)) {
                 $project->sk_project = (string) Str::uuid();
+            }
+            if (Auth::check() && empty($project->create_by)) {
+                $project->create_by = Auth::user()->employee_name;
             }
         });
 

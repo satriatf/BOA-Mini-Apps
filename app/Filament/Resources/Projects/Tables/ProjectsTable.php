@@ -17,22 +17,24 @@ class ProjectsTable
             ->columns([
                 TextColumn::make('project_ticket_no')
                     ->label('Project Ticket No')
-                    ,
+                    ->searchable()
+                    ->sortable(),
 
                 TextColumn::make('project_name')
                     ->label('Project Name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 TextColumn::make('project_status')
                     ->label('Project Status')
-                    ,
+                    ->sortable(),
 
                 TextColumn::make('techLead.employee_name')
                     ->label('Technical Lead')
                     ->state(function ($record) {
                         return optional($record->techLead)->employee_name ?? '-';
                     })
-                    ,
+                    ->sortable(),
 
                 TextColumn::make('pics')
                     ->label('PIC')

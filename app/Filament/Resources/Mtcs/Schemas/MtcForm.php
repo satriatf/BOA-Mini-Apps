@@ -12,6 +12,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Schema;
+use Illuminate\Validation\Rules\Unique;
 
 class MtcForm
 {
@@ -20,13 +21,13 @@ class MtcForm
         return $schema->components([
             Select::make('created_by_id')
                 ->label('Created By')
-                ->options(fn() => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'SH'])->pluck('employee_name', 'sk_user'))
+                ->options(fn() => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'Section Head'])->pluck('employee_name', 'sk_user'))
                 ->searchable()->preload()->native(false)->required(),
 
             TextInput::make('no_tiket')
                 ->label('No. Ticket')
                 ->required()
-                ->unique(ignoreRecord: true)
+                ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at'))
                 ->maxLength(50),
 
             Textarea::make('deskripsi')
@@ -41,7 +42,7 @@ class MtcForm
 
             Select::make('resolver_id')
                 ->label('Resolver PIC')
-                ->options(fn() => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'SH'])->pluck('employee_name', 'sk_user'))
+                ->options(fn() => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'Section Head'])->pluck('employee_name', 'sk_user'))
                 ->searchable()->preload()->native(false),
 
             Textarea::make('solusi')
@@ -64,11 +65,32 @@ class MtcForm
                 ->multiple()
                 ->disk('public')
                 ->directory('mtc_attachments')
+                // Max size per file: 10 MB (in KB)
                 ->maxSize(10240)
                 ->preserveFilenames()
                 ->reorderable()
-                ->helperText('Upload multiple files. Preview available for PDF, images, and text files only.')
-                ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'text/plain'])
+                ->helperText('Multi-file. Allowed: PDF/PNG/JPG/JPEG/XLS/XLSX/DOC/DOCX/ZIP/HEIC/TXT. If not listed, compress to ZIP first. Preview: PDF/images/TXT only. Max 10 MB/file.')
+                // Frontend accept/mime filter
+                ->acceptedFileTypes([
+                    'application/pdf',
+                    'image/png',
+                    'image/jpeg',
+                    'image/heic',
+                    'image/heif',
+                    'application/msword', // .doc
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+                    'application/vnd.ms-excel', // .xls
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+                    'application/zip',
+                    'application/x-zip-compressed',
+                    'text/plain', // .txt
+                ])
+                // Server-side validation (per file)
+                ->rules(['mimes:pdf,png,jpg,jpeg,xls,xlsx,doc,docx,zip,heic,txt', 'max:10240'])
+                ->validationMessages([
+                    'mimes' => 'Tipe file tidak sesuai. Gunakan: pdf, png, jpg, jpeg, xls, xlsx, doc, docx, zip, heic, txt. Jika berbeda, mohon zip dulu.',
+                    'max' => 'File terlalu besar. Maksimal 10 MB per file.',
+                ])
                 ->previewable(true)
                 ->downloadable()
                 ->openable()

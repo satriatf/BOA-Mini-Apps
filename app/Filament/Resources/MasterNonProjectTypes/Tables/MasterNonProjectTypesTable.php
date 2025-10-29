@@ -19,8 +19,9 @@ class MasterNonProjectTypesTable
                     ->label('Name')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('creator.name')
+                TextColumn::make('created_by')
                     ->label('Created By')
+                    ->getStateUsing(fn ($record) => $record->created_by ?: '-')
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->label('Created Date')

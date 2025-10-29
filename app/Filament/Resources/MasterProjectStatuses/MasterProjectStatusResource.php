@@ -54,12 +54,7 @@ class MasterProjectStatusResource extends Resource
         return MasterProjectStatusesTable::configure($table);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
+    // ...existing code...
 
     public static function getPages(): array
     {

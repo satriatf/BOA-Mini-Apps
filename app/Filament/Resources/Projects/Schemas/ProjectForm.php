@@ -8,6 +8,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use App\Models\User;
 use App\Models\MasterProjectStatus;
+use Illuminate\Validation\Rules\Unique;
 
 class ProjectForm
 {
@@ -17,11 +18,12 @@ class ProjectForm
             TextInput::make('project_ticket_no')
                 ->label('Project Ticket No')
                 ->required()
-                ->unique(ignoreRecord: true),
+                ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at')),
 
             TextInput::make('project_name')
                 ->label('Project Name')
-                ->required(),
+                ->required()
+                ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at')),
 
             Select::make('project_status')
                 ->label('Project Status')
@@ -32,7 +34,7 @@ class ProjectForm
 
             Select::make('technical_lead')
                 ->label('Technical Lead')
-                ->options(fn() => User::where('is_active', 'Active')->where('level', 'SH')->pluck('employee_name', 'sk_user'))
+                ->options(fn() => User::where('is_active', 'Active')->where('level', 'Section Head')->pluck('employee_name', 'sk_user'))
                 ->searchable()
                 ->preload()
                 ->native(false)
@@ -51,12 +53,25 @@ class ProjectForm
             DatePicker::make('start_date')
                 ->label('Start Date')
                 ->native(false)
-                ->displayFormat('d/m/Y'),
+                ->displayFormat('d/m/Y')
+                ->closeOnDateSelection()
+                ->live()
+                ->afterStateUpdated(function ($state, callable $set, $get) {
+                    // Reset end_date if it's less than start_date
+                    if ($get('end_date') && $state && $get('end_date') < $state) {
+                        $set('end_date', null);
+                    }
+                }),
 
             DatePicker::make('end_date')
                 ->label('End Date')
                 ->native(false)
-                ->displayFormat('d/m/Y'),
+                ->displayFormat('d/m/Y')
+                ->minDate(fn ($get) => $get('start_date'))
+                ->closeOnDateSelection()
+                ->live()
+                ->disabled(fn ($get) => !$get('start_date'))
+                ->rules(['after_or_equal:start_date']),
 
             TextInput::make('total_day')
                 ->label('Total Days')

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, \Illuminate\Database\Eloquent\SoftDeletes;
 
     protected $primaryKey = 'sk_user';
 
@@ -36,9 +36,9 @@ class User extends Authenticatable
         'create_date',
         'modified_by',
         'modified_date',
-        // Standard Laravel auth fields for compatibility
         'name',
         'email',
+        'deleted_at',
     ];
 
     /**

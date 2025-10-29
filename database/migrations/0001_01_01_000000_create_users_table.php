@@ -28,7 +28,7 @@ return new class extends Migration
 
             $table->enum('is_active', ['Active', 'Inactive'])->default('Active'); // Status user
 
-            $table->enum('level', ['Manager', 'Asmen', 'SH', 'Staff', 'Intern'])->default('Staff'); // Level user
+            $table->enum('level', ['Manager', 'Asisten Manager', 'Section Head', 'Staff', 'Intern'])->default('Staff'); // Level user
 
             $table->date('join_date')->nullable(); // Tanggal bergabung di adira
 

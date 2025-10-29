@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 class Mtc extends Model
 {
+    use SoftDeletes;
     protected $primaryKey = 'sk_mtc';
 
     // Allowed types
@@ -43,7 +46,16 @@ class Mtc extends Model
         'create_date',
         'modified_by',
         'modified_date',
+        'deleted_at',
     ];
+    protected static function booted(): void
+    {
+        static::creating(function (Mtc $mtc) {
+            if (Auth::check() && empty($mtc->create_by)) {
+                $mtc->create_by = Auth::user()->employee_name;
+            }
+        });
+    }
 
     protected $casts = [
         'tanggal'     => 'date',

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\MasterApplications\Schemas;
 
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Validation\Rules\Unique;
 
 class MasterApplicationForm
 {
@@ -15,7 +16,10 @@ class MasterApplicationForm
                     ->label('Name')
                     ->required()
                     ->maxLength(255)
-                    ->unique(ignoreRecord: true),
+                    ->unique(
+                        ignoreRecord: true,
+                        modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at')
+                    ),
             ]);
     }
 }

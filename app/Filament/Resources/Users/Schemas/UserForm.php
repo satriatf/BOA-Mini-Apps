@@ -7,6 +7,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Unique;
 
 class UserForm
 {
@@ -16,7 +17,7 @@ return $schema->components([
     TextInput::make('employee_nik')
         ->label('Employee NIK')
         ->required()
-        ->unique(ignoreRecord: true),
+        ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at')),
 
     TextInput::make('employee_name')
         ->label('Employee Name')
@@ -24,16 +25,23 @@ return $schema->components([
 
     TextInput::make('employee_email')
         ->label('Employee Email')
-        ->email()
         ->required()
-        ->unique(ignoreRecord: true),
+        ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at'))
+        ->suffix('@adira.co.id')
+        ->dehydrateStateUsing(fn ($state) => $state . '@adira.co.id')
+        ->afterStateHydrated(function ($component, $state) {
+            if ($state && str_contains($state, '@adira.co.id')) {
+                $component->state(str_replace('@adira.co.id', '', $state));
+            }
+        })
+        ->rules(['regex:/^[a-zA-Z0-9._-]+$/']),
 
     Select::make('level') 
         ->label('Level')
         ->options([
             'Manager'  => 'Manager',
-            'Asmen' => 'Asmen',
-            'SH' => 'SH',
+            'Asisten Manager' => 'Asisten Manager',
+            'Section Head' => 'Section Head',
             'Staff'    => 'Staff',
             'Intern'   => 'Intern',
         ])
@@ -53,12 +61,25 @@ return $schema->components([
     DatePicker::make('join_date')
         ->label('Join Date')
         ->native(false)
-        ->displayFormat('d/m/Y'),
+        ->displayFormat('d/m/Y')
+        ->closeOnDateSelection()
+        ->live()
+        ->afterStateUpdated(function ($state, callable $set, $get) {
+            // Reset end_date if it's less than join_date
+            if ($get('end_date') && $state && $get('end_date') < $state) {
+                $set('end_date', null);
+            }
+        }),
 
     DatePicker::make('end_date')
         ->label('End Date')
         ->native(false)
-        ->displayFormat('d/m/Y'),
+        ->displayFormat('d/m/Y')
+        ->minDate(fn ($get) => $get('join_date'))
+        ->closeOnDateSelection()
+        ->live()
+        ->disabled(fn ($get) => !$get('join_date'))
+        ->rules(['after_or_equal:join_date']),
 
     TextInput::make('password')
         ->label('Password')

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,13 +22,9 @@ class Holiday extends Model
     {
         static::creating(function (self $model): void {
             if (Auth::check() && empty($model->created_by)) {
-                $model->created_by = Auth::id();
+                // Store employee name instead of ID
+                $model->created_by = Auth::user()->employee_name;
             }
         });
-    }
-
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
     }
 }
