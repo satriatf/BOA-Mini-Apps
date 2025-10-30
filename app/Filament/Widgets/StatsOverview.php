@@ -19,16 +19,16 @@ class StatsOverview extends BaseWidget
                 ->icon('heroicon-o-user-group'),
 
             Stat::make('Projects', Project::count())
-                ->icon('heroicon-o-briefcase'),
-
-            Stat::make('Non-Projects', Mtc::count())
-                ->icon('heroicon-o-wrench-screwdriver'),
-
-            Stat::make('Applications', MasterApplication::count())
                 ->icon('heroicon-o-window'),
 
+            Stat::make('Non-Projects', Mtc::count())
+                ->icon('heroicon-o-code-bracket-square'),
+
+            Stat::make('Applications', MasterApplication::count())
+                ->icon('heroicon-o-squares-2x2'),
+
             Stat::make('Holidays', Holiday::count())
-                ->icon('heroicon-o-calendar'),
+                ->icon('heroicon-o-calendar-days'),
         ];
     }
 }
