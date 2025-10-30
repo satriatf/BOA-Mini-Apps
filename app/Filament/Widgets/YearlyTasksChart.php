@@ -16,13 +16,17 @@ class YearlyTasksChart extends ChartWidget
 
     public ?string $filter = null;
 
+    public function mount(): void
+    {
+        $this->filter = (string) Carbon::now()->year;
+    }
+
     protected function getFilters(): ?array
     {
         $currentYear = Carbon::now()->year;
         $years = [];
         
-        // Generate years from 2020 to current year + 2
-        for ($year = 2020; $year <= $currentYear + 2; $year++) {
+        for ($year = 2022; $year <= $currentYear + 5; $year++) {
             $years[$year] = $year;
         }
         
@@ -42,12 +46,12 @@ class YearlyTasksChart extends ChartWidget
                     'label' => 'Tasks',
                     'data' => [$projectCount, $mtcCount],
                     'backgroundColor' => [
-                        'rgb(59, 130, 246)', // Blue for Projects
-                        'rgb(234, 179, 8)',  // Yellow for Non-Projects
+                        '#2563eb', // Blue for Projects
+                        '#d97706',  // Yellow for Non-Projects
                     ],
                     'borderColor' => [
-                        'rgb(59, 130, 246)',
-                        'rgb(234, 179, 8)',
+                        '#2563eb',
+                        '#d97706',
                     ],
                 ],
             ],

@@ -2,7 +2,7 @@
     $user = filament()->auth()->user();
 @endphp
 
-<x-filament-widgets::widget class="fi-account-widget">
+<x-filament-widgets::widget class="fi-account-widget" style="grid-column: span 2 / span 2;">
     <x-filament::section>
         <x-filament-panels::avatar.user
             size="lg"

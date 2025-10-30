@@ -59,7 +59,6 @@ class AdminPanelProvider extends PanelProvider
                         ->url(UserResource::getUrl('edit', ['record' => $user]))
                         ->visible(fn () => (bool) $user);
                 },
-                // 'logout' left as default
             ])
             ->middleware([
                 EncryptCookies::class,
