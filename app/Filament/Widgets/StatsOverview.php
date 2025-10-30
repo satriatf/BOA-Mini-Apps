@@ -22,10 +22,10 @@ class StatsOverview extends BaseWidget
                 ->icon('heroicon-o-briefcase'),
 
             Stat::make('Non-Projects', Mtc::count())
-                ->icon('heroicon-o-briefcase'),
+                ->icon('heroicon-o-wrench-screwdriver'),
 
             Stat::make('Applications', MasterApplication::count())
-                ->icon('heroicon-o-briefcase'),
+                ->icon('heroicon-o-window'),
 
             Stat::make('Holidays', Holiday::count())
                 ->icon('heroicon-o-calendar'),

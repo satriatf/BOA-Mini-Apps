@@ -19,7 +19,8 @@ class MasterApplicationResource extends Resource
 {
     protected static ?string $model = MasterApplication::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    // Use a window icon for Applications in Master group
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWindow;
 
     protected static ?string $recordTitleAttribute = 'name';
 

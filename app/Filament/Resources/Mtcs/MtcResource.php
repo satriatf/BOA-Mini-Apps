@@ -22,7 +22,8 @@ class MtcResource extends Resource
     protected static ?string $recordTitleAttribute = 'application';
 
     protected static ?string $navigationLabel = 'Non-Projects';
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    // Use wrench-screwdriver icon to distinguish Non-Projects from Projects
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
     protected static string|\UnitEnum|null $navigationGroup  = 'Tasks';
     protected static ?int $navigationSort = 20;
     protected static ?string $slug = 'non-project';

@@ -19,7 +19,8 @@ class MasterProjectStatusResource extends Resource
 {
     protected static ?string $model = MasterProjectStatus::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    // Use flag icon for Project Statuses to symbolize state/status
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFlag;
 
     protected static ?string $recordTitleAttribute = 'name';
 
