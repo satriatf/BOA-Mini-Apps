@@ -27,6 +27,5 @@
             @endif
         </div>
 
-        {{-- Sign out button removed intentionally --}}
     </x-filament::section>
 </x-filament-widgets::widget>
