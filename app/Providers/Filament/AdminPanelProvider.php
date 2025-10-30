@@ -14,7 +14,7 @@ use Filament\Widgets\AccountWidget;
 use Filament\Actions\Action;
 use Filament\Support\Icons\Heroicon;
 use App\Filament\Resources\Users\UserResource;
-use App\Filament\Widgets\YearlyStatsOverview;
+use App\Filament\Widgets\YearlyTasksOverview;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -46,7 +46,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
-                YearlyStatsOverview::class,
+                YearlyTasksOverview::class,
             ])
             // Customize user menu: replace Profile with Change Password (go to Employees edit), keep Sign out
             ->userMenuItems([
