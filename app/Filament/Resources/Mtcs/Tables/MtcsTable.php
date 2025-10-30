@@ -15,6 +15,10 @@ class MtcsTable
         return $table
             ->searchPlaceholder('Search by no ticket or description')
             ->columns([
+                TextColumn::make('createdBy.employee_name')
+                    ->label('Created By')
+                    ->sortable(),
+
                 TextColumn::make('no_tiket')
                     ->label('No. Ticket')
                     ->searchable()
