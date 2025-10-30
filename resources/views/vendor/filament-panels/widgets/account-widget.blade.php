@@ -11,17 +11,17 @@
         />
 
         <div class="fi-account-widget-main">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                Welcome
+            <h2 class="fi-account-widget-heading">
+                {{ __('filament-panels::widgets/account-widget.welcome', ['app' => config('app.name')]) }}
             </h2>
 
-            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            <p class="fi-account-widget-user-name">
                 {{ filament()->getUserName($user) }}
             </p>
 
             {{-- Added: show user level under name --}}
             @if (filled($user?->level))
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                <p class="text-sm text-gray-500 dark:text-gray-400">
                     {{ $user->level }}
                 </p>
             @endif

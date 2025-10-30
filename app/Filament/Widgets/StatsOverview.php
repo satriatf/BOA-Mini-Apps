@@ -12,13 +12,6 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class StatsOverview extends BaseWidget
 {
-    protected int | string | array $columnSpan = 'full';
-
-    protected function getColumns(): int
-    {
-        return 3;
-    }
-
     protected function getStats(): array
     {
         return [
@@ -32,12 +25,10 @@ class StatsOverview extends BaseWidget
                 ->icon('heroicon-o-code-bracket-square'),
 
             Stat::make('Applications', MasterApplication::count())
-                ->icon('heroicon-o-squares-2x2')
-                ->extraAttributes(['style' => 'grid-column: 1 / 2;']),
+                ->icon('heroicon-o-squares-2x2'),
 
             Stat::make('Holidays', Holiday::count())
-                ->icon('heroicon-o-calendar-days')
-                ->extraAttributes(['style' => 'grid-column: 3 / 4;']),
+                ->icon('heroicon-o-calendar-days'),
         ];
     }
 }
