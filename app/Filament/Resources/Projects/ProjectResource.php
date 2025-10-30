@@ -18,8 +18,8 @@ class ProjectResource extends Resource
 {
     protected static ?string $model = Project::class;
 
-    // Use a briefcase icon to represent Projects (Tasks group)
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBriefcase;
+    // Use a window icon to represent Projects (Tasks group)
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-window';
 
     protected static ?string $recordTitleAttribute = 'project_name';
 

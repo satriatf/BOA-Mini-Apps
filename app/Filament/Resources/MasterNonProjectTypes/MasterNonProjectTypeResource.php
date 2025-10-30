@@ -19,8 +19,8 @@ class MasterNonProjectTypeResource extends Resource
 {
     protected static ?string $model = MasterNonProjectType::class;
 
-    // Use tag icon to represent Non-Project Types in Master group
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
+    // Use briefcase icon to represent Non-Project Types in Master group
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-briefcase';
 
     protected static ?string $recordTitleAttribute = 'name';
 
