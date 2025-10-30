@@ -64,6 +64,8 @@ class CustomUserProvider extends EloquentUserProvider
 
             if ($key === 'email') {
                 $query->where('employee_email', $value);
+            } elseif ($key === 'employee_nik') {
+                $query->where('employee_nik', $value);
             } else {
                 $query->where($key, $value);
             }

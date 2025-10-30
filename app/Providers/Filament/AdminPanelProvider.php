@@ -27,7 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->brandName('Team Management') 
-            ->login()
+            ->login(\App\Filament\Pages\Auth\Login::class)
             ->darkMode(false)
             ->colors([
                 'primary' => Color::Amber,
