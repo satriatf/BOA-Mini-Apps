@@ -51,11 +51,12 @@ class AdminPanelProvider extends PanelProvider
             // Customize user menu: replace Profile with Change Password (go to Employees edit), keep Sign out
             ->userMenuItems([
                 'profile' => function (): Action {
-                    $user = auth()->user();
+                    /** @var \App\Models\User $user */
+                    $user = \Illuminate\Support\Facades\Auth::user();
 
                     return Action::make('changePassword')
                         ->label('Change Password')
-                        ->icon(Heroicon::Key)
+                        ->icon('heroicon-o-key')
                         ->url(UserResource::getUrl('edit', ['record' => $user]))
                         ->visible(fn () => (bool) $user);
                 },
