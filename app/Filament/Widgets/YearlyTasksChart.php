@@ -37,12 +37,10 @@ class YearlyTasksChart extends ChartWidget
     {
         $year = $this->filter ?? Carbon::now()->year;
 
-        // Projects: filter by start_date (tanggal mulai project), exclude soft-deleted
         $projectCount = Project::whereYear('start_date', $year)
             ->whereNull('deleted_at')
             ->count();
         
-        // Non-Projects: filter by tanggal (tanggal MTC), exclude soft-deleted
         $mtcCount = Mtc::whereYear('tanggal', $year)
             ->whereNull('deleted_at')
             ->count();
