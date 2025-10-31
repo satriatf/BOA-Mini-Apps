@@ -62,7 +62,7 @@ class YearlyTasksChart extends ChartWidget
                     ],
                 ],
             ],
-            'labels' => ['Projects', 'Non-Projects'],
+            'labels' => ["Projects ({$projectCount})", "Non-Projects ({$mtcCount})"],
         ];
     }
 
