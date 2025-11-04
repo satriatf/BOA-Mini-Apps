@@ -25,7 +25,10 @@ class UserResource extends Resource
     protected static ?string $navigationLabel = 'Employees';
     protected static ?string $pluralLabel = 'Employees';
     protected static ?string $label = 'Employee';
-    protected static string|\UnitEnum|null $navigationGroup = null; // Untuk grouping menu
+    // Tampilkan Employees di grup "Master" pada sidebar
+    protected static string|\UnitEnum|null $navigationGroup = 'Master';
+    // Urutan dalam grup Master (lebih kecil = lebih atas)
+    protected static ?int $navigationSort = 10;
 
     public static function getNavigationLabel(): string
     {

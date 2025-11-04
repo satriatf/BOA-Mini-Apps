@@ -13,6 +13,7 @@ use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Actions\Action;
 use Filament\Support\Icons\Heroicon;
+use Filament\Navigation\NavigationGroup;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Widgets\YearlyTasksChart;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -42,6 +43,12 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
+            ])
+            // Tentukan urutan grup navigasi di sidebar
+            ->navigationGroups([
+                NavigationGroup::make()->label('Tasks'),
+                NavigationGroup::make()->label('Calendar'),
+                NavigationGroup::make()->label('Master'),
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
