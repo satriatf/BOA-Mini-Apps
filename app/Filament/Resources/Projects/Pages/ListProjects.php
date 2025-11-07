@@ -3,9 +3,15 @@
 namespace App\Filament\Resources\Projects\Pages;
 
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Models\Project;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Table;
+use Filament\Actions\Action;
+use Illuminate\Support\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProjectsExport;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListProjects extends ListRecords
 {
@@ -15,6 +21,18 @@ class ListProjects extends ListRecords
     {
         return [
             CreateAction::make()->label('New Project'),
+
+            
+            Action::make('export_csv')
+                ->label('Export CSV')
+                ->icon('heroicon-o-document-arrow-up')
+                ->action(function () {
+                        $query = $this->getTableQueryForExport();
+                        $rows = $query->with('techLead')->get();
+                        $timestamp = now()->format('Ymd_His');
+                        $filename = "projects_{$timestamp}.xlsx";
+                        return Excel::download(new ProjectsExport($rows), $filename);
+                    }),
         ];
     }
 

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Projects\Pages;
 
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Models\Project;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Actions\Action;
@@ -23,7 +24,6 @@ class EditProject extends EditRecord
         return parent::getCancelFormAction()->label('Cancel');
     }
 
-    /** Map 'pics' -> pic_1/pic_2 sebelum update */
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $pics = $this->form->getState()['pics'] ?? [];
