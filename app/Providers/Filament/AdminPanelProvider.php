@@ -16,6 +16,9 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Navigation\NavigationGroup;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Widgets\YearlyTasksChart;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -64,8 +67,75 @@ class AdminPanelProvider extends PanelProvider
                     return Action::make('changePassword')
                         ->label('Change Password')
                         ->icon('heroicon-o-key')
-                        ->url(UserResource::getUrl('edit', ['record' => $user]))
+                        ->modalHeading('Change Password')
+                        ->form([
+                            TextInput::make('current_password')
+                                ->label('Current Password')
+                                ->password()
+                                ->revealable()
+                                ->required(),
+                            TextInput::make('password')
+                                ->label('New Password')
+                                ->password()
+                                ->revealable()
+                                ->required()
+                                ->minLength(8),
+                            TextInput::make('password_confirmation')
+                                ->label('Confirm New Password')
+                                ->password()
+                                ->revealable()
+                                ->required(),
+                        ])
+                        ->action(function (array $data) use ($user) {
+                            // Validate current password
+                            if (! Hash::check($data['current_password'], $user->password)) {
+                                Notification::make()
+                                    ->title('Current password is incorrect.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            if ($data['password'] !== $data['password_confirmation']) {
+                                Notification::make()
+                                    ->title('New password and confirmation do not match.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            $user->password = Hash::make($data['password']);
+                            $user->save();
+
+                            Notification::make()
+                                ->title('Password changed successfully.')
+                                ->success()
+                                ->send();
+                        })
                         ->visible(fn () => (bool) $user);
+                },
+                // Override logout to show a confirmation modal in English before logging out.
+                'logout' => function (): Action {
+                    return Action::make('logout')
+                        ->label('Sign out')
+                        // 'heroicon-o-logout' is not present in the bundled heroicons set; use a v2 name instead
+                        ->icon('heroicon-o-arrow-right-on-rectangle')
+                        ->modalHeading('Confirm Sign Out')
+                        ->modalSubheading('Are you sure you want to sign out?')
+                        ->requiresConfirmation()
+                        ->action(function () {
+                            $request = request();
+                            \Illuminate\Support\Facades\Auth::logout();
+                            $request->session()->invalidate();
+                            $request->session()->regenerateToken();
+
+                            // Redirect to Filament login URL (use helper to avoid relying on a named route)
+                            $loginUrl = filament()->getLoginUrl();
+
+                            return redirect($loginUrl ?? '/');
+                        });
                 },
             ])
             ->middleware([

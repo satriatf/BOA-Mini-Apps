@@ -67,7 +67,6 @@ class Project extends Model
     {
         return $this->belongsTo(related: User::class, foreignKey: 'technical_lead', ownerKey: 'sk_user');
     }
-
     /**
      * Semua user PIC berdasarkan array ID di kolom `pics`.
      * Selalu return Collection (tidak pernah null) agar aman dipakai di tabel.
