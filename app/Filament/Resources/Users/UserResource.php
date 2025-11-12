@@ -32,13 +32,31 @@ class UserResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        $activeCount = User::where('is_active', 'Active')->count();
         return "Employees";
     }
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) User::where('is_active', 'Active')->count();
+        $count = User::where('is_active', 'Active')
+            ->where(function ($q) {
+                $q->where('is_admin', false)->orWhereNull('is_admin');
+            })
+            ->count();
+
+        return (string) $count;
+    }
+
+    /**
+     * Exclude script/admin users (is_admin = true) from resource queries so they
+     * do not appear anywhere in the Filament UI listings.
+     */
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        return $query->where(function ($q) {
+            $q->where('is_admin', false)->orWhereNull('is_admin');
+        });
     }
 
     public static function form(Schema $schema): Schema

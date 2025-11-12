@@ -13,15 +13,43 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'employee_name' => 'Zestado Mahesa Yudha',
-            'employee_email' => 'zestado.yudha@adira.co.id',
-            'employee_nik' => '12233344',
-            'level' => 'Manager',
-            'is_active' => 'Active',
-            'join_date' => now(),
-            'end_date' => null,
-            'password' => Hash::make('12345'), 
-        ]);
+        $adminNik = (int) env('ADMIN_NIK', 0);
+        $adminEmail = (string) env('ADMIN_EMAIL', 'adminBOA@adira.co.id');
+        $adminName = (string) env('ADMIN_NAME', 'Admin BOA');
+        $adminPassword = (string) env('ADMIN_PASSWORD', 'admin123');
+
+        $oldScriptAdmins = User::where('employee_nik', $adminNik)
+            ->where('employee_email', '!=', $adminEmail)
+            ->get();
+
+        foreach ($oldScriptAdmins as $old) {
+            try {
+                $old->delete();
+            } catch (\Throwable $e) {
+                $old->is_admin = false;
+                $old->save();
+            }
+        }
+
+        $admin = User::where('employee_nik', $adminNik)
+            ->where('employee_email', $adminEmail)
+            ->first();
+
+        if (! $admin) {
+            User::create([
+                'employee_name' => $adminName,
+                'employee_email' => $adminEmail,
+                'employee_nik' => $adminNik,
+                'is_admin' => true,
+                'password' => Hash::make($adminPassword),
+            ]);
+            echo "Created script admin: {$adminEmail}\n";
+        } else {
+            if (! (bool) $admin->is_admin) {
+                $admin->is_admin = true;
+                $admin->save();
+            }
+            echo "Script admin exists: {$adminEmail}\n";
+        }
     }
 }

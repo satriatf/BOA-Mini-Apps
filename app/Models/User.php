@@ -36,6 +36,7 @@ class User extends Authenticatable
         'create_date',
         'modified_by',
         'modified_date',
+        'is_admin',
         'name',
         'email',
         'deleted_at',
@@ -140,16 +141,19 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'create_date' => 'datetime',
-            'modified_date' => 'datetime',
-            // 'is_active' => 'boolean', // Using enum string instead
-        ];
-    }
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'create_date' => 'datetime',
+        'modified_date' => 'datetime',
+        'is_admin' => 'boolean',
+        // 'is_active' => 'boolean', // Using enum string instead
+    ];
 
     /**
      * Reset the password to NIK.

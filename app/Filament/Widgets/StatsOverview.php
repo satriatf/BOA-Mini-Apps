@@ -15,7 +15,8 @@ class StatsOverview extends BaseWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Employees', User::count())
+            // Exclude script/admin users from the Employees stat
+            Stat::make('Employees', User::where(function ($q) { $q->where('is_admin', false)->orWhereNull('is_admin'); })->count())
                 ->icon('heroicon-o-user-group'),
 
             Stat::make('Projects', Project::count())

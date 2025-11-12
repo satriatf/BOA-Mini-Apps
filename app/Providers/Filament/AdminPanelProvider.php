@@ -30,6 +30,23 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        $adminEmail = 'adminBOA@adira.co.id';
+        $user = null;
+        try {
+            $user = \Illuminate\Support\Facades\Auth::user();
+        } catch (\Throwable $e) {
+            $user = null;
+        }
+
+        $groups = [
+            NavigationGroup::make()->label('Tasks'),
+            NavigationGroup::make()->label('Calendar'),
+        ];
+
+        if ($user && method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            $groups[] = NavigationGroup::make()->label('Master');
+        }
+
         return $panel
             ->default()
             ->id('admin')

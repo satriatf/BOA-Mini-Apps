@@ -13,7 +13,17 @@ class UserForm
 {
     public static function configure(Schema $schema): Schema
     {
-return $schema->components([
+        $isEditingAdmin = function (): bool {
+            $routeParam = request()->route('record') ?? request()->route('recordId') ?? null;
+            if (! $routeParam) {
+                return false;
+            }
+
+            $user = \App\Models\User::find($routeParam);
+            return $user?->is_admin ?? false;
+        };
+
+        return $schema->components([
     TextInput::make('employee_nik')
         ->label('Employee NIK')
         ->required()
@@ -46,7 +56,8 @@ return $schema->components([
             'Intern'   => 'Intern',
         ])
         ->placeholder('Select one')
-        ->required(),
+        ->required(fn () => ! ($isEditingAdmin)())
+        ->hidden(fn () => ($isEditingAdmin)()),
 
     Select::make('is_active')
         ->label('Is Active')
