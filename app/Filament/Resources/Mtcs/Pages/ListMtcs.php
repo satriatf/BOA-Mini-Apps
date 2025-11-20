@@ -20,7 +20,7 @@ class ListMtcs extends ListRecords
         return [
             CreateAction::make()->label('New Non-Project'),
             Action::make('export_mtc')
-                ->label('Export CSV')
+                ->label('Export Excel')
                 ->icon('heroicon-o-document-arrow-up')
                 ->action(function () {
                     $query = $this->getTableQueryForExport();

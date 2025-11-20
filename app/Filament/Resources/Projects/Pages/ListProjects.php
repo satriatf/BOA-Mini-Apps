@@ -23,8 +23,8 @@ class ListProjects extends ListRecords
             CreateAction::make()->label('New Project'),
 
             
-            Action::make('export_csv')
-                ->label('Export CSV')
+            Action::make('export_project')
+                ->label('Export Excel')
                 ->icon('heroicon-o-document-arrow-up')
                 ->action(function () {
                         $query = $this->getTableQueryForExport();
