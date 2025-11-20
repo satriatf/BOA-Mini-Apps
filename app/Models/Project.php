@@ -8,6 +8,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use App\Models\ProjectPic;
 
 class Project extends Model
 {
@@ -67,18 +68,23 @@ class Project extends Model
     {
         return $this->belongsTo(related: User::class, foreignKey: 'technical_lead', ownerKey: 'sk_user');
     }
+
+    public function projectPics()
+    {
+        return $this->hasMany(ProjectPic::class, 'sk_project', 'sk_project');
+    }
     /**
      * Semua user PIC berdasarkan array ID di kolom `pics`.
      * Selalu return Collection (tidak pernah null) agar aman dipakai di tabel.
      */
     public function getPicUsersAttribute(): Collection
     {
-        $ids = is_array($this->pics) ? $this->pics : [];
-        if (empty($ids)) {
+        $pics = $this->projectPics()->with('user')->get();
+        if ($pics->isEmpty()) {
             return collect();
         }
 
-        return User::whereIn('sk_user', $ids)->get();
+        return $pics->map(fn($p) => $p->user)->filter();
     }
 
     /**

@@ -39,33 +39,20 @@ class ProjectsTable
                 TextColumn::make('pics')
                     ->label('PIC')
                     ->state(function ($record) {
-                        if (empty($record->pics)) {
-                            return '-';
-                        }
-                        
-                        // Get user names based on IDs in pics array
-                        $userIds = is_array($record->pics) ? $record->pics : [];
-                        if (empty($userIds)) {
-                            return '-';
-                        }
-                        
-                        $users = \App\Models\User::whereIn('sk_user', $userIds)->get();
-                        $names = $users->pluck('employee_name')->values()->all();
-                        
-                        if (empty($names)) {
+                        $pics = $record->projectPics()->with('user')->get();
+                        if ($pics->isEmpty()) {
                             return '-';
                         }
 
                         $lines = [];
-                        foreach ($names as $i => $name) {
-                            // Format: "1. Nama PIC"
+                        foreach ($pics as $i => $p) {
+                            $name = optional($p->user)->employee_name ?? ($p->sk_user ?? '-');
                             $full = ($i + 1) . '. ' . $name;
                             $safe = e($full);
                             $safe = str_replace(' ', '&nbsp;', $safe);
                             $lines[] = $safe;
                         }
 
-                        // Join with <br> for line breaks
                         return implode('<br>', $lines);
                     })
                     ->html()

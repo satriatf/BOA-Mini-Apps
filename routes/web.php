@@ -120,3 +120,8 @@ Route::get('/storage/mtc_attachments/download/{filename}', function ($filename) 
         'X-Accel-Buffering' => 'no' // Disable buffering untuk streaming
     ]);
 })->where('filename', '.*');
+
+use App\Http\Controllers\ProjectPicController;
+
+Route::post('/project-pics/{project_sk}/store', [ProjectPicController::class, 'store'])->name('project-pics.store');
+Route::delete('/project-pics/{project_sk}/delete/{id}', [ProjectPicController::class, 'destroy'])->name('project-pics.destroy');

@@ -79,17 +79,17 @@ class Yearly extends Page
             }
             $pics = !empty($picNames) ? implode(', ', $picNames) : '—';
 
-            // HTML detail (sama seperti Monthly)
+            // HTML detail (match Project Timeline)
             $detailsHtml = "
                 <table style='width:100%;border-collapse:collapse' cellpadding='6'>
-                    <tr><td style='width:140px'><b>Type</b></td><td>Project</td></tr>
+                    <tr><td style='width:140px'><b>Task</b></td><td>Project</td></tr>
                     <tr><td><b>Ticket No</b></td><td>" . e($p->project_ticket_no ?? '—') . "</td></tr>
-                    <tr><td><b>Name</b></td><td>" . e($p->project_name ?? '—') . "</td></tr>
+                    <tr><td><b>Name</b></td><td>" . e($p->project_name ?? "Project {$p->sk_project}") . "</td></tr>
                     <tr><td><b>Status</b></td><td>" . e($p->project_status ?? '—') . "</td></tr>
                     <tr><td><b>Lead</b></td><td>" . e($lead) . "</td></tr>
                     <tr><td><b>PIC</b></td><td>" . e($pics) . "</td></tr>
-                    <tr><td><b>Start</b></td><td>" . e($start?->toDateString()) . "</td></tr>
-                    <tr><td><b>End</b></td><td>" . e($end?->toDateString()) . "</td></tr>
+                    <tr><td><b>Start</b></td><td>" . e($start?->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>End</b></td><td>" . e($end?->format('M j, Y')) . "</td></tr>
                     <tr><td><b>% Done</b></td><td>" . e($done) . "</td></tr>
                 </table>
             ";
@@ -128,15 +128,15 @@ class Yearly extends Page
 
             $detailsHtml = "
                 <table style='width:100%;border-collapse:collapse' cellpadding='6'>
-                    <tr><td style='width:140px'><b>Type</b></td><td>Non-Project</td></tr>
-                    <tr><td><b>No Ticket</b></td><td>" . e($t->no_tiket ?? '—') . "</td></tr>
-                    <tr><td><b>Application</b></td><td>" . e($t->application ?? '—') . "</td></tr>
-                    <tr><td><b>Category</b></td><td>" . e($t->type ?? '—') . "</td></tr>
-                    <tr><td><b>Date</b></td><td>" . e($d->toDateString()) . "</td></tr>
-                    <tr><td><b>Created By</b></td><td>" . e(optional($t->createdBy)->employee_name ?? '—') . "</td></tr>
-                    <tr><td><b>Resolver</b></td><td>" . e(optional($t->resolver)->employee_name ?? '—') . "</td></tr>
-                    <tr><td><b>Description</b></td><td>" . nl2br(e($t->deskripsi ?? '—')) . "</td></tr>
-                    <tr><td><b>Solution</b></td><td>" . nl2br(e($t->solusi ?? '—')) . "</td></tr>
+                    <tr><td style='width:140px'><b>Task</b></td><td>Non-Project</td></tr>
+                    <tr><td><b>Ticket No</b></td><td>" . e($t->no_tiket ?? '—') . "</td></tr>
+                    <tr><td><b>Name</b></td><td>" . e($t->application ?? '—') . "</td></tr>
+                    <tr><td><b>Status</b></td><td>" . e($t->type ?? '—') . "</td></tr>
+                    <tr><td><b>Lead</b></td><td>—</td></tr>
+                    <tr><td><b>PIC</b></td><td>—</td></tr>
+                    <tr><td><b>Start</b></td><td>" . e($d->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>End</b></td><td>" . e($d->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>% Done</b></td><td>—</td></tr>
                 </table>
             ";
 

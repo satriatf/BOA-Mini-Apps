@@ -98,8 +98,18 @@
 
                     const ev   = info.event;
                     const body = ev.extendedProps?.details || '';
-                    const s = ev.start ? ev.start.toLocaleDateString('id-ID') : '';
-                    const e = ev.end   ? new Date(ev.end.getTime()-86400000).toLocaleDateString('id-ID') : '';
+
+                    // use English short month names to match Project Timeline
+                    const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+                    function formatMonthDay(date) {
+                        if (!date) return '';
+                        const d = new Date(date);
+                        if (Number.isNaN(d.getTime())) return '';
+                        return `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+                    }
+
+                    const s = ev.start ? formatMonthDay(ev.start) : '';
+                    const e = ev.end   ? formatMonthDay(new Date(ev.end.getTime()-86400000)) : '';
 
                     const overlay = document.createElement('div');
                     overlay.className = 'fc-detail-overlay';
@@ -107,9 +117,21 @@
                     const card = document.createElement('div');
                     card.className = 'fc-detail-card';
 
-                    const title = document.createElement('div');
-                    title.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:8px;';
-                    title.textContent = ev.title || 'Detail';
+                    // Title as blue link (if edit url provided) to match Project Timeline style
+                    const titleWrap = document.createElement('div');
+                    titleWrap.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:8px;';
+                    // ensure title text color uses Filament primary blue
+                    titleWrap.style.color = colorProject;
+                    if (ev.extendedProps?.url) {
+                        const a = document.createElement('a');
+                        a.href = ev.extendedProps.url;
+                        a.target = '_blank';
+                        a.style.cssText = 'color:' + colorProject + ';text-decoration:none;font-weight:700;display:inline-block;';
+                        a.textContent = ev.title || 'Detail';
+                        titleWrap.appendChild(a);
+                    } else {
+                        titleWrap.textContent = ev.title || 'Detail';
+                    }
 
                     const when = document.createElement('div');
                     when.style.cssText = 'color:#4b5563;margin-bottom:10px;';
@@ -128,7 +150,7 @@
                     close.onclick = () => overlay.remove();
                     actions.appendChild(close);
 
-                    card.appendChild(title);
+                    card.appendChild(titleWrap);
                     card.appendChild(when);
                     card.appendChild(content);
                     card.appendChild(actions);

@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Projects\Schemas;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\View as FormsView;
 use Filament\Schemas\Schema;
 use App\Models\User;
 use App\Models\MasterProjectStatus;
@@ -39,16 +41,6 @@ class ProjectForm
                 ->preload()
                 ->native(false)
                 ->required(),
-
-            Select::make('pics')
-                ->label('PIC')
-                ->options(fn() => User::where('is_active', 'Active')->where('level', 'Staff')->pluck('employee_name', 'sk_user'))
-                ->multiple()
-                ->searchable()
-                ->preload()
-                ->native(false)
-                ->placeholder('Select PIC')
-                ->helperText('Select one or more PICs (Staff level only).'),
 
             DatePicker::make('start_date')
                 ->label('Start Date')

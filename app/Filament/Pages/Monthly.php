@@ -70,20 +70,19 @@ class Monthly extends Page
             }
             $pics = !empty($picNames) ? implode(', ', $picNames) : '—';
 
-            $detailsHtml = "
-                <table style='width:100%;border-collapse:collapse' cellpadding='6'>
-                    <tr><td style='width:140px'><b>Type</b></td><td>Project</td></tr>
-                    <tr><td><b>Ticket No</b></td><td>" . e($p->project_ticket_no ?? '—') . "</td></tr>
-                    <tr><td><b>Name</b></td><td>" . e($p->project_name ?? "Project {$p->sk_project}") . "</td></tr>
-                    <tr><td><b>Status</b></td><td>" . e($p->project_status ?? '—') . "</td></tr>
-                    <tr><td><b>Lead</b></td><td>" . e($lead) . "</td></tr>
-                    <tr><td><b>PIC</b></td><td>" . e($pics) . "</td></tr>
-                    <tr><td><b>Start</b></td><td>{$ps->toDateString()}</td></tr>
-                    <tr><td><b>End</b></td><td>{$pe->toDateString()}</td></tr>
-                    <tr><td><b>% Done</b></td><td>" . e($done) . "</td></tr>
-                </table>
-            ";
-
+                $detailsHtml = "
+                    <table style='width:100%;border-collapse:collapse' cellpadding='6'>
+                        <tr><td style='width:140px'><b>Task</b></td><td>Project</td></tr>
+                        <tr><td><b>Ticket No</b></td><td>" . e($p->project_ticket_no ?? '—') . "</td></tr>
+                        <tr><td><b>Name</b></td><td>" . e($p->project_name ?? "Project {$p->sk_project}") . "</td></tr>
+                        <tr><td><b>Status</b></td><td>" . e($p->project_status ?? '—') . "</td></tr>
+                        <tr><td><b>Lead</b></td><td>" . e($lead) . "</td></tr>
+                        <tr><td><b>PIC</b></td><td>" . e($pics) . "</td></tr>
+                        <tr><td><b>Start</b></td><td>" . e($ps?->format('M j, Y')) . "</td></tr>
+                        <tr><td><b>End</b></td><td>" . e($pe?->format('M j, Y')) . "</td></tr>
+                        <tr><td><b>% Done</b></td><td>" . e($done) . "</td></tr>
+                    </table>
+                ";
             $events[] = [
                 'id'    => "project-{$p->sk_project}",
                 'title' => $title,
@@ -107,23 +106,21 @@ class Monthly extends Page
             if (!$t->tanggal) continue;
 
             $d = Carbon::parse($t->tanggal)->startOfDay();
-
-            // Judul: Application [TIKET] / [NO TIKET] (tanpa #)
             $app   = trim($t->application ?? 'Non-Project');
             $no    = trim((string) ($t->no_tiket ?? ''));
             $title = $no !== '' ? "{$app} [{$no}]" : "{$app} [NO TIKET]";
 
             $detailsHtml = "
                 <table style='width:100%;border-collapse:collapse' cellpadding='6'>
-                    <tr><td style='width:140px'><b>Type</b></td><td>Non-Project</td></tr>
-                    <tr><td><b>No Ticket</b></td><td>" . e($t->no_tiket ?? '—') . "</td></tr>
-                    <tr><td><b>Application</b></td><td>" . e($t->application ?? '—') . "</td></tr>
-                    <tr><td><b>Category</b></td><td>" . e($t->type ?? '—') . "</td></tr>
-                    <tr><td><b>Date</b></td><td>{$d->toDateString()}</td></tr>
-                    <tr><td><b>Created By</b></td><td>" . e(optional($t->createdBy)->employee_name ?? '—') . "</td></tr>
-                    <tr><td><b>Resolver</b></td><td>" . e(optional($t->resolver)->employee_name ?? '—') . "</td></tr>
-                    <tr><td><b>Description</b></td><td>" . nl2br(e($t->deskripsi ?? '—')) . "</td></tr>
-                    <tr><td><b>Solution</b></td><td>" . nl2br(e($t->solusi ?? '—')) . "</td></tr>
+                    <tr><td style='width:140px'><b>Task</b></td><td>Non-Project</td></tr>
+                    <tr><td><b>Ticket No</b></td><td>" . e($t->no_tiket ?? '—') . "</td></tr>
+                    <tr><td><b>Name</b></td><td>" . e($t->application ?? '—') . "</td></tr>
+                    <tr><td><b>Status</b></td><td>" . e($t->type ?? '—') . "</td></tr>
+                    <tr><td><b>Lead</b></td><td>—</td></tr>
+                    <tr><td><b>PIC</b></td><td>—</td></tr>
+                    <tr><td><b>Start</b></td><td>" . e($d?->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>End</b></td><td>" . e($d?->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>% Done</b></td><td>—</td></tr>
                 </table>
             ";
 

@@ -41,12 +41,18 @@ class AdminUserSeeder extends Seeder
                 'employee_email' => $adminEmail,
                 'employee_nik' => $adminNik,
                 'is_admin' => true,
+                'level' => null,
                 'password' => Hash::make($adminPassword),
             ]);
             echo "Created script admin: {$adminEmail}\n";
         } else {
             if (! (bool) $admin->is_admin) {
                 $admin->is_admin = true;
+                $admin->save();
+            }
+            // Ensure admin doesn't inherit a default "level" value
+            if ($admin->level !== null) {
+                $admin->level = null;
                 $admin->save();
             }
             echo "Script admin exists: {$adminEmail}\n";

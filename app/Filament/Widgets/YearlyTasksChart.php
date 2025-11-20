@@ -25,7 +25,7 @@ class YearlyTasksChart extends ChartWidget
     {
         $currentYear = Carbon::now()->year;
         $years = [];
-        
+
         for ($year = 2022; $year <= $currentYear + 5; $year++) {
             $years[$year] = $year;
         }
@@ -37,10 +37,22 @@ class YearlyTasksChart extends ChartWidget
     {
         $year = $this->filter ?? Carbon::now()->year;
 
-        $projectCount = Project::whereYear('start_date', $year)
+        $yearStart = Carbon::create($year, 1, 1)->startOfDay();
+        $yearEnd = Carbon::create($year, 12, 31)->endOfDay();
+
+        $projectCount = Project::where(function ($q) use ($year, $yearStart, $yearEnd) {
+            $q->whereYear('start_date', $year)
+                ->orWhereYear('end_date', $year)
+                ->orWhere(function ($q2) use ($yearStart, $yearEnd) {
+                    $q2->whereNotNull('start_date')
+                        ->whereNotNull('end_date')
+                        ->whereDate('start_date', '<=', $yearEnd)
+                        ->whereDate('end_date', '>=', $yearStart);
+                });
+        })
             ->whereNull('deleted_at')
             ->count();
-        
+
         $mtcCount = Mtc::whereYear('tanggal', $year)
             ->whereNull('deleted_at')
             ->count();

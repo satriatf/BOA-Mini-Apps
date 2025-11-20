@@ -3,8 +3,8 @@
  * Vanilla JS implementation for employee task visualization
  */
 
-// English month names (full names)
-const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+// English month short names (match PHP 'M' format, e.g. 'Oct')
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /**
  * Get number of days in a month for a given year
@@ -121,8 +121,18 @@ function showDetailPopup(tasks) {
         taskTitle.textContent = task.title || 'Task Detail';
         card.appendChild(taskTitle);
         
-        const startDate = task.start ? new Date(task.start).toLocaleDateString('id-ID') : '';
-        const endDate = task.end ? new Date(task.end).toLocaleDateString('id-ID') : '';
+        // Format as "Month Day, Year" (e.g. Oct 24, 2024)
+        function formatMonthDay(dateStr) {
+            const d = new Date(dateStr);
+            if (Number.isNaN(d.getTime())) return '';
+            const month = MONTH_NAMES[d.getMonth()];
+            const day = d.getDate();
+            const year = d.getFullYear();
+            return `${month} ${day}, ${year}`;
+        }
+
+        const startDate = task.start ? formatMonthDay(task.start) : '';
+        const endDate = task.end ? formatMonthDay(task.end) : '';
         
         const whenEl = document.createElement('div');
         whenEl.style.cssText = 'color:#4b5563;margin-bottom:10px;font-size:12px;';

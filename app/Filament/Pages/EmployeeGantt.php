@@ -48,9 +48,12 @@ class EmployeeGantt extends Page
 
         $employeeTasks = [];
 
-        // Process Projects - each project contributes one task to the technical_lead
+        // Process Projects - include projects that have project dates OR PIC rows with dates
         $projects = Project::query()
-            ->where(fn($q) => $q->whereNotNull('start_date')->orWhereNotNull('end_date'))
+            ->where(fn($q) => $q->whereNotNull('start_date')
+                ->orWhereNotNull('end_date')
+                ->orWhereHas('projectPics', fn($q2) => $q2->whereNotNull('start_date')->orWhereNotNull('end_date'))
+            )
             ->get();
 
         foreach ($projects as $project) {
@@ -93,9 +96,11 @@ class EmployeeGantt extends Page
             }
         }
 
-        // Process Projects - also add PICs as separate tasks
+        // Process Projects - also add PICs as separate tasks using project_pics relationship
         foreach ($projects as $project) {
-            if (!$project->pics || !is_array($project->pics)) continue;
+            // Load PIC rows from the project_pics table (soft-deleted rows are excluded by default)
+            $pics = $project->projectPics()->with('user')->get();
+            if ($pics->isEmpty()) continue;
 
             $start = $project->start_date ? Carbon::parse($project->start_date)->startOfDay() : null;
             $end = $project->end_date ? Carbon::parse($project->end_date)->endOfDay() : null;
@@ -118,17 +123,34 @@ class EmployeeGantt extends Page
             $ticketNo = trim((string) ($project->project_ticket_no ?? ''));
             $title = $ticketNo !== '' ? "{$projectName} [{$ticketNo}]" : "{$projectName} [NO TIKET]";
 
-            foreach ($project->pics as $picId) {
-                if (!$picId) continue; // Skip empty PIC IDs
-                
-                
-                if (!isset($employeeTasks[$picId])) {
-                    $employeeTasks[$picId] = [];
+            foreach ($pics as $pic) {
+                if (!$pic->user) continue; // skip if user missing
+
+                // Prefer PIC-specific dates; fall back to project dates
+                $picStart = $pic->start_date ? Carbon::parse($pic->start_date)->startOfDay() : ($start ? $start->clone() : null);
+                $picEnd = $pic->end_date ? Carbon::parse($pic->end_date)->endOfDay() : ($end ? $end->clone() : null);
+
+                if (!$picStart && !$picEnd) continue;
+
+                // If only one date exists, treat as single day
+                if ($picStart && !$picEnd) $picEnd = $picStart->clone();
+                if (!$picStart && $picEnd) $picStart = $picEnd->clone();
+
+                // Clamp to selected year per PIC
+                $picStartClamped = $picStart->max($yearStart);
+                $picEndClamped = $picEnd->min($yearEnd);
+
+                // Skip if no overlap with selected year
+                if ($picStartClamped->gt($yearEnd) || $picEndClamped->lt($yearStart)) continue;
+
+                $employeeId = $pic->user->sk_user;
+                if (!isset($employeeTasks[$employeeId])) {
+                    $employeeTasks[$employeeId] = [];
                 }
 
-                $employeeTasks[$picId][] = [
-                    'start' => $start->toDateString(),
-                    'end' => $end->toDateString(),
+                $employeeTasks[$employeeId][] = [
+                    'start' => $picStartClamped->toDateString(),
+                    'end' => $picEndClamped->toDateString(),
                     'type' => 'project',
                     'title' => $title,
                     'role' => 'PIC',
@@ -217,14 +239,11 @@ class EmployeeGantt extends Page
         $lead = $leadUser?->employee_name ?? '—';
         $done = isset($project->percent_done) ? "{$project->percent_done}%" : '—';
         
-        // Get PIC names
         $picNames = [];
-        if ($project->pics && is_array($project->pics)) {
-            foreach ($project->pics as $picId) {
-                $picUser = User::find($picId);
-                if ($picUser) {
-                    $picNames[] = $picUser->employee_name;
-                }
+        $picUsers = $project->pic_users ?? collect();
+        foreach ($picUsers as $picUser) {
+            if ($picUser && $picUser->employee_name) {
+                $picNames[] = $picUser->employee_name;
             }
         }
         $picsText = !empty($picNames) ? implode(', ', $picNames) : '—';
@@ -237,8 +256,8 @@ class EmployeeGantt extends Page
                 <tr><td><b>Status</b></td><td>" . e($project->project_status ?? '—') . "</td></tr>
                 <tr><td><b>Lead</b></td><td>" . e($lead) . "</td></tr>
                 <tr><td><b>PIC</b></td><td>" . e($picsText) . "</td></tr>
-                <tr><td><b>Start</b></td><td>" . e($project->start_date?->toDateString()) . "</td></tr>
-                <tr><td><b>End</b></td><td>" . e($project->end_date?->toDateString()) . "</td></tr>
+                    <tr><td><b>Start</b></td><td>" . e($project->start_date?->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>End</b></td><td>" . e($project->end_date?->format('M j, Y')) . "</td></tr>
                 <tr><td><b>% Done</b></td><td>" . e($done) . "</td></tr>
             </table>
         ";
@@ -258,7 +277,7 @@ class EmployeeGantt extends Page
                 <tr><td><b>No Ticket</b></td><td>" . e($mtc->no_tiket ?? '—') . "</td></tr>
                 <tr><td><b>Application</b></td><td>" . e($mtc->application ?? '—') . "</td></tr>
                 <tr><td><b>Type</b></td><td>" . e($mtc->type ?? '—') . "</td></tr>
-                <tr><td><b>Date</b></td><td>" . e($mtc->tanggal?->toDateString()) . "</td></tr>
+                <tr><td><b>Date</b></td><td>" . e($mtc->tanggal?->format('M j, Y')) . "</td></tr>
                 <tr><td><b>Created By</b></td><td>" . e($createdBy?->employee_name ?? '—') . "</td></tr>
                 <tr><td><b>Resolver</b></td><td>" . e($resolver?->employee_name ?? '—') . "</td></tr>
                 <tr><td><b>Description</b></td><td>" . nl2br(e($mtc->deskripsi ?? '—')) . "</td></tr>
