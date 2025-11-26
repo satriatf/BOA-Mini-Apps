@@ -13,7 +13,6 @@ class UsersTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->defaultSort('level', 'asc')
             ->searchPlaceholder('Search by name')
             ->columns([
                 TextColumn::make('employee_nik')->label('Employee NIK'),

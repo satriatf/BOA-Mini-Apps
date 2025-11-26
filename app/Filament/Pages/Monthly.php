@@ -37,6 +37,15 @@ class Monthly extends Page
         $yearStart = Carbon::create($year, 1, 1);
         $yearEnd   = Carbon::create($year, 12, 31);
 
+        $activeEmployees = User::where('is_active', 'Active')
+            ->where(function ($q) {
+                $q->whereNull('is_admin')
+                  ->orWhere('is_admin', false)
+                  ->orWhere('is_admin', 0);
+            })
+            ->get()
+            ->keyBy('sk_user');
+
         $events = [];
 
         // ---------------- PROJECTS ----------------
@@ -58,14 +67,26 @@ class Monthly extends Page
             $ticket = trim((string) ($p->project_ticket_no ?? ''));
             $title  = $ticket !== '' ? "{$name} [{$ticket}]" : "{$name} [NO TIKET]";
 
-            $leadUser = $p->technical_lead ? User::find($p->technical_lead) : null;
+            $leadUser = $p->technical_lead ? ($activeEmployees->get($p->technical_lead) ?? null) : null;
             $lead     = $leadUser?->employee_name ?? '—';
+
+            $hasActiveParticipant = false;
+            if ($leadUser) $hasActiveParticipant = true;
+            if (!$hasActiveParticipant && is_array($p->pics) && !empty($p->pics)) {
+                foreach ($p->pics as $picId) {
+                    if ($activeEmployees->has($picId)) { $hasActiveParticipant = true; break; }
+                }
+            }
+
+            if (! $hasActiveParticipant) continue;
             $done     = isset($p->percent_done) ? "{$p->percent_done}%" : '—';
             
             // Get PIC names
             $picNames = [];
             if (is_array($p->pics) && !empty($p->pics)) {
-                $picUsers = User::whereIn('sk_user', $p->pics)->get();
+                $picUsers = User::whereIn('sk_user', $p->pics)
+                    ->where('is_active', 'Active')
+                    ->get();
                 $picNames = $picUsers->pluck('employee_name')->toArray();
             }
             $pics = !empty($picNames) ? implode(', ', $picNames) : '—';
@@ -104,8 +125,13 @@ class Monthly extends Page
                 ->get() as $t
         ) {
             if (!$t->tanggal) continue;
-
             $d = Carbon::parse($t->tanggal)->startOfDay();
+
+            // Only include MTC events that involve an active non-admin user (resolver or created_by)
+            $hasActive = false;
+            if ($t->resolver_id && $activeEmployees->has($t->resolver_id)) $hasActive = true;
+            if (! $hasActive && $t->created_by_id && $activeEmployees->has($t->created_by_id)) $hasActive = true;
+            if (! $hasActive) continue;
             $app   = trim($t->application ?? 'Non-Project');
             $no    = trim((string) ($t->no_tiket ?? ''));
             $title = $no !== '' ? "{$app} [{$no}]" : "{$app} [NO TIKET]";

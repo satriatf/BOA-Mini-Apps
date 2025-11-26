@@ -56,7 +56,10 @@ class UserResource extends Resource
 
         return $query->where(function ($q) {
             $q->where('is_admin', false)->orWhereNull('is_admin');
-        });
+        })
+        ->orderByRaw("CASE WHEN is_active = 'Active' THEN 0 ELSE 1 END")
+        ->orderByRaw("CASE WHEN level = 'Manager' THEN 1 WHEN level = 'Asisten Manager' THEN 2 WHEN level = 'Section Head' THEN 3 WHEN level = 'Staff' THEN 4 WHEN level = 'Intern' THEN 5 ELSE 6 END")
+        ->orderBy('employee_name');
     }
 
     public static function form(Schema $schema): Schema

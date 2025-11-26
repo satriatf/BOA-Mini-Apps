@@ -16,9 +16,13 @@ class Login extends BaseLogin
             ->required()
             ->autocomplete('off')
             ->autofocus()
-            ->numeric()
+            ->type('text')
             ->inputMode('numeric')
-            ->extraInputAttributes(['tabindex' => 1]);
+            ->extraInputAttributes([
+                'tabindex' => 1,
+                'pattern' => '[0-9]*',
+                'oninput' => "this.value=this.value.replace(/[^0-9]/g,'');",
+            ]);
     }
 
     protected function getCredentialsFromFormData(array $data): array

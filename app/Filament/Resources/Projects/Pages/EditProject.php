@@ -32,14 +32,8 @@ class EditProject extends EditRecord
                     Select::make('sk_user')
                         ->label('Select PIC')
                         ->options(function () {
-                            $assigned = [];
-                            if ($this->record) {
-                                $assigned = $this->record->projectPics()->pluck('sk_user')->toArray();
-                            }
-
                             return User::where('is_active', 'Active')
                                 ->where('level', 'Staff')
-                                ->when(! empty($assigned), fn($q) => $q->whereNotIn('sk_user', $assigned))
                                 ->pluck('employee_name', 'sk_user');
                         })
                         ->searchable()

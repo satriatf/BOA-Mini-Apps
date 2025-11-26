@@ -46,6 +46,27 @@ class EmployeeGantt extends Page
         $yearStart = Carbon::create($year, 1, 1)->startOfDay();
         $yearEnd = Carbon::create($year, 12, 31)->endOfDay();
 
+        $activeEmployees = User::where('is_active', 'Active')
+            ->where(function ($q) {
+                $q->whereNull('is_admin')
+                  ->orWhere('is_admin', false)
+                  ->orWhere('is_admin', 0);
+            })
+            ->get()
+            ->keyBy('sk_user');
+
+        $activeEmployees = $activeEmployees->filter(function ($emp) {
+            $lvlRaw = trim((string) ($emp->level ?? ''));
+
+            $lvlNorm = strtolower(preg_replace('/\s+/', ' ', $lvlRaw));
+
+            if (str_contains($lvlNorm, 'manager')) {
+                return false;
+            }
+
+            return true;
+        });
+
         $employeeTasks = [];
 
         // Process Projects - include projects that have project dates OR PIC rows with dates
@@ -57,9 +78,36 @@ class EmployeeGantt extends Page
             ->get();
 
         foreach ($projects as $project) {
+            // Determine project-wide start/end. Prefer explicit project dates,
+            // but if missing, try to derive a span from PIC rows (min start, max end).
             $start = $project->start_date ? Carbon::parse($project->start_date)->startOfDay() : null;
             $end = $project->end_date ? Carbon::parse($project->end_date)->endOfDay() : null;
-            
+
+            // If project has no dates, but some PIC rows have dates, derive project span
+            if (!$start && !$end) {
+                $picsForSpan = $project->projectPics()->whereNotNull('start_date')
+                    ->orWhereNotNull('end_date')
+                    ->get();
+
+                $minStart = null;
+                $maxEnd = null;
+                foreach ($picsForSpan as $pSpan) {
+                    if ($pSpan->start_date) {
+                        $s = Carbon::parse($pSpan->start_date)->startOfDay();
+                        $minStart = $minStart ? min($minStart, $s) : $s;
+                    }
+                    if ($pSpan->end_date) {
+                        $e = Carbon::parse($pSpan->end_date)->endOfDay();
+                        $maxEnd = $maxEnd ? max($maxEnd, $e) : $e;
+                    }
+                }
+
+                if ($minStart || $maxEnd) {
+                    $start = $minStart ?? $maxEnd;
+                    $end = $maxEnd ?? $minStart;
+                }
+            }
+
             if (!$start && !$end) continue;
 
             // If only one date exists, treat as single day
@@ -78,21 +126,23 @@ class EmployeeGantt extends Page
             $ticketNo = trim((string) ($project->project_ticket_no ?? ''));
             $title = $ticketNo !== '' ? "{$projectName} [{$ticketNo}]" : "{$projectName} [NO TIKET]";
 
-            // Add technical lead if exists
             if ($project->technical_lead) {
                 $employeeId = $project->technical_lead;
-                if (!isset($employeeTasks[$employeeId])) {
-                    $employeeTasks[$employeeId] = [];
-                }
 
-                $employeeTasks[$employeeId][] = [
-                    'start' => $start->toDateString(),
-                    'end' => $end->toDateString(),
-                    'type' => 'project',
-                    'title' => $title,
-                    'role' => 'Technical Lead',
-                    'details' => $this->getProjectDetails($project),
-                ];
+                if ($activeEmployees->has($employeeId)) {
+                    if (!isset($employeeTasks[$employeeId])) {
+                        $employeeTasks[$employeeId] = [];
+                    }
+
+                    $employeeTasks[$employeeId][] = [
+                        'start' => $start->toDateString(),
+                        'end' => $end->toDateString(),
+                        'type' => 'project',
+                        'title' => $title,
+                        'role' => 'Technical Lead',
+                        'details' => $this->getProjectDetails($project),
+                    ];
+                }
             }
         }
 
@@ -125,6 +175,8 @@ class EmployeeGantt extends Page
 
             foreach ($pics as $pic) {
                 if (!$pic->user) continue; // skip if user missing
+
+                if (!$activeEmployees->has($pic->user->sk_user)) continue;
 
                 // Prefer PIC-specific dates; fall back to project dates
                 $picStart = $pic->start_date ? Carbon::parse($pic->start_date)->startOfDay() : ($start ? $start->clone() : null);
@@ -176,56 +228,78 @@ class EmployeeGantt extends Page
             $ticketNo = trim((string) ($mtc->no_tiket ?? ''));
             $title = $ticketNo !== '' ? "{$application} [{$ticketNo}]" : "{$application} [NO TIKET]";
 
-            // Add resolver if exists
+            // Add resolver if exists and active
             if ($mtc->resolver_id) {
                 $employeeId = $mtc->resolver_id;
-                if (!isset($employeeTasks[$employeeId])) {
-                    $employeeTasks[$employeeId] = [];
-                }
+                if ($activeEmployees->has($employeeId)) {
+                    if (!isset($employeeTasks[$employeeId])) {
+                        $employeeTasks[$employeeId] = [];
+                    }
 
-                $employeeTasks[$employeeId][] = [
-                    'start' => $tanggal->toDateString(),
-                    'end' => $tanggal->toDateString(),
-                    'type' => 'mtc',
-                    'title' => $title,
-                    'role' => 'Resolver',
-                    'details' => $this->getMtcDetails($mtc),
-                ];
+                    $employeeTasks[$employeeId][] = [
+                        'start' => $tanggal->toDateString(),
+                        'end' => $tanggal->toDateString(),
+                        'type' => 'mtc',
+                        'title' => $title,
+                        'role' => 'Resolver',
+                        'details' => $this->getMtcDetails($mtc),
+                    ];
+                }
             }
 
-            // Add created_by if exists and different from resolver
+            // Add created_by if exists, different from resolver, and active
             if ($mtc->created_by_id && $mtc->created_by_id !== $mtc->resolver_id) {
                 $employeeId = $mtc->created_by_id;
-                if (!isset($employeeTasks[$employeeId])) {
-                    $employeeTasks[$employeeId] = [];
-                }
+                if ($activeEmployees->has($employeeId)) {
+                    if (!isset($employeeTasks[$employeeId])) {
+                        $employeeTasks[$employeeId] = [];
+                    }
 
-                $employeeTasks[$employeeId][] = [
-                    'start' => $tanggal->toDateString(),
-                    'end' => $tanggal->toDateString(),
-                    'type' => 'mtc',
-                    'title' => $title,
-                    'role' => 'Created By',
-                    'details' => $this->getMtcDetails($mtc),
-                ];
+                    $employeeTasks[$employeeId][] = [
+                        'start' => $tanggal->toDateString(),
+                        'end' => $tanggal->toDateString(),
+                        'type' => 'mtc',
+                        'title' => $title,
+                        'role' => 'Created By',
+                        'details' => $this->getMtcDetails($mtc),
+                    ];
+                }
             }
         }
 
-        // Build final rows array with employee names - one row per employee
-        $rows = [];
-        foreach ($employeeTasks as $employeeId => $tasks) {
-            $employee = User::find($employeeId);
-            if (!$employee) continue;
+        $levelPriority = [
+            'asisten manager' => 1,
+            'section head' => 2,
+            'staff' => 3,
+            'intern' => 4,
+        ];
 
+        $orderedEmployees = $activeEmployees->sortBy(function ($emp) use ($levelPriority) {
+            $name = trim($emp->employee_name ?? '');
+
+            $lvlRaw = trim(strtolower((string) ($emp->level ?? '')));
+            $aliases = [
+                'asmen' => 'asisten manager',
+                'section head' => 'section head',
+                'sh' => 'section head',
+            ];
+
+            $lvl = $aliases[$lvlRaw] ?? $lvlRaw;
+            $prio = $levelPriority[$lvl] ?? 99;
+
+            // Primary sort by priority, secondary by name to match Employees list ordering
+            return sprintf('%03d%s', $prio, strtolower($name));
+        });
+
+        $rows = [];
+        foreach ($orderedEmployees as $employee) {
+            $tasks = $employeeTasks[$employee->sk_user] ?? [];
 
             $rows[] = [
                 'name' => $employee->employee_name,
                 'tasks' => $tasks,
             ];
         }
-
-        // Sort rows by employee name
-        usort($rows, fn($a, $b) => strcmp($a['name'], $b['name']));
 
         return $rows;
     }
@@ -241,11 +315,22 @@ class EmployeeGantt extends Page
         
         $picNames = [];
         $picUsers = $project->pic_users ?? collect();
+        $seen = [];
         foreach ($picUsers as $picUser) {
-            if ($picUser && $picUser->employee_name) {
-                $picNames[] = $picUser->employee_name;
+            $name = optional($picUser)->employee_name ?: null;
+            $uid = optional($picUser)->sk_user ?: null;
+            if ($uid) {
+                if (isset($seen[$uid])) continue;
+                $seen[$uid] = true;
+            } else {
+                if ($name === null) continue;
+                if (in_array($name, $seen, true)) continue;
+                $seen[] = $name;
             }
+
+            if ($name) $picNames[] = $name;
         }
+
         $picsText = !empty($picNames) ? implode(', ', $picNames) : '—';
 
         return "

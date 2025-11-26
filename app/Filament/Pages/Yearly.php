@@ -40,6 +40,15 @@ class Yearly extends Page
         $startOfYear = Carbon::create($year, 1, 1)->startOfDay();
         $endOfYear   = Carbon::create($year, 12, 31)->endOfDay();
 
+        $activeEmployees = User::where('is_active', 'Active')
+            ->where(function ($q) {
+                $q->whereNull('is_admin')
+                  ->orWhere('is_admin', false)
+                  ->orWhere('is_admin', 0);
+            })
+            ->get()
+            ->keyBy('sk_user');
+
         /* =========================
          * PROJECTS (rentang, clamp ke tahun)
          * ========================= */
@@ -68,13 +77,24 @@ class Yearly extends Page
             $ticket = trim((string) ($p->project_ticket_no ?? ''));
             $title  = $ticket !== '' ? "{$name} [{$ticket}]" : "{$name} [NO TIKET]";
 
-            $lead = $p->techLead->employee_name ?? '—';
+            $leadUser = $p->techLead ? ($activeEmployees->get($p->techLead->sk_user ?? $p->techLead) ?? null) : null;
+            $lead = $leadUser?->employee_name ?? '—';
             $done = isset($p->percent_done) ? "{$p->percent_done}%" : '—';
-            
-            // Get PIC names
+
+            $hasActiveParticipant = false;
+            if ($leadUser) $hasActiveParticipant = true;
+            if (!$hasActiveParticipant && is_array($p->pics) && !empty($p->pics)) {
+                foreach ($p->pics as $picId) {
+                    if ($activeEmployees->has($picId)) { $hasActiveParticipant = true; break; }
+                }
+            }
+
+            if (! $hasActiveParticipant) continue;
             $picNames = [];
             if (is_array($p->pics) && !empty($p->pics)) {
-                $picUsers = User::whereIn('sk_user', $p->pics)->get();
+                $picUsers = User::whereIn('sk_user', $p->pics)
+                    ->where('is_active', 'Active')
+                    ->get();
                 $picNames = $picUsers->pluck('employee_name')->toArray();
             }
             $pics = !empty($picNames) ? implode(', ', $picNames) : '—';
@@ -120,6 +140,11 @@ class Yearly extends Page
             if (!$t->tanggal) continue;
 
             $d = Carbon::parse($t->tanggal)->startOfDay();
+
+            $hasActive = false;
+            if ($t->resolver_id && $activeEmployees->has($t->resolver_id)) $hasActive = true;
+            if (! $hasActive && $t->created_by_id && $activeEmployees->has($t->created_by_id)) $hasActive = true;
+            if (! $hasActive) continue;
 
             // Judul: Application [TIKET] / [NO TIKET]
             $app   = trim($t->application ?? 'Non-Project');

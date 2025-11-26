@@ -43,17 +43,28 @@ class ProjectsTable
                         if ($pics->isEmpty()) {
                             return '-';
                         }
-
                         $lines = [];
-                        foreach ($pics as $i => $p) {
+                        $seen = [];
+                        $index = 0;
+                        foreach ($pics as $p) {
+                            $uid = $p->sk_user ?? optional($p->user)->sk_user ?? null;
                             $name = optional($p->user)->employee_name ?? ($p->sk_user ?? '-');
-                            $full = ($i + 1) . '. ' . $name;
+
+                            if ($uid) {
+                                if (isset($seen[$uid])) continue; // skip duplicate user entries
+                                $seen[$uid] = true;
+                            } else {
+                                if (in_array($name, $seen, true)) continue;
+                                $seen[] = $name;
+                            }
+
+                            $index++;
+                            $full = $index . '. ' . $name;
                             $safe = e($full);
                             $safe = str_replace(' ', '&nbsp;', $safe);
                             $lines[] = $safe;
                         }
-
-                        return implode('<br>', $lines);
+                        return empty($lines) ? '-' : implode('<br>', $lines);
                     })
                     ->html()
                     ->wrap(),

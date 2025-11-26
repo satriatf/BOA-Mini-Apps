@@ -67,14 +67,24 @@ class ProjectForm
 
             TextInput::make('total_day')
                 ->label('Total Days')
-                ->numeric()
+                ->type('text')
+                ->inputMode('numeric')
                 ->default(0)
+                ->extraInputAttributes([
+                    'pattern' => '[0-9]*',
+                    'oninput' => "this.value=this.value.replace(/[^0-9]/g,'');",
+                ])
                 ->required(),
 
             TextInput::make('percent_done')
                 ->label('% Done')
-                ->numeric()
+                ->type('text')
+                ->inputMode('numeric')
                 ->default(0)
+                ->extraInputAttributes([
+                    'pattern' => '[0-9]*',
+                    'oninput' => "this.value=this.value.replace(/[^0-9]/g,'');",
+                ])
                 ->suffix('%')
                 ->required(),
         ]);

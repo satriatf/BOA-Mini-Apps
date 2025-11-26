@@ -282,7 +282,8 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
     // Create body
     const tbody = document.createElement('tbody');
     
-    // Create rows for each employee - create up to 2 rows per employee (Project and Non-Project)
+    // Create rows for each employee - create up to 2 rows per employee (Project and Non-Project).
+    // Always render a row for each employee (so active employees without tasks still appear).
     rows.forEach((row, rowIndex) => {
         // Ensure row has required properties
         if (!row || typeof row !== 'object') {
@@ -290,43 +291,30 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
             return;
         }
         
-        // Separate tasks by type and apply filters
+        // Separate tasks by type
         const projectTasks = (row.tasks || []).filter(task => task.type === 'project');
         const nonProjectTasks = (row.tasks || []).filter(task => task.type === 'mtc');
-        
-        // Check if employee has tasks that match the current filter
+
         const hasProjectTasks = projectTasks.length > 0;
         const hasNonProjectTasks = nonProjectTasks.length > 0;
-        
-        // If both filters are disabled (default), show all employees with tasks
-        if (!showProject && !showNonProject) {
-            const hasAnyTasks = hasProjectTasks || hasNonProjectTasks;
-            if (!hasAnyTasks) {
-                return; // Skip this employee if they have no tasks at all
-            }
-        } else {
-            // If filters are active, only show employees with matching tasks
-            const shouldShowProject = showProject && hasProjectTasks;
-            const shouldShowNonProject = showNonProject && hasNonProjectTasks;
-            
-            if (!shouldShowProject && !shouldShowNonProject) {
-                return; // Skip this employee if they don't have tasks matching the active filters
-            }
-        }
-        
-        
-        // Create Project and Non-Project rows
+
+        // Determine whether to create rows for each task type based on availability
+        // and the active filters. However, even if no tasks match, we still want
+        // to render a single empty row so the active employee appears in the timeline.
         let projectTr = null;
         let nonProjectTr = null;
 
-        const shouldShowProjectRow = (showProject && hasProjectTasks) || (!showProject && !showNonProject && hasProjectTasks);
-        const shouldShowNonProjectRow = (showNonProject && hasNonProjectTasks) || (!showProject && !showNonProject && hasNonProjectTasks);
-
-        if (shouldShowProjectRow) {
+        if (hasProjectTasks && showProject) {
             projectTr = document.createElement('tr');
         }
-        if (shouldShowNonProjectRow) {
+        if (hasNonProjectTasks && showNonProject) {
             nonProjectTr = document.createElement('tr');
+        }
+
+        // If neither row was created (no tasks matching filters or no tasks at all),
+        // create a single empty row so the employee is still shown.
+        if (!projectTr && !nonProjectTr) {
+            projectTr = document.createElement('tr');
         }
 
         // Build employee cell: if both rows exist, use one cell with rowspan=2 centered vertically
