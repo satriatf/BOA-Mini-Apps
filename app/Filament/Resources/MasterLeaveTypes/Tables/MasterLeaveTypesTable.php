@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Filament\Resources\MasterLeaveTypes\Tables;
+
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+
+class MasterLeaveTypesTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->searchPlaceholder('Search by name')
+            ->columns([
+                TextColumn::make('name')
+                    ->label('Name')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('created_by')
+                    ->label('Created By')
+                    ->getStateUsing(fn ($record) => $record->created_by ?: '-')
+                    ->sortable(),
+                TextColumn::make('created_at')
+                    ->label('Created Date')
+                    ->date()
+                    ->sortable(),
+            ])
+            ->recordUrl(null)
+            ->recordActions([
+                DeleteAction::make()
+                    ->icon('heroicon-o-trash')
+                    ->iconButton(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+}

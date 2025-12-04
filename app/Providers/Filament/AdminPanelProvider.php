@@ -43,7 +43,7 @@ class AdminPanelProvider extends PanelProvider
             NavigationGroup::make()->label('Calendar'),
         ];
 
-        if ($user && method_exists($user, 'isAdmin') && $user->isAdmin()) {
+        if ($user && $user->email === $adminEmail) {
             $groups[] = NavigationGroup::make()->label('Master');
         }
 

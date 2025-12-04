@@ -4,9 +4,11 @@ namespace App\Filament\Pages;
 
 use App\Filament\Resources\Projects\ProjectResource;
 use App\Filament\Resources\Mtcs\MtcResource;
+use App\Filament\Resources\OnLeaves\OnLeaveResource;
 use App\Models\Project;
 use App\Models\Mtc;
 use App\Models\User;
+use App\Models\OnLeave;
 use Carbon\Carbon;
 use Filament\Pages\Page;
 
@@ -59,8 +61,9 @@ class Monthly extends Page
             $ps = $p->start_date ? Carbon::parse($p->start_date)->startOfDay() : $yearStart->clone();
             $pe = $p->end_date   ? Carbon::parse($p->end_date)->endOfDay()   : $yearEnd->clone();
 
-            $s = $ps->max($yearStart);
-            $e = $pe->min($yearEnd);
+            // use the full start/end from the record so events span correctly across year boundaries
+            $s = $ps;
+            $e = $pe;
 
             // Judul: Project Name [TIKET] / [NO TIKET] (tanpa #)
             $name   = trim($p->project_name ?? "Project {$p->sk_project}");
@@ -160,6 +163,50 @@ class Monthly extends Page
                 'backgroundColor' => '#f59e0b',
                 'textColor'       => '#1f2937',
                 'extendedProps'   => ['type' => 'mtc', 'details' => $detailsHtml],
+            ];
+        }
+
+        // ---------------- ON LEAVES ----------------
+        foreach (
+            OnLeave::query()
+                ->select(['id','user_id','leave_type','start_date','end_date'])
+                ->get() as $o
+        ) {
+            if (! $o->start_date && ! $o->end_date) continue;
+
+            $ps = $o->start_date ? Carbon::parse($o->start_date)->startOfDay() : $yearStart->clone();
+            $pe = $o->end_date   ? Carbon::parse($o->end_date)->endOfDay()   : $yearEnd->clone();
+
+            $s = $ps->max($yearStart);
+            $e = $pe->min($yearEnd);
+
+            // Only include if user is active
+            $user = $activeEmployees->get($o->user_id) ?? $o->user;
+            if (! $user) continue;
+
+            $title = ($user->employee_name ?? ('User #'.$o->user_id)) . ' — ' . ($o->leave_type ?? 'Leave');
+
+            $detailsHtml = "
+                <table style='width:100%;border-collapse:collapse' cellpadding='6'>
+                    <tr><td style='width:140px'><b>Task</b></td><td>On Leave</td></tr>
+                    <tr><td><b>User</b></td><td>" . e($user->employee_name ?? '—') . "</td></tr>
+                    <tr><td><b>Type</b></td><td>" . e($o->leave_type ?? '—') . "</td></tr>
+                    <tr><td><b>Start</b></td><td>" . e($ps?->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>End</b></td><td>" . e($pe?->format('M j, Y')) . "</td></tr>
+                </table>
+            ";
+
+            $events[] = [
+                'id'    => "onleave-{$o->id}",
+                'title' => $title,
+                'start' => $ps->toDateString(),
+                'end'   => $pe->copy()->addDay()->toDateString(),
+                'allDay'=> true,
+                'display' => 'block',
+                'url'   => OnLeaveResource::getUrl('edit', ['record' => $o]),
+                'backgroundColor' => '#ef4444',
+                'textColor'       => '#ffffff',
+                'extendedProps'   => ['type' => 'onleave', 'details' => $detailsHtml],
             ];
         }
 

@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\Mtc;
 use App\Models\MasterApplication;
 use App\Models\Holiday;
+use App\Models\OnLeave;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -24,6 +25,9 @@ class StatsOverview extends BaseWidget
 
             Stat::make('Non-Projects', Mtc::count())
                 ->icon('heroicon-o-code-bracket-square'),
+
+            Stat::make('On Leaves', OnLeave::count())
+                ->icon('heroicon-o-user'),
 
             Stat::make('Applications', MasterApplication::count())
                 ->icon('heroicon-o-squares-2x2'),

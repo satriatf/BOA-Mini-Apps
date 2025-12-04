@@ -18,6 +18,9 @@
         <span class="inline-flex items-center gap-2">
             <span style="width:12px;height:12px;background:#f59e0b;display:inline-block;border-radius:2px"></span> Non-Project (MTC)
         </span>
+        <span class="inline-flex items-center gap-2">
+            <span style="width:12px;height:12px;background:#ef4444;display:inline-block;border-radius:2px"></span> On Leave
+        </span>
     </div>
 
     <div id="calendar" class="bg-white rounded-lg shadow p-4"></div>
