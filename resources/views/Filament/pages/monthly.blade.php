@@ -21,6 +21,9 @@
         <span class="inline-flex items-center gap-2">
             <span style="width:12px;height:12px;background:#ef4444;display:inline-block;border-radius:2px"></span> On Leave
         </span>
+        <span class="inline-flex items-center gap-2">
+            <span style="width:12px;height:12px;background:#00ff00;display:inline-block;border-radius:2px"></span> Holiday
+        </span>
     </div>
 
     <div id="calendar" class="bg-white rounded-lg shadow p-4"></div>
@@ -36,6 +39,9 @@
         #calendar { width: 100%; }
         .fc .fc-daygrid-event { border: 0; }
         .fc .fc-toolbar-title { font-weight: 700; }
+
+        /* force full opacity for holiday backgrounds */
+        .fc-bg-event { opacity: 1 !important; }
 
         /* overlay detail */
         .fc-detail-overlay{
@@ -111,15 +117,16 @@
                     titleWrap.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:8px;';
                     // ensure title text color uses Filament primary blue
                     titleWrap.style.color = colorProject;
+                    const detailTitle = ev.extendedProps?.detailTitle || ev.title || 'Detail';
                     if (ev.extendedProps?.url) {
                         const a = document.createElement('a');
                         a.href = ev.extendedProps.url;
                         a.target = '_blank';
                         a.style.cssText = 'color:' + colorProject + ';text-decoration:none;font-weight:700;display:inline-block;';
-                        a.textContent = ev.title || 'Detail';
+                        a.textContent = detailTitle;
                         titleWrap.appendChild(a);
                     } else {
-                        titleWrap.textContent = ev.title || 'Detail';
+                        titleWrap.textContent = detailTitle;
                     }
 
                     const when = document.createElement('div');

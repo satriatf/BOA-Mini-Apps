@@ -18,6 +18,12 @@
         <span class="inline-flex items-center gap-2">
             <span style="width:12px;height:12px;background:#f59e0b;display:inline-block;border-radius:2px"></span> Non-Project (MTC)
         </span>
+        <span class="inline-flex items-center gap-2">
+            <span style="width:12px;height:12px;background:#ef4444;display:inline-block;border-radius:2px"></span> On Leave
+        </span>
+        <span class="inline-flex items-center gap-2">
+            <span style="width:12px;height:12px;background:#00ff00;display:inline-block;border-radius:2px"></span> Holiday
+        </span>
     </div>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
@@ -33,6 +39,9 @@
         .fc-theme-standard .fc-scrollgrid,
         .fc-theme-standard td,
         .fc-theme-standard th { border-color: rgba(107,114,128,.2); }
+
+        /* force full opacity for holiday backgrounds */
+        .fc-bg-event { opacity: 1 !important; }
 
         /* overlay detail (tanpa Edit, hanya Close) */
         .fc-detail-overlay{
@@ -54,11 +63,13 @@
         document.addEventListener('DOMContentLoaded', function() {
             const el = document.getElementById('calendar');
 
-            // ambil warna dari theme filament (fallback biru/kuning)
+            // ambil warna dari theme filament (fallback biru/kuning/hijau/merah)
             const root = getComputedStyle(document.documentElement);
             const cssVar = (name, fallback) => (root.getPropertyValue(name).trim() || fallback);
             const colorProject = cssVar('--fi-color-primary-600', '#3b82f6'); // biru
             const colorMtc     = cssVar('--fi-color-warning-600', '#f59e0b'); // kuning
+            const colorOnLeave = '#ef4444';
+            const colorHoliday = '#00ff00';
 
             // warnai event sesuai type
             const events = @json($events).map(e => {
@@ -71,6 +82,14 @@
                     e.backgroundColor = colorMtc;
                     e.borderColor     = colorMtc;
                     e.textColor       = '#1f2937';
+                } else if (type === 'onleave') {
+                    e.backgroundColor = colorOnLeave;
+                    e.borderColor     = colorOnLeave;
+                    e.textColor       = '#ffffff';
+                } else if (type === 'holiday') {
+                    e.backgroundColor = colorHoliday;
+                    e.borderColor     = colorHoliday;
+                    e.textColor       = '#ffffff';
                 }
                 return e;
             });
@@ -122,15 +141,16 @@
                     titleWrap.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:8px;';
                     // ensure title text color uses Filament primary blue
                     titleWrap.style.color = colorProject;
+                    const detailTitle = ev.extendedProps?.detailTitle || ev.title || 'Detail';
                     if (ev.extendedProps?.url) {
                         const a = document.createElement('a');
                         a.href = ev.extendedProps.url;
                         a.target = '_blank';
                         a.style.cssText = 'color:' + colorProject + ';text-decoration:none;font-weight:700;display:inline-block;';
-                        a.textContent = ev.title || 'Detail';
+                        a.textContent = detailTitle;
                         titleWrap.appendChild(a);
                     } else {
-                        titleWrap.textContent = ev.title || 'Detail';
+                        titleWrap.textContent = detailTitle;
                     }
 
                     const when = document.createElement('div');

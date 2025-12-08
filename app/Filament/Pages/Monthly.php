@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\Mtc;
 use App\Models\User;
 use App\Models\OnLeave;
+use App\Models\Holiday;
 use Carbon\Carbon;
 use Filament\Pages\Page;
 
@@ -207,6 +208,45 @@ class Monthly extends Page
                 'backgroundColor' => '#ef4444',
                 'textColor'       => '#ffffff',
                 'extendedProps'   => ['type' => 'onleave', 'details' => $detailsHtml],
+            ];
+        }
+
+        // ---------------- HOLIDAYS ----------------
+        foreach (
+            Holiday::query()
+                ->whereYear('date', $year)
+                ->get() as $h
+        ) {
+            if (! $h->date) continue;
+            $d = Carbon::parse($h->date)->startOfDay();
+            $title = 'Holiday';
+            $desc  = trim($h->desc ?? '');
+            if ($desc !== '') {
+                $title .= " — {$desc}";
+            }
+
+            $detailsHtml = "
+                <table style='width:100%;border-collapse:collapse' cellpadding='6'>
+                    <tr><td style='width:140px'><b>Type</b></td><td>Holiday</td></tr>
+                    <tr><td><b>Date</b></td><td>" . e($d->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>Description</b></td><td>" . e($h->desc ?? '—') . "</td></tr>
+                </table>
+            ";
+
+            $events[] = [
+                'id'    => "holiday-{$h->id}",
+                'title' => '', // hide text on calendar
+                'start' => $d->toDateString(),
+                'end'   => $d->copy()->addDay()->toDateString(),
+                'allDay'=> true,
+                'display' => 'background',
+                'backgroundColor' => '#00ff00',
+                'borderColor'     => '#00ff00',
+                'extendedProps'   => [
+                    'type' => 'holiday',
+                    'details' => $detailsHtml,
+                    'detailTitle' => $title,
+                ],
             ];
         }
 
