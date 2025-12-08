@@ -7,6 +7,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Auth;
 
 class EditMtc extends EditRecord
 {
@@ -24,6 +25,7 @@ class EditMtc extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+
         $files = $data['attachments'] ?? [];
         $data['attachments_count'] = is_array($files) ? count($files) : 0;
         return $data;

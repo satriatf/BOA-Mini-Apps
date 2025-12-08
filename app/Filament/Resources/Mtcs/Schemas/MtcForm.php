@@ -19,16 +19,35 @@ class MtcForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('created_by_id')
-                ->label('Created By')
-                ->options(fn() => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'Section Head'])->pluck('employee_name', 'sk_user'))
-                ->searchable()->preload()->native(false)->required(),
-
             TextInput::make('no_tiket')
                 ->label('No. Ticket')
-                ->required()
-                ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at'))
-                ->maxLength(50),
+                ->required(fn ($get) => strtolower((string) $get('type')) !== 'operational issue')
+                ->rules(function ($get, $record) {
+                    // Skip unique validation for operational issue (value = 0)
+                    if (strtolower((string) $get('type')) === 'operational issue') {
+                        return ['max:50'];
+                    }
+                    
+                    // Apply unique validation for other types
+                    $rules = ['max:50'];
+                    $uniqueRule = \Illuminate\Validation\Rule::unique('mtcs', 'no_tiket')
+                        ->whereNull('deleted_at')
+                        ->whereNot('no_tiket', '0'); // Ignore '0' in unique check
+                    
+                    if ($record) {
+                        $uniqueRule->ignore($record->sk_mtc, 'sk_mtc');
+                    }
+                    
+                    $rules[] = $uniqueRule;
+                    return $rules;
+                })
+                ->disabled(fn ($get) => strtolower((string) $get('type')) === 'operational issue')
+                ->dehydrated(true)
+                ->afterStateUpdated(function ($state, $set, $get) {
+                    if (strtolower((string) $get('type')) === 'operational issue') {
+                        $set('no_tiket', '0');
+                    }
+                }),
 
             Textarea::make('deskripsi')
                 ->label('Description')
@@ -38,7 +57,13 @@ class MtcForm
             Select::make('type')
                 ->label('Type')
                 ->options(fn() => MasterNonProjectType::pluck('name', 'name'))
-                ->searchable()->native(false)->required(),
+                ->searchable()->native(false)->required()
+                ->live()
+                ->afterStateUpdated(function ($state, $set) {
+                    if (strtolower((string) $state) === 'operational issue') {
+                        $set('no_tiket', '0');
+                    }
+                }),
 
             Select::make('resolver_id')
                 ->label('Resolver PIC')

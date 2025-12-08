@@ -6,6 +6,7 @@ use App\Filament\Resources\Mtcs\MtcResource;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class CreateMtc extends CreateRecord
 {
@@ -23,6 +24,10 @@ class CreateMtc extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        if (Auth::check()) {
+            $data['created_by_id'] = Auth::user()->sk_user;
+        }
+
         $files = $data['attachments'] ?? [];
         $data['attachments_count'] = is_array($files) ? count($files) : 0;
         return $data;
