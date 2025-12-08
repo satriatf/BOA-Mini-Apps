@@ -63,12 +63,17 @@
             const cssVar = (name, fallback) => (root.getPropertyValue(name).trim() || fallback);
             const colorProject = cssVar('--fi-color-primary-600', '#3b82f6');
 
+            const selectedYear = {{ $initYear }};
             const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'id',
                 firstDay: 1,
                 headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
-                initialDate: '{{ $initYear }}-01-01',
+                initialDate: `${selectedYear}-01-01`,
+                validRange: {
+                    start: `${selectedYear}-01-01`,
+                    end: `${selectedYear + 1}-01-01`, // exclusive end, jadi sampai 31 Dec tahun terpilih
+                },
                 height: 'auto',
                 expandRows: true,
                 dayMaxEvents: true,
