@@ -9,6 +9,12 @@ use Illuminate\Support\Carbon;
 
 class YearlyTasksChart extends ChartWidget
 {
+    protected int | string | array $columnSpan = 1;
+
+    protected ?string $maxHeight = '450px';
+    
+    protected ?string $minHeight = '400px';
+
     public function getHeading(): ?string
     {
         return 'Tasks Overview';
@@ -57,6 +63,26 @@ class YearlyTasksChart extends ChartWidget
             ->whereNull('deleted_at')
             ->count();
 
+        // Calculate max value across all years to set consistent Y-axis
+        $maxProjects = Project::selectRaw('EXTRACT(YEAR FROM COALESCE(start_date, end_date)) as year, COUNT(*) as count')
+            ->where(function ($q) {
+                $q->whereNotNull('start_date')
+                    ->orWhereNotNull('end_date');
+            })
+            ->whereNull('deleted_at')
+            ->groupBy('year')
+            ->orderByDesc('count')
+            ->first()?->count ?? 0;
+
+        $maxMtcs = Mtc::selectRaw('EXTRACT(YEAR FROM tanggal) as year, COUNT(*) as count')
+            ->whereNotNull('tanggal')
+            ->whereNull('deleted_at')
+            ->groupBy('year')
+            ->orderByDesc('count')
+            ->first()?->count ?? 0;
+
+        $suggestedMax = 100;
+
         // For bar chart we use two datasets so the legend shows
         // separate items for Projects and Non-Projects with their colors.
         return [
@@ -82,6 +108,7 @@ class YearlyTasksChart extends ChartWidget
             ],
             // Single category to place both bars side-by-side
             'labels' => ['Tasks'],
+            'suggestedMax' => $suggestedMax,
         ];
     }
 
@@ -94,11 +121,11 @@ class YearlyTasksChart extends ChartWidget
     {
         return [
             'maintainAspectRatio' => false,
+            'responsive' => true,
+            'aspectRatio' => 0.8,
             'plugins' => [
                 'legend' => [
                     'display' => true,
-                    // Move legend to the bottom so long labels (with counts)
-                    // are not clipped on the right side of the card.
                     'position' => 'bottom',
                     'align' => 'center',
                     'labels' => [
@@ -108,23 +135,27 @@ class YearlyTasksChart extends ChartWidget
                         ],
                         'color' => '#374151',
                         'padding' => 14,
-                        // Slightly smaller color box to save horizontal space
                         'boxWidth' => 12,
                     ],
                 ],
             ],
-            // Provide a bit of vertical padding to comfortably fit the legend at the bottom
             'layout' => [
                 'padding' => [
-                    'top' => 4,
-                    'bottom' => 6,
+                    'top' => 20,
+                    'bottom' => 15,
+                    'left' => 25,
+                    'right' => 20,
                 ],
             ],
             'scales' => [
                 'y' => [
                     'beginAtZero' => true,
+                    'min' => 0,
+                    'max' => 100,
                     'ticks' => [
                         'precision' => 0,
+                        'stepSize' => 10,
+                        'autoSkip' => false,
                     ],
                     'grid' => [
                         'color' => 'rgba(107,114,128,0.15)',
