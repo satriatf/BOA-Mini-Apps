@@ -60,7 +60,14 @@ class EmployeeGantt extends Page
 
             $lvlNorm = strtolower(preg_replace('/\s+/', ' ', $lvlRaw));
 
+            // Hide managers
             if (str_contains($lvlNorm, 'manager')) {
+                return false;
+            }
+
+            // Hide specific employees by name
+            $name = strtolower(trim((string) ($emp->employee_name ?? '')));
+            if ($name === 'destiana dwi saputri' || $name === 'syafira indah nurkafianti') {
                 return false;
             }
 
