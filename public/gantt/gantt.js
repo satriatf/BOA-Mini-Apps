@@ -295,29 +295,25 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
         const projectTasks = (row.tasks || []).filter(task => task.type === 'project');
         const nonProjectTasks = (row.tasks || []).filter(task => task.type === 'mtc');
 
-        const hasProjectTasks = projectTasks.length > 0;
-        const hasNonProjectTasks = nonProjectTasks.length > 0;
-
-        // Determine whether to create rows for each task type based on availability
-        // and the active filters. However, even if no tasks match, we still want
-        // to render a single empty row so the active employee appears in the timeline.
         let projectTr = null;
         let nonProjectTr = null;
 
-        if (hasProjectTasks && showProject) {
+        // Only create project row if filter Project aktif dan ada task project
+        if (showProject && projectTasks.length > 0) {
             projectTr = document.createElement('tr');
         }
-        if (hasNonProjectTasks && showNonProject) {
+        // Only create non-project row jika filter Non-Project aktif dan ada task non-project
+        if (showNonProject && nonProjectTasks.length > 0) {
             nonProjectTr = document.createElement('tr');
         }
 
-        // If neither row was created (no tasks matching filters or no tasks at all),
-        // create a single empty row so the employee is still shown.
+        // Jika tidak ada satupun row, tetap tampilkan baris kosong untuk karyawan
         if (!projectTr && !nonProjectTr) {
+            // Baris kosong, employee tetap muncul
             projectTr = document.createElement('tr');
         }
 
-        // Build employee cell: if both rows exist, use one cell with rowspan=2 centered vertically
+        // Build employee cell: jika dua row, pakai rowspan=2
         if (projectTr && nonProjectTr) {
             const employeeCell = document.createElement('td');
             employeeCell.className = 'employee';
@@ -332,8 +328,8 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
             targetRow.appendChild(employeeCell);
         }
         
-        // Create day cells for Project row (only if project row exists)
-        if (projectTr) {
+        // Create day cells for Project row (hanya jika project row ada dan filter aktif)
+        if (projectTr && showProject) {
             for (let month = 1; month <= 12; month++) {
                 const days = getMonthDays(year, month);
                 
@@ -386,8 +382,8 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
             }
         }
         
-        // Create day cells for Non-Project row (only if non-project row exists)
-        if (nonProjectTr) {
+        // Create day cells for Non-Project row (hanya jika non-project row ada dan filter aktif)
+        if (nonProjectTr && showNonProject) {
             for (let month = 1; month <= 12; month++) {
                 const days = getMonthDays(year, month);
                 
