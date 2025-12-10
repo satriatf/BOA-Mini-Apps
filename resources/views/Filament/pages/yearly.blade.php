@@ -19,9 +19,6 @@
             <span style="width:12px;height:12px;background:#f59e0b;display:inline-block;border-radius:2px"></span> Non-Project (MTC)
         </span>
         <span class="inline-flex items-center gap-2">
-            <span style="width:12px;height:12px;background:#ef4444;display:inline-block;border-radius:2px"></span> On Leave
-        </span>
-        <span class="inline-flex items-center gap-2">
             <span style="width:12px;height:12px;background:#00ff00;display:inline-block;border-radius:2px"></span> Holiday
         </span>
     </div>
