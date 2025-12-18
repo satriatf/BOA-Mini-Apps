@@ -35,7 +35,12 @@ class MasterApplicationsTable
             ->recordActions([
                 DeleteAction::make()
                     ->icon('heroicon-o-trash')
-                    ->iconButton(),
+                    ->iconButton()
+                    ->modalHeading(function ($record) {
+                        $name = $record->name ?? 'this application';
+                        return 'DELETE "' . $name . '"';
+                    })
+                    ->modalDescription('Are you sure you would like to do this?'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

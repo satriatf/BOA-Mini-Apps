@@ -42,20 +42,17 @@ class OnLeavesTable
             ->recordUrl(null)
             ->recordActions([
                 DeleteAction::make()
-                    ->label('Delete')           // label actions
+                    ->label('Delete')
                     ->icon('heroicon-o-trash')
                     ->iconButton()
-
-                    // 👇 heading modal pakai nama user, bukan id
                     ->modalHeading(function ($record) {
                         $userName = $record->user->employee_name
                             ?? $record->user->name
                             ?? 'this leave';
 
-                        return 'Delete ' . $userName;
+                        return 'DELETE "' . $userName . '"';
                     })
-
-                    ->modalDescription('Are you sure you want to delete this leave?')
+                    ->modalDescription('Are you sure you would like to do this?')
 
                     // simpan deleted_by pakai NAMA user login, lalu soft delete
                     ->action(function ($record) {

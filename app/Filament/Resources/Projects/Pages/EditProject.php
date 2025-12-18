@@ -22,7 +22,13 @@ class EditProject extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()->label('Delete Project'),
+            DeleteAction::make()
+                ->label('Delete')
+                ->modalHeading(function ($record) {
+                    $name = $record->project_name ?? 'this project';
+                    return 'DELETE "' . $name . '"';
+                })
+                ->modalDescription('Are you sure you would like to do this?'),
 
             Action::make('addPic')
                 ->label('Add PIC')

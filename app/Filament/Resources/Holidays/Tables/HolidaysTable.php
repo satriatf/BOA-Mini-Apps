@@ -39,7 +39,12 @@ class HolidaysTable
             ->recordActions([
                 DeleteAction::make()
                     ->icon('heroicon-o-trash')
-                    ->iconButton(),
+                    ->iconButton()
+                    ->modalHeading(function ($record) {
+                        $desc = $record->desc ?? 'this holiday';
+                        return 'DELETE "' . $desc . '"';
+                    })
+                    ->modalDescription('Are you sure you would like to do this?'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

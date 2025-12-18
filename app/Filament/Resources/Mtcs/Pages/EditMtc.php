@@ -15,7 +15,15 @@ class EditMtc extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [ DeleteAction::make()->label('Delete') ];
+        return [ 
+            DeleteAction::make()
+                ->label('Delete')
+                ->modalHeading(function ($record) {
+                    $name = $record->no_tiket ?? $record->application ?? 'this non-project';
+                    return 'DELETE "' . $name . '"';
+                })
+                ->modalDescription('Are you sure you would like to do this?')
+        ];
     }
 
     protected function getCancelFormAction(): Action

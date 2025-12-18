@@ -14,7 +14,13 @@ class EditMasterApplication extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->label('Delete')
+                ->modalHeading(function ($record) {
+                    $name = $record->name ?? 'this application';
+                    return 'DELETE "' . $name . '"';
+                })
+                ->modalDescription('Are you sure you would like to do this?'),
         ];
     }
 

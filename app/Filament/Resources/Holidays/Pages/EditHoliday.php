@@ -14,7 +14,13 @@ class EditHoliday extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->label('Delete')
+                ->modalHeading(function ($record) {
+                    $desc = $record->desc ?? 'this holiday';
+                    return 'DELETE "' . $desc . '"';
+                })
+                ->modalDescription('Are you sure you would like to do this?'),
         ];
     }
 
