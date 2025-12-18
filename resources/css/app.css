@@ -9,3 +9,111 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Fix z-index issues with Project Timeline page */
+.fi-modal,
+.fi-modal-window,
+.fi-dropdown-panel,
+.fi-notification,
+.fi-slide-over {
+    z-index: 50 !important;
+}
+
+.fi-modal-window {
+    z-index: 51 !important;
+}
+
+/* Notifications */
+.fi-notification {
+    z-index: 53 !important;
+}
+
+/* Ensure ALL gantt elements stay well below modals */
+.gantt-container,
+.gantt-container-wrapper,
+.gantt-table,
+.gantt-tooltip,
+.gantt-detail-overlay,
+#timeline-root,
+#timeline-root *,
+#timeline-filters,
+#timeline-legend {
+    z-index: 1 !important;
+}
+
+/* Ensure Filament navbar and topbar stay on top but below modals */
+.fi-topbar,
+.fi-sidebar,
+.fi-header,
+.fi-main-ctn {
+    z-index: 40 !important;
+}
+
+/* User dropdown should be well below modals */
+.fi-topbar .fi-dropdown-panel,
+[x-data*="dropdown"],
+.fi-dropdown-panel,
+.fi-user-menu .fi-dropdown-panel {
+    z-index: 10 !important;
+}
+
+/* Ensure modal overlay covers everything */
+.fi-modal {
+    z-index: 9999 !important;
+}
+
+.fi-modal-window {
+    z-index: 10000 !important;
+}
+/* Force legend to stay behind all modals */
+.fi-page [class*="legend"],
+.fi-page .mb-4.flex.items-center.gap-4.text-sm,
+.fi-page div:has(span[style*="background:#3b82f6"]) {
+    z-index: -1 !important;
+    position: relative;
+}
+
+/* Ensure modal overlay is above everything in project timeline */
+.fi-modal {
+    z-index: 9999 !important;
+}
+
+.fi-modal-window {
+    z-index: 10000 !important;
+}
+
+/* Make sure user dropdown is above modal */
+.fi-dropdown-panel {
+    z-index: 10001 !important;
+}
+/* Force hide ALL dropdown panels when modal is open */
+body:has(.fi-modal) .fi-dropdown-panel,
+body:has(.fi-modal) [role="menu"],
+body:has(.fi-modal) [x-show],
+body:has(.fi-modal) .fi-user-menu .fi-dropdown-panel {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+}
+
+/* Ensure modal backdrop covers everything */
+.fi-modal-backdrop {
+    z-index: 9998 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Set all dropdown panels to very low z-index */
+.fi-dropdown-panel,
+[role="menu"],
+.fi-topbar [x-data] .fi-dropdown-panel,
+.fi-user-menu .fi-dropdown-panel {
+    z-index: 1 !important;
+}
+
+/* When modal exists, force hide specific user menu elements */
+.fi-modal ~ .fi-topbar .fi-dropdown-panel,
+.fi-modal ~ * .fi-dropdown-panel {
+    display: none !important;
+}

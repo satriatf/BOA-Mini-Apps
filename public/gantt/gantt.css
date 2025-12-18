@@ -28,14 +28,14 @@
     color: #374151;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 2;
 }
 
 .gantt-table th.employee-header {
     background: #f3f4f6;
     position: sticky;
     left: 0;
-    z-index: 200;
+    z-index: 3;
     min-width: 250px;
     text-align: left;
 }
@@ -58,7 +58,7 @@
     background: #ffffff;
     position: sticky;
     left: 0;
-    z-index: 50;
+    z-index: 2;
     text-align: left;
     font-weight: 500;
     color: #374151;
@@ -109,7 +109,7 @@
 .gantt-table td.project {
     background: #3b82f6 !important;
     color: #ffffff !important;
-    font-weight: 500;
+    font-weight: 500 !important;
 }
 
 .gantt-table td.project:hover {
@@ -120,12 +120,21 @@
 .gantt-table td.mtc {
     background: #f59e0b !important;
     color: #1f2937 !important;
-    font-weight: 500;
+    font-weight: 500 !important;
 }
 
 .gantt-table td.mtc:hover {
     background: #d97706 !important;
     cursor: pointer;
+}
+
+/* Ensure colors are applied even if other CSS tries to override */
+.gantt-container .gantt-table td.project {
+    background-color: #3b82f6 !important;
+}
+
+.gantt-container .gantt-table td.mtc {
+    background-color: #f59e0b !important;
 }
 
 .gantt-table td.mixed-tasks {
@@ -152,7 +161,7 @@
     padding: 0.5rem;
     border-radius: 0.375rem;
     font-size: 0.75rem;
-    z-index: 1000;
+    z-index: 10;
     max-width: 200px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     pointer-events: none;
@@ -235,7 +244,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.35);
-    z-index: 9999;
+    z-index: 30;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -363,4 +372,84 @@
     color: #374151;
     cursor: pointer;
     user-select: none;
+}
+/* Ensure Filament modals appear above gantt elements */
+.fi-modal,
+.fi-modal-window,
+.fi-dropdown-panel,
+.fi-notification,
+.fi-slide-over {
+    z-index: 50 !important;
+}
+
+.fi-modal-window {
+    z-index: 51 !important;
+}
+
+/* Ensure user menu dropdown appears above gantt */
+[x-data*="dropdown"],
+.fi-dropdown-panel {
+    z-index: 52 !important;
+}
+
+/* Ensure notifications appear above everything */
+.fi-notification {
+    z-index: 53 !important;
+}
+/* Wrapper for gantt container to separate from fixed elements */
+.gantt-container-wrapper {
+    background: #ffffff;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Update gantt container to remove duplicate styling */
+.gantt-container {
+    overflow-x: auto;
+    background: #ffffff;
+    border-radius: 0.5rem;
+}
+
+/* Remove old filter and legend styles since they're now external */
+.filter-container,
+.gantt-legend {
+    display: none !important;
+}
+
+/* Ensure external filters and legend don't scroll with timeline */
+#timeline-filters,
+#timeline-legend {
+    position: relative;
+    z-index: 1;
+    background: #f9fafb;
+}
+
+/* Style for external filter checkboxes */
+#timeline-filters .filter-checkbox {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid #d1d5db;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#timeline-filters .filter-checkbox:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+#timeline-filters .filter-checkbox:checked[id="filter-non-project"] {
+    background-color: #f59e0b;
+    border-color: #f59e0b;
+}
+
+/* Responsive adjustments for external filters */
+@media (max-width: 768px) {
+    #timeline-filters .flex,
+    #timeline-legend .flex {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
 }

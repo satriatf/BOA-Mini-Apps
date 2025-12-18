@@ -199,42 +199,7 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
         return;
     }
     
-    // If both filters are disabled, show all tasks (default behavior)
-    if (!showProject && !showNonProject) {
-        showProject = true;
-        showNonProject = true;
-    }
-    
-    // Create filter controls
-    const filterContainer = document.createElement('div');
-    filterContainer.className = 'filter-container';
-    filterContainer.innerHTML = `
-        <span class="filter-label">Filter by Task:</span>
-        <div class="filter-checkbox-group">
-            <input type="checkbox" id="filter-project" class="filter-checkbox" ${showProject ? 'checked' : ''} data-type="project">
-            <label for="filter-project" class="filter-checkbox-label">Project</label>
-        </div>
-        <div class="filter-checkbox-group">
-            <input type="checkbox" id="filter-non-project" class="filter-checkbox" ${showNonProject ? 'checked' : ''} data-type="non-project">
-            <label for="filter-non-project" class="filter-checkbox-label">Non-Project</label>
-        </div>
-    `;
-    container.appendChild(filterContainer);
-    
-    // Create legend
-    const legend = document.createElement('div');
-    legend.className = 'gantt-legend';
-    legend.innerHTML = `
-        <div class="gantt-legend-item">
-            <div class="gantt-legend-color project"></div>
-            <span>Project</span>
-        </div>
-        <div class="gantt-legend-item">
-            <div class="gantt-legend-color non-project"></div>
-            <span>Non-Project</span>
-        </div>
-    `;
-    container.appendChild(legend);
+    // Note: At least one filter should always be enabled due to UI validation
     
     // Create table
     const table = document.createElement('table');
@@ -354,6 +319,7 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
                     
                     if (overlappingTasks.length > 0) {
                         cell.className = 'project';
+                        console.log('Added project cell with class:', cell.className);
                         
                         // Add text content for multiple tasks
                         if (overlappingTasks.length > 1) {
@@ -408,6 +374,7 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
                     
                     if (overlappingTasks.length > 0) {
                         cell.className = 'mtc';
+                        console.log('Added MTC cell with class:', cell.className);
                         
                         // Add text content for multiple tasks
                         if (overlappingTasks.length > 1) {
@@ -447,34 +414,44 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
     
     table.appendChild(tbody);
     container.appendChild(table);
-    
-    // Add event listeners for the filter checkboxes that were just created
-    const projectFilterCheckbox = container.querySelector('#filter-project');
-    const nonProjectFilterCheckbox = container.querySelector('#filter-non-project');
-    
-    if (projectFilterCheckbox && nonProjectFilterCheckbox) {
-        const updateFilters = () => {
-            const showProjectTasks = projectFilterCheckbox.checked;
-            const showNonProjectTasks = nonProjectFilterCheckbox.checked;
-            renderGantt(container, rows, year, showProjectTasks, showNonProjectTasks);
-        };
-        
-        projectFilterCheckbox.addEventListener('change', updateFilters);
-        nonProjectFilterCheckbox.addEventListener('change', updateFilters);
-    }
 }
 
 /**
  * Initialize the Gantt chart when DOM is loaded
  */
 document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('timeline-root');
+    const container = document.querySelector('#timeline-root .gantt-container');
     const year = window.GANTT_YEAR;
     const data = window.GANTT_DATA;
     
     if (container && year && data !== undefined) {
+
+        
         // Initial render with both filters enabled
         renderGantt(container, data, year, true, true);
+        
+        // Add event listeners for external filter checkboxes
+        const projectFilterCheckbox = document.getElementById('filter-project');
+        const nonProjectFilterCheckbox = document.getElementById('filter-non-project');
+        
+        if (projectFilterCheckbox && nonProjectFilterCheckbox) {
+            const updateFilters = (event) => {
+                const showProjectTasks = projectFilterCheckbox.checked;
+                const showNonProjectTasks = nonProjectFilterCheckbox.checked;
+                
+                // Prevent both checkboxes from being unchecked
+                if (!showProjectTasks && !showNonProjectTasks) {
+                    // Keep the checkbox that was just clicked as checked
+                    event.target.checked = true;
+                    return;
+                }
+                
+                renderGantt(container, data, year, showProjectTasks, showNonProjectTasks);
+            };
+            
+            projectFilterCheckbox.addEventListener('change', updateFilters);
+            nonProjectFilterCheckbox.addEventListener('change', updateFilters);
+        }
     } else {
         console.error('Project Timeline initialization failed: missing data or container');
     }

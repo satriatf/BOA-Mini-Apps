@@ -59,7 +59,7 @@
         .fc-btn-primary{background:#2563eb;color:#fff}
         .fc-btn-gray{background:#e5e7eb;color:#111827}
     </style>
-
+ 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const calendarEl = document.getElementById('calendar');
