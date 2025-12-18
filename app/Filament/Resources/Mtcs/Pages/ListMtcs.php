@@ -18,7 +18,7 @@ class ListMtcs extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('New Non-Project'),
+            CreateAction::make()->label('Add New Non-Project'),
             Action::make('export_mtc')
                 ->label('Export Excel')
                 ->icon('heroicon-o-document-arrow-up')
@@ -26,7 +26,7 @@ class ListMtcs extends ListRecords
                     $query = $this->getTableQueryForExport();
                     $rows = $query->with(['createdBy', 'resolver'])->get();
                     $timestamp = now()->format('Ymd_His');
-                    $filename = "mtcs_{$timestamp}.xlsx";
+                    $filename = "Non-Project_{$timestamp}.xlsx";
                     return Excel::download(new MtcsExport($rows), $filename);
                 }),
         ];

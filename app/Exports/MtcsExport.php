@@ -30,14 +30,13 @@ class MtcsExport implements FromCollection, WithHeadings, ShouldAutoSize, WithSt
                 $r->solusi ?? null,
                 $r->application,
                 $r->tanggal ? $r->tanggal->toDateString() : null,
-                (string) ((int) ($r->attachments_count ?? (is_array($r->attachments) ? count($r->attachments) : 0))),
             ];
         })->values();
     }
 
     public function headings(): array
     {
-        return ['Created By', 'No. Ticket', 'Description', 'Type', 'Resolver PIC', 'Solution', 'Application', 'Date', 'Attachments'];
+        return ['Created By', 'No. Ticket', 'Description', 'Type', 'Resolver PIC', 'Solution', 'Application', 'Date'];
     }
 
     public function styles(Worksheet $sheet)

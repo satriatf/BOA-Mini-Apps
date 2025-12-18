@@ -20,7 +20,7 @@ class ListProjects extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('New Project'),
+            CreateAction::make()->label('Add New Project'),
 
             
             Action::make('export_project')
@@ -30,7 +30,7 @@ class ListProjects extends ListRecords
                         $query = $this->getTableQueryForExport();
                         $rows = $query->with('techLead')->get();
                         $timestamp = now()->format('Ymd_His');
-                        $filename = "projects_{$timestamp}.xlsx";
+                        $filename = "Project_{$timestamp}.xlsx";
                         return Excel::download(new ProjectsExport($rows), $filename);
                     }),
         ];
