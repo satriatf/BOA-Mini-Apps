@@ -65,7 +65,7 @@ class ProjectsExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
                 try {
                     $proj = Project::with('projectPics.user')->find($sk);
                     if ($proj && $proj->projectPics->isNotEmpty()) {
-                        // Use DB projectPics as authoritative
+                        // Use DB projectPics as authoritative - ambil SEMUA tanpa filter
                         $pics = $proj->projectPics->all();
                     }
                 } catch (\Throwable $e) {
@@ -73,6 +73,7 @@ class ProjectsExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
                 }
             }
 
+            // Fallback only if pics is still empty
             if (empty($pics)) {
                 if (! empty($r->project_pics)) {
                     $pics = $r->project_pics;
@@ -83,53 +84,6 @@ class ProjectsExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
                 } elseif (! empty($r->pics) && is_array($r->pics)) {
                     $pics = array_map(fn($p) => (is_object($p) ? $p : ['employee_name' => $p]), $r->pics);
                 }
-            }
-
-            if (! empty($pics) && is_iterable($pics)) {
-                $seen = [];
-                $unique = [];
-                foreach ($pics as $pp) {
-                    $uid = null;
-                    if (is_object($pp)) {
-                        $uid = (string) ($pp->sk_user ?? $pp->user?->sk_user ?? '');
-                    } elseif (is_array($pp) || $pp instanceof \ArrayAccess) {
-                        if (isset($pp['sk_user'])) $uid = (string) $pp['sk_user'];
-                        elseif (isset($pp['user']) && is_array($pp['user']) && isset($pp['user']['sk_user'])) $uid = (string) $pp['user']['sk_user'];
-                        elseif (isset($pp['user']) && is_object($pp['user']) && isset($pp['user']->sk_user)) $uid = (string) $pp['user']->sk_user;
-                        else $uid = (string) ($pp['employee_name'] ?? $pp['name'] ?? '');
-                    } else {
-                        $uid = (string) $pp;
-                    }
-
-                    if ($uid === '') {
-                        $uid = md5(serialize($pp));
-                    }
-
-                    if (! in_array($uid, $seen, true)) {
-                        $seen[] = $uid;
-                        $unique[] = $pp;
-                    }
-                }
-
-                $pics = $unique;
-            }
-
-            if ($proj && ! empty($r->pics) && is_array($r->pics) && ! empty($proj->projectPics)) {
-                $ordered = [];
-                foreach ($r->pics as $uid) {
-                    $found = $proj->projectPics->first(fn($pp) => (string) ($pp->sk_user ?? $pp->user?->sk_user ?? '') === (string) $uid);
-                    if ($found) $ordered[] = $found;
-                }
-                $orderedUserIds = array_map(fn($o) => (string) ($o->sk_user ?? $o->user?->sk_user ?? ''), $ordered);
-                foreach ($proj->projectPics as $pp) {
-                    $ppUid = (string) ($pp->sk_user ?? $pp->user?->sk_user ?? '');
-                    if ($ppUid === '') continue;
-                    if (! in_array($ppUid, $orderedUserIds, true)) {
-                        $ordered[] = $pp;
-                        $orderedUserIds[] = $ppUid;
-                    }
-                }
-                $pics = $ordered;
             }
 
             if (! empty($pics)) {

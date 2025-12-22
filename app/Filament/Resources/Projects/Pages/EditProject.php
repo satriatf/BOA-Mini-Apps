@@ -43,7 +43,8 @@ class EditProject extends EditRecord
                                 ->pluck('employee_name', 'sk_user');
                         })
                         ->searchable()
-                        ->required(),
+                        ->required()
+                        ->live(),
 
                     DatePicker::make('start_date')
                         ->label('Start Date')
@@ -52,6 +53,34 @@ class EditProject extends EditRecord
                         ->native(false)
                         ->displayFormat('d/m/Y')
                         ->closeOnDateSelection()
+                        ->disabledDates(function ($get) {
+                            $picId = $get('sk_user');
+                            if (!$picId) {
+                                return [];
+                            }
+
+                            $project = $this->record;
+                            $disabledDates = [];
+
+                            // Get all existing PIC assignments for this user
+                            $existingPics = ProjectPic::where('sk_project', $project->sk_project)
+                                ->where('sk_user', $picId)
+                                ->whereNull('deleted_at')
+                                ->get();
+
+                            // Collect all dates that are already assigned
+                            foreach ($existingPics as $pic) {
+                                $current = $pic->start_date->copy();
+                                $end = $pic->end_date ? $pic->end_date->copy() : $pic->start_date->copy();
+
+                                while ($current->lte($end)) {
+                                    $disabledDates[] = $current->format('Y-m-d');
+                                    $current->addDay();
+                                }
+                            }
+
+                            return $disabledDates;
+                        })
                         ->afterStateUpdated(function ($state, callable $set, $get) {
                             if ($get('end_date') && $state && $get('end_date') < $state) {
                                 $set('end_date', null);
@@ -66,7 +95,35 @@ class EditProject extends EditRecord
                         ->displayFormat('d/m/Y')
                         ->minDate(fn($get) => $get('start_date'))
                         ->closeOnDateSelection()
-                        ->disabled(fn($get) => !$get('start_date')),
+                        ->disabled(fn($get) => !$get('start_date'))
+                        ->disabledDates(function ($get) {
+                            $picId = $get('sk_user');
+                            if (!$picId) {
+                                return [];
+                            }
+
+                            $project = $this->record;
+                            $disabledDates = [];
+
+                            // Get all existing PIC assignments for this user
+                            $existingPics = ProjectPic::where('sk_project', $project->sk_project)
+                                ->where('sk_user', $picId)
+                                ->whereNull('deleted_at')
+                                ->get();
+
+                            // Collect all dates that are already assigned
+                            foreach ($existingPics as $pic) {
+                                $current = $pic->start_date->copy();
+                                $end = $pic->end_date ? $pic->end_date->copy() : $pic->start_date->copy();
+
+                                while ($current->lte($end)) {
+                                    $disabledDates[] = $current->format('Y-m-d');
+                                    $current->addDay();
+                                }
+                            }
+
+                            return $disabledDates;
+                        }),
                 ])
                 ->action(function (array $data) {
                     $project = $this->record;
@@ -81,6 +138,7 @@ class EditProject extends EditRecord
                         'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
                     ])->validate();
 
+                    // Simple create - overlaps will be handled in display logic
                     ProjectPic::create([
                         'sk_project' => $project->sk_project,
                         'sk_user' => $data['sk_user'],
@@ -89,7 +147,7 @@ class EditProject extends EditRecord
                         'created_by' => optional(Auth::user())->employee_name ?? null,
                     ]);
 
-                    Notification::make()->success()->title('PIC added')->send();
+                    Notification::make()->success()->title('PIC added successfully')->send();
                 }),
 
             Action::make('viewPic')

@@ -156,65 +156,142 @@ class EmployeeGantt extends Page
         // Process Projects - also add PICs as separate tasks using project_pics relationship
         foreach ($projects as $project) {
             // Load PIC rows from the project_pics table (soft-deleted rows are excluded by default)
-            $pics = $project->projectPics()->with('user')->get();
+            $pics = $project->projectPics()->with('user')->orderBy('start_date')->get();
             if ($pics->isEmpty()) continue;
-
-            $start = $project->start_date ? Carbon::parse($project->start_date)->startOfDay() : null;
-            $end = $project->end_date ? Carbon::parse($project->end_date)->endOfDay() : null;
-            
-            if (!$start && !$end) continue;
-
-            // If only one date exists, treat as single day
-            if ($start && !$end) $end = $start->clone();
-            if (!$start && $end) $start = $end->clone();
-
-            // Clamp to selected year
-            $start = $start->max($yearStart);
-            $end = $end->min($yearEnd);
-
-            // Skip if no overlap with selected year
-            if ($start->gt($yearEnd) || $end->lt($yearStart)) continue;
 
             // Create task title
             $projectName = trim($project->project_name ?? "Project {$project->sk_project}");
             $ticketNo = trim((string) ($project->project_ticket_no ?? ''));
             $title = $ticketNo !== '' ? "{$projectName} [{$ticketNo}]" : "{$projectName} [NO TIKET]";
 
+            // Group PICs by user
+            $picsByUser = [];
             foreach ($pics as $pic) {
-                if (!$pic->user) continue; // skip if user missing
-
+                if (!$pic->user) continue;
                 if (!$activeEmployees->has($pic->user->sk_user)) continue;
+                
+                $userId = $pic->user->sk_user;
+                if (!isset($picsByUser[$userId])) {
+                    $picsByUser[$userId] = [];
+                }
+                $picsByUser[$userId][] = $pic;
+            }
 
-                // Prefer PIC-specific dates; fall back to project dates
-                $picStart = $pic->start_date ? Carbon::parse($pic->start_date)->startOfDay() : ($start ? $start->clone() : null);
-                $picEnd = $pic->end_date ? Carbon::parse($pic->end_date)->endOfDay() : ($end ? $end->clone() : null);
+            // Process each user's PICs
+            foreach ($picsByUser as $employeeId => $userPics) {
+                // Sort PICs by date range size (smaller ranges first) to prioritize specific assignments
+                usort($userPics, function($a, $b) {
+                    $aStart = $a->start_date;
+                    $aEnd = $a->end_date ?? $a->start_date;
+                    $bStart = $b->start_date;
+                    $bEnd = $b->end_date ?? $b->start_date;
+                    
+                    $aDays = $aStart->diffInDays($aEnd) + 1;
+                    $bDays = $bStart->diffInDays($bEnd) + 1;
+                    
+                    // Smaller range first
+                    return $aDays <=> $bDays;
+                });
 
-                if (!$picStart && !$picEnd) continue;
-
-                // If only one date exists, treat as single day
-                if ($picStart && !$picEnd) $picEnd = $picStart->clone();
-                if (!$picStart && $picEnd) $picStart = $picEnd->clone();
-
-                // Clamp to selected year per PIC
-                $picStartClamped = $picStart->max($yearStart);
-                $picEndClamped = $picEnd->min($yearEnd);
-
-                // Skip if no overlap with selected year
-                if ($picStartClamped->gt($yearEnd) || $picEndClamped->lt($yearStart)) continue;
-
-                $employeeId = $pic->user->sk_user;
-                if (!isset($employeeTasks[$employeeId])) {
-                    $employeeTasks[$employeeId] = [];
+                // Collect all assigned dates from ALL pics for this user
+                $allAssignedDates = [];
+                foreach ($userPics as $pic) {
+                    $picStart = $pic->start_date ? Carbon::parse($pic->start_date)->startOfDay() : null;
+                    $picEnd = $pic->end_date ? Carbon::parse($pic->end_date)->endOfDay() : null;
+                    
+                    if (!$picStart || !$picEnd) {
+                        if ($picStart) $picEnd = $picStart->clone();
+                        if ($picEnd) $picStart = $picEnd->clone();
+                    }
+                    
+                    if ($picStart && $picEnd) {
+                        $current = $picStart->copy();
+                        while ($current->lte($picEnd)) {
+                            $allAssignedDates[$current->format('Y-m-d')] = true;
+                            $current->addDay();
+                        }
+                    }
                 }
 
-                $employeeTasks[$employeeId][] = [
-                    'start' => $picStartClamped->toDateString(),
-                    'end' => $picEndClamped->toDateString(),
-                    'type' => 'project',
-                    'title' => $title,
-                    'role' => 'PIC',
-                    'details' => $this->getProjectDetails($project),
-                ];
+                // Now process each PIC and only show dates that haven't been "claimed" by previous PICs
+                $claimedDates = [];
+                
+                foreach ($userPics as $pic) {
+                    $picStart = $pic->start_date ? Carbon::parse($pic->start_date)->startOfDay() : null;
+                    $picEnd = $pic->end_date ? Carbon::parse($pic->end_date)->endOfDay() : null;
+
+                    if (!$picStart && !$picEnd) continue;
+                    if ($picStart && !$picEnd) $picEnd = $picStart->clone();
+                    if (!$picStart && $picEnd) $picStart = $picEnd->clone();
+
+                    // Clamp to year
+                    $picStartClamped = $picStart->clone()->max($yearStart);
+                    $picEndClamped = $picEnd->clone()->min($yearEnd);
+
+                    if ($picStartClamped->gt($yearEnd) || $picEndClamped->lt($yearStart)) continue;
+
+                    // For this PIC, find which dates are NOT yet claimed
+                    $availableDates = [];
+                    $current = $picStartClamped->copy();
+                    while ($current->lte($picEndClamped)) {
+                        $dateKey = $current->format('Y-m-d');
+                        if (!isset($claimedDates[$dateKey])) {
+                            $availableDates[] = $dateKey;
+                            $claimedDates[$dateKey] = true;
+                        }
+                        $current->addDay();
+                    }
+
+                    if (empty($availableDates)) continue;
+
+                    // Group consecutive dates
+                    $ranges = [];
+                    $rangeStart = null;
+                    $rangeEnd = null;
+
+                    foreach ($availableDates as $dateStr) {
+                        $date = Carbon::parse($dateStr);
+                        
+                        if ($rangeStart === null) {
+                            $rangeStart = $date->copy();
+                            $rangeEnd = $date->copy();
+                        } else {
+                            if ($date->copy()->subDay()->isSameDay($rangeEnd)) {
+                                $rangeEnd = $date->copy();
+                            } else {
+                                $ranges[] = [
+                                    'start' => $rangeStart->format('Y-m-d'),
+                                    'end' => $rangeEnd->format('Y-m-d')
+                                ];
+                                $rangeStart = $date->copy();
+                                $rangeEnd = $date->copy();
+                            }
+                        }
+                    }
+
+                    if ($rangeStart !== null) {
+                        $ranges[] = [
+                            'start' => $rangeStart->format('Y-m-d'),
+                            'end' => $rangeEnd->format('Y-m-d')
+                        ];
+                    }
+
+                    // Add tasks
+                    if (!isset($employeeTasks[$employeeId])) {
+                        $employeeTasks[$employeeId] = [];
+                    }
+
+                    foreach ($ranges as $range) {
+                        $employeeTasks[$employeeId][] = [
+                            'start' => $range['start'],
+                            'end' => $range['end'],
+                            'type' => 'project',
+                            'title' => $title,
+                            'role' => 'PIC',
+                            'details' => $this->getProjectDetails($project),
+                        ];
+                    }
+                }
             }
         }
 
