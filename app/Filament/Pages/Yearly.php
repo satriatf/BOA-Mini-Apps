@@ -191,17 +191,20 @@ class Yearly extends Page
             $no    = trim((string) ($t->no_tiket ?? ''));
             $title = $no !== '' ? "{$app} [{$no}]" : "{$app} [NO TIKET]";
 
+            $createdByName = $t->createdBy?->employee_name ?? '—';
+            $resolverName  = $t->resolver?->employee_name ?? '—';
+
             $detailsHtml = "
                 <table style='width:100%;border-collapse:collapse' cellpadding='6'>
                     <tr><td style='width:140px'><b>Task</b></td><td>Non-Project</td></tr>
                     <tr><td><b>Ticket No</b></td><td>" . e($t->no_tiket ?? '—') . "</td></tr>
-                    <tr><td><b>Name</b></td><td>" . e($t->application ?? '—') . "</td></tr>
-                    <tr><td><b>Status</b></td><td>" . e($t->type ?? '—') . "</td></tr>
-                    <tr><td><b>Lead</b></td><td>—</td></tr>
-                    <tr><td><b>PIC</b></td><td>—</td></tr>
-                    <tr><td><b>Start</b></td><td>" . e($d->format('M j, Y')) . "</td></tr>
-                    <tr><td><b>End</b></td><td>" . e($d->format('M j, Y')) . "</td></tr>
-                    <tr><td><b>% Done</b></td><td>—</td></tr>
+                    <tr><td><b>Application</b></td><td>" . e($t->application ?? '—') . "</td></tr>
+                    <tr><td><b>Type</b></td><td>" . e($t->type ?? '—') . "</td></tr>
+                    <tr><td><b>Date</b></td><td>" . e($d->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>Created By</b></td><td>" . e($createdByName) . "</td></tr>
+                    <tr><td><b>Resolver</b></td><td>" . e($resolverName) . "</td></tr>
+                    <tr><td><b>Description</b></td><td>" . e($t->deskripsi ?? '—') . "</td></tr>
+                    <tr><td><b>Solution</b></td><td>" . e($t->solusi ?? '—') . "</td></tr>
                 </table>
             ";
 
