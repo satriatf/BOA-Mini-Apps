@@ -2,11 +2,18 @@
 
 namespace App\Filament\Resources\Mtcs\Tables;
 
+use App\Models\MasterNonProjectType;
+use App\Models\MasterApplication;
+use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class MtcsTable
 {
@@ -81,7 +88,42 @@ class MtcsTable
                     })
                     ->html(), 
             ])
-            ->filters([])
+            ->filters([
+                SelectFilter::make('type')
+                    ->label('Type')
+                    ->options(fn () => MasterNonProjectType::pluck('name', 'name')->toArray())
+                    ->searchable()
+                    ->indicator('Type'),
+
+                SelectFilter::make('resolver_id')
+                    ->label('Resolver PIC')
+                    ->options(fn () => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'Section Head'])->pluck('employee_name', 'sk_user')->toArray())
+                    ->searchable()
+                    ->indicator('Resolver'),
+
+                SelectFilter::make('application')
+                    ->label('Application')
+                    ->options(fn () => MasterApplication::pluck('name', 'name')->toArray())
+                    ->searchable()
+                    ->indicator('Application'),
+
+                Filter::make('tanggal')
+                    ->label('Date Range')
+                    ->form([
+                        DatePicker::make('from')->label('Date from'),
+                        DatePicker::make('to')->label('Date to'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        return $query
+                            ->when($data['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('tanggal', '>=', $date))
+                            ->when($data['to'] ?? null, fn (Builder $q, $date) => $q->whereDate('tanggal', '<=', $date));
+                    }),
+            ])
+            ->filtersTriggerAction(fn ($action) => $action
+                ->button()
+                ->label('Filter')
+                ->icon('heroicon-o-funnel'),
+            )
             ->recordActions([
                 EditAction::make()->label('Edit'),
             ])
