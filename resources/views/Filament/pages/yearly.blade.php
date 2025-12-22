@@ -40,6 +40,14 @@
         /* force full opacity for holiday backgrounds */
         .fc-bg-event { opacity: 1 !important; }
 
+        /* weekend (Sabtu & Minggu) merah: hanya header & nomor tanggal (tanpa background blok) */
+        .fc-day-sat .fc-col-header-cell-cushion,
+        .fc-day-sun .fc-col-header-cell-cushion,
+        .fc-day-sat .fc-daygrid-day-number,
+        .fc-day-sun .fc-daygrid-day-number {
+            color: #ef4444 !important; /* merah Tailwind red-500 */
+        }
+
         /* overlay detail (tanpa Edit, hanya Close) */
         .fc-detail-overlay{
             position:fixed;inset:0;background:rgba(0,0,0,.35);

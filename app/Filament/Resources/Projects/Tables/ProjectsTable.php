@@ -2,11 +2,17 @@
 
 namespace App\Filament\Resources\Projects\Tables;
 
+use App\Models\MasterProjectStatus;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProjectsTable
 {
@@ -91,7 +97,79 @@ class ProjectsTable
                     ->formatStateUsing(fn($state) => $state . '%'),
 
             ])
-            ->filters([])
+            ->filters([
+                SelectFilter::make('project_status')
+                    ->label('Project Status')
+                    ->options(fn () => MasterProjectStatus::pluck('name', 'name')->toArray())
+                    ->searchable()
+                    ->indicator('Status'),
+                Filter::make('project_ticket_no')
+                    ->label('Project Ticket No')
+                    ->form([
+                        TextInput::make('value')
+                            ->label('Project Ticket No')
+                            ->placeholder('e.g. PMO-123456'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        return $query->when(
+                            $data['value'] ?? null,
+                            fn (Builder $q, $value) => $q->where('project_ticket_no', 'like', '%' . $value . '%'),
+                        );
+                    }),
+                Filter::make('project_name')
+                    ->label('Project Name')
+                    ->form([
+                        TextInput::make('value')
+                            ->label('Project Name')
+                            ->placeholder('e.g. Digitalisasi'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        return $query->when(
+                            $data['value'] ?? null,
+                            fn (Builder $q, $value) => $q->where('project_name', 'like', '%' . $value . '%'),
+                        );
+                    }),
+                Filter::make('tech_lead')
+                    ->label('Technical Lead')
+                    ->form([
+                        TextInput::make('value')
+                            ->label('Technical Lead')
+                            ->placeholder('Nama PIC / Lead'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        return $query->when(
+                            $data['value'] ?? null,
+                            fn (Builder $q, $value) => $q->whereHas(
+                                'techLead',
+                                fn (Builder $sub) => $sub->where('employee_name', 'like', '%' . $value . '%'),
+                            ),
+                        );
+                    }),
+                Filter::make('date_range')
+                    ->label('Date Range')
+                    ->form([
+                        DatePicker::make('start_from')
+                            ->label('Start Date From'),
+                        DatePicker::make('end_to')
+                            ->label('End Date To'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        return $query
+                            ->when(
+                                $data['start_from'] ?? null,
+                                fn (Builder $q, $date) => $q->whereDate('start_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['end_to'] ?? null,
+                                fn (Builder $q, $date) => $q->whereDate('end_date', '<=', $date),
+                            );
+                    }),
+            ])
+            ->filtersTriggerAction(fn ($action) => $action
+                ->button()
+                ->label('Filter')
+                ->icon('heroicon-o-funnel'),
+            )
             ->recordActions([
                 EditAction::make()->label('Edit'),
             ])

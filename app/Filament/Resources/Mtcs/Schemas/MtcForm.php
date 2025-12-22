@@ -70,10 +70,6 @@ class MtcForm
                 ->options(fn() => User::where('is_active', 'Active')->whereIn('level', ['Staff', 'Section Head'])->pluck('employee_name', 'sk_user'))
                 ->searchable()->preload()->native(false),
 
-            Textarea::make('solusi')
-                ->label('Solution')
-                ->rows(3),
-
             Select::make('application')
                 ->label('Application')
                 ->options(fn() => MasterApplication::pluck('name', 'name'))
@@ -84,6 +80,10 @@ class MtcForm
                 ->native(false)
                 ->displayFormat('d/m/Y')
                 ->required(),
+
+            Textarea::make('solusi')
+                ->label('Solution')
+                ->rows(3),
 
             FileUpload::make('attachments')
                 ->label('Attachments')

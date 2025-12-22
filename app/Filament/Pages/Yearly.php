@@ -73,6 +73,37 @@ class Yearly extends Page
             $s = $start->clone()->max($startOfYear);
             $e = $end->clone()->min($endOfYear);
 
+            // Bagi rentang menjadi beberapa segmen HANYA hari kerja (Mon–Fri),
+            // sehingga event tidak tampil di weekend.
+            $segments = [];
+            $currentStart = null;
+            $currentEnd   = null;
+
+            for ($day = $s->copy(); $day->lte($e); $day->addDay()) {
+                // Carbon: 1 = Mon, ..., 6 = Sat, 7 = Sun
+                if (in_array($day->dayOfWeekIso, [6, 7], true)) {
+                    if ($currentStart) {
+                        $segments[] = [$currentStart->copy(), $currentEnd->copy()];
+                        $currentStart = $currentEnd = null;
+                    }
+                    continue;
+                }
+
+                if (! $currentStart) {
+                    $currentStart = $day->copy();
+                }
+                $currentEnd = $day->copy();
+            }
+
+            if ($currentStart) {
+                $segments[] = [$currentStart->copy(), $currentEnd->copy()];
+            }
+
+            // Jika seluruh rentang hanya weekend (tidak ada segmen hari kerja), skip.
+            if (empty($segments)) {
+                continue;
+            }
+
             // Judul: Project Name [TIKET] / [NO TIKET]
             $name   = trim($p->project_name ?? "Project {$p->sk_project}");
             $ticket = trim((string) ($p->project_ticket_no ?? ''));
@@ -115,17 +146,20 @@ class Yearly extends Page
                 </table>
             ";
 
-            $events[] = [
-                'title'   => $title,
-                'start'   => $s->toDateString(),
-                'end'     => $e->clone()->addDay()->toDateString(), // end exclusive utk FC
-                'allDay'  => true,
-                'display' => 'block',
-                'extendedProps' => [
-                    'type'    => 'project',
-                    'details' => $detailsHtml,
-                ],
-            ];
+            foreach ($segments as [$segStart, $segEnd]) {
+                $events[] = [
+                    'title'   => $title,
+                    'start'   => $segStart->toDateString(),
+                    // FullCalendar pakai end exclusive, jadi +1 hari
+                    'end'     => $segEnd->clone()->addDay()->toDateString(),
+                    'allDay'  => true,
+                    'display' => 'block',
+                    'extendedProps' => [
+                        'type'    => 'project',
+                        'details' => $detailsHtml,
+                    ],
+                ];
+            }
         }
 
         /* =========================
@@ -141,6 +175,11 @@ class Yearly extends Page
             if (!$t->tanggal) continue;
 
             $d = Carbon::parse($t->tanggal)->startOfDay();
+
+            // Skip jika jatuh di weekend (Sabtu/Minggu)
+            if ($d->isWeekend()) {
+                continue;
+            }
 
             $hasActive = false;
             if ($t->resolver_id && $activeEmployees->has($t->resolver_id)) $hasActive = true;
