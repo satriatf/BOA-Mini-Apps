@@ -6,6 +6,8 @@ use App\Models\Project;
 use App\Models\Mtc;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\HtmlString;
 
 class YearlyTasksChart extends ChartWidget
 {
@@ -15,9 +17,49 @@ class YearlyTasksChart extends ChartWidget
     
     protected ?string $minHeight = '400px';
 
-    public function getHeading(): ?string
+    public function getHeading(): string|Htmlable|null
     {
-        return 'Tasks Overview';
+        $tooltipId = 'tasks-overview-tooltip-' . uniqid();
+        
+        $tooltipContent = '
+            <div class="text-sm">
+                
+                <p class="text-gray-700 text-xs leading-relaxed mb-3">
+                    Menampilkan perbandingan jumlah Projects dan Non Projects per tahun.
+                </p>
+                
+            </div>
+        ';
+        
+        return new HtmlString(
+            '<div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                <span class="font-semibold">Tasks Overview</span>
+                <div style="position: relative; display: inline-block;" x-data="{ showTooltip: false }">
+                    <span 
+                        style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background-color: #dbeafe; color: #2563eb; font-size: 10px; font-weight: 600; cursor: help; transition: background-color 0.2s;"
+                        @mouseenter="showTooltip = true; $el.style.backgroundColor = \'#bfdbfe\'"
+                        @mouseleave="showTooltip = false; $el.style.backgroundColor = \'#dbeafe\'"
+                    >
+                        i
+                    </span>
+                    <template x-if="showTooltip">
+                        <div 
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            style="position: absolute; left: 30px; top: 30px; width: 320px; z-index: 50; pointer-events: none;"
+                        >
+                            <div class="bg-white rounded-xl shadow-2xl border border-gray-200 backdrop-blur-sm" style="padding: 1.75rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05); background: linear-gradient(to bottom, rgba(255, 255, 255, 0.98), rgba(249, 250, 251, 0.98));">
+                                ' . $tooltipContent . '
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>'
+        );
     }
 
     public ?string $filter = null;
