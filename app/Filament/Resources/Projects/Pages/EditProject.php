@@ -228,7 +228,7 @@ class EditProject extends EditRecord
                         ->disabled()
                         ->reactive()
                         ->default(0)
-                        ->helperText(fn($get) => $get('has_overtime') ? 'Regular days (weekdays only) + Overtime days (all days)' : 'Weekdays only'),
+                        ->helperText(fn($get) => $get('has_overtime') ? 'Regular days (weekdays only) + Overtime days (weekends only)' : 'Weekdays only'),
                 ])
                 ->action(function (array $data) {
                     $project = $this->record;
@@ -339,11 +339,17 @@ class EditProject extends EditRecord
             }
         }
         
-        // Calculate overtime days (all days)
+        // Calculate overtime days (weekends only)
         if ($get('has_overtime') && $get('overtime_start_date') && $get('overtime_end_date')) {
             $overtimeStart = \Carbon\Carbon::parse($get('overtime_start_date'));
             $overtimeEnd = \Carbon\Carbon::parse($get('overtime_end_date'));
-            $overtimeDays = $overtimeStart->diffInDays($overtimeEnd) + 1;
+            
+            while ($overtimeStart->lte($overtimeEnd)) {
+                if ($overtimeStart->isWeekend()) {
+                    $overtimeDays++;
+                }
+                $overtimeStart->addDay();
+            }
         }
         
         $set('total_days', $regularDays + $overtimeDays);
@@ -367,11 +373,17 @@ class EditProject extends EditRecord
             }
         }
         
-        // Calculate overtime days (all days)
+        // Calculate overtime days (weekends only)
         if ($hasOvertime && $overtimeStartDate && $overtimeEndDate) {
             $overtimeStart = \Carbon\Carbon::parse($overtimeStartDate);
             $overtimeEnd = \Carbon\Carbon::parse($overtimeEndDate);
-            $overtimeDays = $overtimeStart->diffInDays($overtimeEnd) + 1;
+            
+            while ($overtimeStart->lte($overtimeEnd)) {
+                if ($overtimeStart->isWeekend()) {
+                    $overtimeDays++;
+                }
+                $overtimeStart->addDay();
+            }
         }
         
         return $regularDays + $overtimeDays;

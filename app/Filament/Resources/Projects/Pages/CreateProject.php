@@ -213,7 +213,7 @@ class CreateProject extends CreateRecord
                         ->disabled()
                         ->reactive()
                         ->default(0)
-                        ->helperText(fn($get) => $get('has_overtime') ? 'Regular days (weekdays only) + Overtime days (all days)' : 'Weekdays only'),
+                        ->helperText(fn($get) => $get('has_overtime') ? 'Regular days (weekdays only) + Overtime days (weekends only)' : 'Weekdays only'),
                 ])
                 ->action(function (array $data) {
                     if (! $this->record) {
@@ -266,7 +266,7 @@ class CreateProject extends CreateRecord
                 ->label('View PIC')
                 ->icon('heroicon-o-eye')
                 ->modalHeading('View PIC')
-                ->modalContent(fn () => view('filament.projects.pics_modal', ['project' => $this->record]))
+                ->modalContent(fn () => view('Filament.projects.pics_modal', ['project' => $this->record]))
                 ->modalActions([
                     Action::make('close')
                         ->label('Close')
@@ -293,11 +293,17 @@ class CreateProject extends CreateRecord
             }
         }
         
-        // Calculate overtime days (all days)
+        // Calculate overtime days (weekends only)
         if ($get('has_overtime') && $get('overtime_start_date') && $get('overtime_end_date')) {
             $overtimeStart = Carbon::parse($get('overtime_start_date'));
             $overtimeEnd = Carbon::parse($get('overtime_end_date'));
-            $overtimeDays = $overtimeStart->diffInDays($overtimeEnd) + 1;
+            
+            while ($overtimeStart->lte($overtimeEnd)) {
+                if ($overtimeStart->isWeekend()) {
+                    $overtimeDays++;
+                }
+                $overtimeStart->addDay();
+            }
         }
         
         $set('total_days', $regularDays + $overtimeDays);
@@ -321,11 +327,17 @@ class CreateProject extends CreateRecord
             }
         }
         
-        // Calculate overtime days (all days)
+        // Calculate overtime days (weekends only)
         if ($hasOvertime && $overtimeStartDate && $overtimeEndDate) {
             $overtimeStart = Carbon::parse($overtimeStartDate);
             $overtimeEnd = Carbon::parse($overtimeEndDate);
-            $overtimeDays = $overtimeStart->diffInDays($overtimeEnd) + 1;
+            
+            while ($overtimeStart->lte($overtimeEnd)) {
+                if ($overtimeStart->isWeekend()) {
+                    $overtimeDays++;
+                }
+                $overtimeStart->addDay();
+            }
         }
         
         return $regularDays + $overtimeDays;

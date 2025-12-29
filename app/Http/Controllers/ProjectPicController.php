@@ -39,6 +39,7 @@ class ProjectPicController extends Controller
             return response()->json(['success' => true]);
         }
 
+        // Redirect back to the referring page
         return back()->with('success', 'PIC removed.');
     }
 }
