@@ -20,6 +20,10 @@ class ProjectPic extends Model
         'sk_user',
         'start_date',
         'end_date',
+        'has_overtime',
+        'overtime_start_date',
+        'overtime_end_date',
+        'total_days',
         'created_by',
         'deleted_by',
     ];
@@ -27,6 +31,10 @@ class ProjectPic extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'overtime_start_date' => 'date',
+        'overtime_end_date' => 'date',
+        'has_overtime' => 'boolean',
+        'total_days' => 'integer',
     ];
 
     public function project()

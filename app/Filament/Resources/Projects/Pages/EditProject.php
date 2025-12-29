@@ -11,6 +11,8 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -55,12 +57,24 @@ class EditProject extends EditRecord
                         ->closeOnDateSelection()
                         ->disabledDates(function ($get) {
                             $picId = $get('sk_user');
+                            $disabledDates = [];
+                            
+                            // Disable weekends
+                            $startDate = now()->subYear();
+                            $endDate = now()->addYears(2);
+                            
+                            while ($startDate <= $endDate) {
+                                if ($startDate->isWeekend()) {
+                                    $disabledDates[] = $startDate->format('Y-m-d');
+                                }
+                                $startDate->addDay();
+                            }
+                            
                             if (!$picId) {
-                                return [];
+                                return $disabledDates;
                             }
 
                             $project = $this->record;
-                            $disabledDates = [];
 
                             // Get all existing PIC assignments for this user
                             $existingPics = ProjectPic::where('sk_project', $project->sk_project)
@@ -79,12 +93,14 @@ class EditProject extends EditRecord
                                 }
                             }
 
-                            return $disabledDates;
+                            return array_unique($disabledDates);
                         })
                         ->afterStateUpdated(function ($state, callable $set, $get) {
                             if ($get('end_date') && $state && $get('end_date') < $state) {
                                 $set('end_date', null);
                             }
+                            // Recalculate total days
+                            $this->calculateTotalDays($get, $set);
                         }),
 
                     DatePicker::make('end_date')
@@ -93,17 +109,29 @@ class EditProject extends EditRecord
                         ->nullable()
                         ->native(false)
                         ->displayFormat('d/m/Y')
-                        ->minDate(fn($get) => $get('start_date'))
                         ->closeOnDateSelection()
+                        ->minDate(fn($get) => $get('start_date'))
                         ->disabled(fn($get) => !$get('start_date'))
                         ->disabledDates(function ($get) {
                             $picId = $get('sk_user');
+                            $disabledDates = [];
+                            
+                            // Disable weekends
+                            $startDate = now()->subYear();
+                            $endDate = now()->addYears(2);
+                            
+                            while ($startDate <= $endDate) {
+                                if ($startDate->isWeekend()) {
+                                    $disabledDates[] = $startDate->format('Y-m-d');
+                                }
+                                $startDate->addDay();
+                            }
+                            
                             if (!$picId) {
-                                return [];
+                                return $disabledDates;
                             }
 
                             $project = $this->record;
-                            $disabledDates = [];
 
                             // Get all existing PIC assignments for this user
                             $existingPics = ProjectPic::where('sk_project', $project->sk_project)
@@ -122,8 +150,85 @@ class EditProject extends EditRecord
                                 }
                             }
 
-                            return $disabledDates;
+                            return array_unique($disabledDates);
+                        })
+                        ->afterStateUpdated(function ($state, callable $set, $get) {
+                            // Recalculate total days when end_date changes
+                            $this->calculateTotalDays($get, $set);
                         }),
+                    
+                    Checkbox::make('has_overtime')
+                        ->label('Include Overtime')
+                        ->reactive()
+                        ->live(),
+                    
+                    DatePicker::make('overtime_start_date')
+                        ->label('Overtime Start Date')
+                        ->reactive()
+                        ->native(false)
+                        ->displayFormat('d/m/Y')
+                        ->closeOnDateSelection()
+                        ->visible(fn($get) => $get('has_overtime'))
+                        ->required(fn($get) => $get('has_overtime'))
+                        ->disabledDates(function () {
+                            // Hanya izinkan weekend (Sabtu-Minggu)
+                            $disabledDates = [];
+                            $startDate = now()->subYear();
+                            $endDate = now()->addYears(2);
+                            
+                            while ($startDate <= $endDate) {
+                                if (!$startDate->isWeekend()) {
+                                    $disabledDates[] = $startDate->format('Y-m-d');
+                                }
+                                $startDate->addDay();
+                            }
+                            
+                            return $disabledDates;
+                        })
+                        ->afterStateUpdated(function ($state, callable $set, $get) {
+                            if ($get('overtime_end_date') && $state && $get('overtime_end_date') < $state) {
+                                $set('overtime_end_date', null);
+                            }
+                            // Recalculate total days
+                            $this->calculateTotalDays($get, $set);
+                        }),
+                    
+                    DatePicker::make('overtime_end_date')
+                        ->label('Overtime End Date')
+                        ->reactive()
+                        ->nullable()
+                        ->native(false)
+                        ->displayFormat('d/m/Y')
+                        ->closeOnDateSelection()
+                        ->visible(fn($get) => $get('has_overtime'))
+                        ->minDate(fn($get) => $get('overtime_start_date'))
+                        ->disabled(fn($get) => !$get('overtime_start_date'))
+                        ->disabledDates(function () {
+                            // Hanya izinkan weekend (Sabtu-Minggu)
+                            $disabledDates = [];
+                            $startDate = now()->subYear();
+                            $endDate = now()->addYears(2);
+                            
+                            while ($startDate <= $endDate) {
+                                if (!$startDate->isWeekend()) {
+                                    $disabledDates[] = $startDate->format('Y-m-d');
+                                }
+                                $startDate->addDay();
+                            }
+                            
+                            return $disabledDates;
+                        })
+                        ->afterStateUpdated(function ($state, callable $set, $get) {
+                            // Recalculate total days
+                            $this->calculateTotalDays($get, $set);
+                        }),
+                    
+                    TextInput::make('total_days')
+                        ->label('Total Days')
+                        ->disabled()
+                        ->reactive()
+                        ->default(0)
+                        ->helperText(fn($get) => $get('has_overtime') ? 'Regular days (weekdays only) + Overtime days (all days)' : 'Weekdays only'),
                 ])
                 ->action(function (array $data) {
                     $project = $this->record;
@@ -132,11 +237,27 @@ class EditProject extends EditRecord
                         return;
                     }
 
-                    Validator::make($data, [
+                    $validationRules = [
                         'sk_user' => ['required', 'string', 'exists:users,sk_user'],
                         'start_date' => ['required', 'date'],
                         'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-                    ])->validate();
+                    ];
+                    
+                    if (!empty($data['has_overtime'])) {
+                        $validationRules['overtime_start_date'] = ['required', 'date'];
+                        $validationRules['overtime_end_date'] = ['nullable', 'date', 'after_or_equal:overtime_start_date'];
+                    }
+                    
+                    Validator::make($data, $validationRules)->validate();
+                    
+                    // Calculate total days
+                    $totalDays = $this->calculateTotalDaysStatic(
+                        $data['start_date'],
+                        $data['end_date'] ?? null,
+                        $data['has_overtime'] ?? false,
+                        $data['overtime_start_date'] ?? null,
+                        $data['overtime_end_date'] ?? null
+                    );
 
                     // Simple create - overlaps will be handled in display logic
                     ProjectPic::create([
@@ -144,6 +265,10 @@ class EditProject extends EditRecord
                         'sk_user' => $data['sk_user'],
                         'start_date' => $data['start_date'],
                         'end_date' => $data['end_date'] ?? null,
+                        'has_overtime' => $data['has_overtime'] ?? false,
+                        'overtime_start_date' => $data['overtime_start_date'] ?? null,
+                        'overtime_end_date' => $data['overtime_end_date'] ?? null,
+                        'total_days' => $totalDays,
                         'created_by' => optional(Auth::user())->employee_name ?? null,
                     ]);
 
@@ -154,7 +279,7 @@ class EditProject extends EditRecord
                 ->label('View PIC')
                 ->icon('heroicon-o-eye')
                 ->modalHeading('View PIC')
-                ->modalContent(fn () => view('filament.projects.pics_modal', ['project' => $this->record]))
+                ->modalContent(fn () => view('Filament.projects.pics_modal', ['project' => $this->record]))
                 ->modalActions([
                     Action::make('close')
                         ->label('Close')
@@ -194,5 +319,61 @@ class EditProject extends EditRecord
         } catch (\Exception $e) {
             Notification::make()->danger()->title('Failed to remove PIC')->body($e->getMessage())->send();
         }
+    }
+    
+    protected function calculateTotalDays($get, $set)
+    {
+        $regularDays = 0;
+        $overtimeDays = 0;
+        
+        // Calculate regular days (weekdays only)
+        if ($get('start_date') && $get('end_date')) {
+            $start = \Carbon\Carbon::parse($get('start_date'));
+            $end = \Carbon\Carbon::parse($get('end_date'));
+            
+            while ($start->lte($end)) {
+                if (!$start->isWeekend()) {
+                    $regularDays++;
+                }
+                $start->addDay();
+            }
+        }
+        
+        // Calculate overtime days (all days)
+        if ($get('has_overtime') && $get('overtime_start_date') && $get('overtime_end_date')) {
+            $overtimeStart = \Carbon\Carbon::parse($get('overtime_start_date'));
+            $overtimeEnd = \Carbon\Carbon::parse($get('overtime_end_date'));
+            $overtimeDays = $overtimeStart->diffInDays($overtimeEnd) + 1;
+        }
+        
+        $set('total_days', $regularDays + $overtimeDays);
+    }
+    
+    protected function calculateTotalDaysStatic($startDate, $endDate, $hasOvertime, $overtimeStartDate, $overtimeEndDate)
+    {
+        $regularDays = 0;
+        $overtimeDays = 0;
+        
+        // Calculate regular days (weekdays only)
+        if ($startDate && $endDate) {
+            $start = \Carbon\Carbon::parse($startDate);
+            $end = \Carbon\Carbon::parse($endDate);
+            
+            while ($start->lte($end)) {
+                if (!$start->isWeekend()) {
+                    $regularDays++;
+                }
+                $start->addDay();
+            }
+        }
+        
+        // Calculate overtime days (all days)
+        if ($hasOvertime && $overtimeStartDate && $overtimeEndDate) {
+            $overtimeStart = \Carbon\Carbon::parse($overtimeStartDate);
+            $overtimeEnd = \Carbon\Carbon::parse($overtimeEndDate);
+            $overtimeDays = $overtimeStart->diffInDays($overtimeEnd) + 1;
+        }
+        
+        return $regularDays + $overtimeDays;
     }
 }

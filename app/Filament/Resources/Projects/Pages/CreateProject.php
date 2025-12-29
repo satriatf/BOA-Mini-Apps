@@ -10,8 +10,11 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\TextInput;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class CreateProject extends CreateRecord
 {
@@ -93,10 +96,26 @@ class CreateProject extends CreateRecord
                         ->native(false)
                         ->displayFormat('d/m/Y')
                         ->closeOnDateSelection()
+                        ->disabledDates(function () {
+                            // Disable weekends (Saturday = 6, Sunday = 0)
+                            $disabledDates = [];
+                            $startDate = now()->subYear();
+                            $endDate = now()->addYears(2);
+                            
+                            while ($startDate <= $endDate) {
+                                if ($startDate->isWeekend()) {
+                                    $disabledDates[] = $startDate->format('Y-m-d');
+                                }
+                                $startDate->addDay();
+                            }
+                            
+                            return $disabledDates;
+                        })
                         ->afterStateUpdated(function ($state, callable $set, $get) {
                             if ($get('end_date') && $state && $get('end_date') < $state) {
                                 $set('end_date', null);
                             }
+                            $this->calculateTotalDays($get, $set);
                         }),
 
                     DatePicker::make('end_date')
@@ -105,9 +124,96 @@ class CreateProject extends CreateRecord
                         ->nullable()
                         ->native(false)
                         ->displayFormat('d/m/Y')
-                        ->minDate(fn($get) => $get('start_date'))
                         ->closeOnDateSelection()
-                        ->disabled(fn($get) => !$get('start_date')),
+                        ->minDate(fn($get) => $get('start_date'))
+                        ->disabled(fn($get) => !$get('start_date'))
+                        ->disabledDates(function () {
+                            // Disable weekends (Saturday = 6, Sunday = 0)
+                            $disabledDates = [];
+                            $startDate = now()->subYear();
+                            $endDate = now()->addYears(2);
+                            
+                            while ($startDate <= $endDate) {
+                                if ($startDate->isWeekend()) {
+                                    $disabledDates[] = $startDate->format('Y-m-d');
+                                }
+                                $startDate->addDay();
+                            }
+                            
+                            return $disabledDates;
+                        })
+                        ->afterStateUpdated(function ($state, callable $set, $get) {
+                            $this->calculateTotalDays($get, $set);
+                        }),
+                    
+                    Checkbox::make('has_overtime')
+                        ->label('Include Overtime')
+                        ->reactive()
+                        ->live(),
+                    
+                    DatePicker::make('overtime_start_date')
+                        ->label('Overtime Start Date')
+                        ->reactive()
+                        ->native(false)
+                        ->displayFormat('d/m/Y')
+                        ->closeOnDateSelection()
+                        ->visible(fn($get) => $get('has_overtime'))
+                        ->required(fn($get) => $get('has_overtime'))
+                        ->disabledDates(function () {
+                            $disabledDates = [];
+                            $startDate = now()->subYear();
+                            $endDate = now()->addYears(2);
+                            
+                            while ($startDate <= $endDate) {
+                                if (!$startDate->isWeekend()) {
+                                    $disabledDates[] = $startDate->format('Y-m-d');
+                                }
+                                $startDate->addDay();
+                            }
+                            
+                            return $disabledDates;
+                        })
+                        ->afterStateUpdated(function ($state, callable $set, $get) {
+                            if ($get('overtime_end_date') && $state && $get('overtime_end_date') < $state) {
+                                $set('overtime_end_date', null);
+                            }
+                            $this->calculateTotalDays($get, $set);
+                        }),
+                    
+                    DatePicker::make('overtime_end_date')
+                        ->label('Overtime End Date')
+                        ->reactive()
+                        ->nullable()
+                        ->native(false)
+                        ->displayFormat('d/m/Y')
+                        ->closeOnDateSelection()
+                        ->visible(fn($get) => $get('has_overtime'))
+                        ->minDate(fn($get) => $get('overtime_start_date'))
+                        ->disabled(fn($get) => !$get('overtime_start_date'))
+                        ->disabledDates(function () {
+                            $disabledDates = [];
+                            $startDate = now()->subYear();
+                            $endDate = now()->addYears(2);
+                            
+                            while ($startDate <= $endDate) {
+                                if (!$startDate->isWeekend()) {
+                                    $disabledDates[] = $startDate->format('Y-m-d');
+                                }
+                                $startDate->addDay();
+                            }
+                            
+                            return $disabledDates;
+                        })
+                        ->afterStateUpdated(function ($state, callable $set, $get) {
+                            $this->calculateTotalDays($get, $set);
+                        }),
+                    
+                    TextInput::make('total_days')
+                        ->label('Total Days')
+                        ->disabled()
+                        ->reactive()
+                        ->default(0)
+                        ->helperText(fn($get) => $get('has_overtime') ? 'Regular days (weekdays only) + Overtime days (all days)' : 'Weekdays only'),
                 ])
                 ->action(function (array $data) {
                     if (! $this->record) {
@@ -120,21 +226,40 @@ class CreateProject extends CreateRecord
                         return;
                     }
 
-                    Validator::make($data, [
+                    $validationRules = [
                         'sk_user' => ['required', 'string', 'exists:users,sk_user'],
                         'start_date' => ['required', 'date'],
                         'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-                    ])->validate();
+                    ];
+                    
+                    if (!empty($data['has_overtime'])) {
+                        $validationRules['overtime_start_date'] = ['required', 'date'];
+                        $validationRules['overtime_end_date'] = ['nullable', 'date', 'after_or_equal:overtime_start_date'];
+                    }
+                    
+                    Validator::make($data, $validationRules)->validate();
+                    
+                    $totalDays = $this->calculateTotalDaysStatic(
+                        $data['start_date'],
+                        $data['end_date'] ?? null,
+                        $data['has_overtime'] ?? false,
+                        $data['overtime_start_date'] ?? null,
+                        $data['overtime_end_date'] ?? null
+                    );
 
                     ProjectPic::create([
                         'sk_project' => $project->sk_project,
                         'sk_user' => $data['sk_user'],
                         'start_date' => $data['start_date'],
                         'end_date' => $data['end_date'] ?? null,
+                        'has_overtime' => $data['has_overtime'] ?? false,
+                        'overtime_start_date' => $data['overtime_start_date'] ?? null,
+                        'overtime_end_date' => $data['overtime_end_date'] ?? null,
+                        'total_days' => $totalDays,
                         'created_by' => optional(Auth::user())->employee_name ?? null,
                     ]);
 
-                    Notification::make()->success()->title('PIC added')->send();
+                    Notification::make()->success()->title('PIC added successfully')->send();
                 }),
 
             Action::make('viewPic')
@@ -148,5 +273,61 @@ class CreateProject extends CreateRecord
                         ->close(),
                 ]),
         ];
+    }
+
+    protected function calculateTotalDays($get, $set)
+    {
+        $regularDays = 0;
+        $overtimeDays = 0;
+        
+        // Calculate regular days (weekdays only)
+        if ($get('start_date') && $get('end_date')) {
+            $start = Carbon::parse($get('start_date'));
+            $end = Carbon::parse($get('end_date'));
+            
+            while ($start->lte($end)) {
+                if (!$start->isWeekend()) {
+                    $regularDays++;
+                }
+                $start->addDay();
+            }
+        }
+        
+        // Calculate overtime days (all days)
+        if ($get('has_overtime') && $get('overtime_start_date') && $get('overtime_end_date')) {
+            $overtimeStart = Carbon::parse($get('overtime_start_date'));
+            $overtimeEnd = Carbon::parse($get('overtime_end_date'));
+            $overtimeDays = $overtimeStart->diffInDays($overtimeEnd) + 1;
+        }
+        
+        $set('total_days', $regularDays + $overtimeDays);
+    }
+
+    protected function calculateTotalDaysStatic($startDate, $endDate, $hasOvertime, $overtimeStartDate, $overtimeEndDate)
+    {
+        $regularDays = 0;
+        $overtimeDays = 0;
+        
+        // Calculate regular days (weekdays only)
+        if ($startDate && $endDate) {
+            $start = Carbon::parse($startDate);
+            $end = Carbon::parse($endDate);
+            
+            while ($start->lte($end)) {
+                if (!$start->isWeekend()) {
+                    $regularDays++;
+                }
+                $start->addDay();
+            }
+        }
+        
+        // Calculate overtime days (all days)
+        if ($hasOvertime && $overtimeStartDate && $overtimeEndDate) {
+            $overtimeStart = Carbon::parse($overtimeStartDate);
+            $overtimeEnd = Carbon::parse($overtimeEndDate);
+            $overtimeDays = $overtimeStart->diffInDays($overtimeEnd) + 1;
+        }
+        
+        return $regularDays + $overtimeDays;
     }
 }
