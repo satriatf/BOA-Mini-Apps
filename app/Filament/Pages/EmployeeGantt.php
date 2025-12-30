@@ -282,6 +282,23 @@ class EmployeeGantt extends Page
                     }
 
                     foreach ($ranges as $range) {
+                        // Check if any PIC has overtime during this range
+                        $hasOvertimeInRange = false;
+                        foreach ($userPics as $pic) {
+                            if ($pic->has_overtime && $pic->overtime_start_date && $pic->overtime_end_date) {
+                                $overtimeStart = Carbon::parse($pic->overtime_start_date);
+                                $overtimeEnd = Carbon::parse($pic->overtime_end_date);
+                                $rangeStart = Carbon::parse($range['start']);
+                                $rangeEnd = Carbon::parse($range['end']);
+
+                                // Check if overtime overlaps with this range
+                                if ($overtimeStart->lte($rangeEnd) && $overtimeEnd->gte($rangeStart)) {
+                                    $hasOvertimeInRange = true;
+                                    break;
+                                }
+                            }
+                        }
+
                         $employeeTasks[$employeeId][] = [
                             'start' => $range['start'],
                             'end' => $range['end'],
@@ -289,6 +306,35 @@ class EmployeeGantt extends Page
                             'title' => $title,
                             'role' => 'PIC',
                             'details' => $this->getProjectDetails($project),
+                            'has_overtime' => $hasOvertimeInRange,
+                        ];
+                    }
+
+                    // Add overtime spans as separate tasks so weekends (overtime) also get colored
+                    foreach ($userPics as $pic) {
+                        if (!$pic->has_overtime || !$pic->overtime_start_date || !$pic->overtime_end_date) {
+                            continue;
+                        }
+
+                        $otStart = Carbon::parse($pic->overtime_start_date)->startOfDay();
+                        $otEnd = Carbon::parse($pic->overtime_end_date)->endOfDay();
+
+                        // Clamp to year
+                        $otStartClamped = $otStart->clone()->max($yearStart);
+                        $otEndClamped = $otEnd->clone()->min($yearEnd);
+
+                        if ($otStartClamped->gt($yearEnd) || $otEndClamped->lt($yearStart)) {
+                            continue;
+                        }
+
+                        $employeeTasks[$employeeId][] = [
+                            'start' => $otStartClamped->toDateString(),
+                            'end' => $otEndClamped->toDateString(),
+                            'type' => 'project',
+                            'title' => $title,
+                            'role' => 'PIC',
+                            'details' => $this->getProjectDetails($project),
+                            'has_overtime' => true,
                         ];
                     }
                 }

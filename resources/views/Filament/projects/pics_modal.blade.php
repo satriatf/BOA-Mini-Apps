@@ -1,64 +1,59 @@
-{{-- Clean design --}}
-@if($project && $project->projectPics()->count() > 0)
-    <div class="space-y-6" id="pics-container">
-        @foreach($project->projectPics as $pic)
-            <div class="bg-white border-2 border-gray-300 rounded-lg p-6 hover:bg-gray-50 transition-colors shadow-md" data-pic-id="{{ $pic->id }}">
-                <!-- Header with Delete Button -->
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                    <h3 style="font-weight: 500; color: #111827; font-size: 16px; margin: 0;">{{ $pic->user->employee_name ?? 'N/A' }}</h3>
-                    <button type="button" 
-                        onclick="if(confirm('Apakah Anda yakin ingin menghapus PIC ini?')) { 
-                            var form = document.createElement('form');
-                            form.method = 'POST';
-                            form.action = '/project-pics/{{ $project->sk_project }}/delete/{{ $pic->id }}';
-                            form.style.display = 'none';
-                            
-                            var csrfInput = document.createElement('input');
-                            csrfInput.type = 'hidden';
-                            csrfInput.name = '_token';
-                            csrfInput.value = document.querySelector('meta[name=&quot;csrf-token&quot;]')?.getAttribute('content') || '';
-                            form.appendChild(csrfInput);
-                            
-                            var methodInput = document.createElement('input');
-                            methodInput.type = 'hidden';
-                            methodInput.name = '_method';
-                            methodInput.value = 'DELETE';
-                            form.appendChild(methodInput);
-                            
-                            document.body.appendChild(form);
-                            form.submit();
-                        }"
-                        style="display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; background-color: #ef4444 !important; color: white !important; border-radius: 6px !important; text-decoration: none !important; transition: all 0.2s !important; flex-shrink: 0 !important; border: none; cursor: pointer;"
-                        onmouseover="this.style.backgroundColor='#dc2626'"
-                        onmouseout="this.style.backgroundColor='#ef4444'">
-                        <svg style="width: 16px !important; height: 16px !important; display: block !important;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+@php
+    /** @var \App\Models\Project|null $project */
+    $project = $project ?? null;
+    $pics = $project ? $project->projectPics()->with('user')->get() : collect();
+@endphp
+
+<div style="min-width:640px;" x-data>
+    @if ($pics->isEmpty())
+        <div style="padding:20px; text-align:center; color:#6b7280;">
+            No PICs added for this project.
+        </div>
+    @else
+        <div style="display:flex;flex-direction:column;gap:12px;padding:8px 8px 0 8px">
+            @foreach ($pics as $p)
+                <div class="pic-row"
+                    style="display:flex;align-items:center;justify-content:space-between;
+                            padding:14px;border-radius:12px;border:1px solid #eef0f2;
+                            background:#fff;box-shadow:0 1px 3px rgba(15,23,42,0.04)">
+                    <div style="display:flex;flex-direction:column">
+                        <div style="font-weight:600; font-size:15px;">
+                            {{ $p->user->employee_name ?? ($p->sk_user ?? '-') }}
+                        </div>
+                        <div style="color:#6b7280;font-size:13px;margin-top:6px;">
+                            Start Date: {{ $p->start_date?->format('M j, Y') ?: '-' }}
+                            &nbsp; • &nbsp;
+                            End Date: {{ $p->end_date?->format('M j, Y') ?: '-' }}
+                        </div>
+                        @if ($p->has_overtime)
+                            <div style="color:#6b7280;font-size:13px;margin-top:4px;">
+                                Overtime Start: {{ $p->overtime_start_date?->format('M j, Y') ?: '-' }}
+                                &nbsp; • &nbsp;
+                                Overtime End: {{ $p->overtime_end_date?->format('M j, Y') ?: '-' }}
+                            </div>
+                        @endif
+                    </div>
+
+                    <button type="button" aria-label="Remove PIC"
+                        style="width:40px;height:40px;display:inline-flex;align-items:center;
+                                justify-content:center;background:#fee2e2;border-radius:8px;
+                                border:0;color:#b91c1c;cursor:pointer;"
+                        x-on:click.prevent="
+                                                    if (confirm('Are you sure you want to remove this PIC?')) {
+                                                        $wire.deleteProjectPic({{ $p->id }});
+                                                    }
+                                                ">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18"
+                            height="18">
+                            <path
+                                d="M9 4.5h6M10.5 4.5V3.75A1.75 1.75 0 0 1 12.25 2h-.5A1.75 1.75 0 0 1 14 3.75V4.5M5 7h14" />
+                            <path d="M9 7v11a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V7" />
+                            <path d="M11 10v6M13 10v6" />
                         </svg>
                     </button>
                 </div>
-                
-                <!-- Details -->
-                <div class="space-y-2 text-sm text-gray-600">
-                    <div class="flex">
-                        <span class="w-20 text-gray-500">Period:</span>
-                        <span>{{ $pic->start_date?->format('d M Y') }} - {{ $pic->end_date?->format('d M Y') }}</span>
-                    </div>
-                    @if($pic->has_overtime)
-                        <div class="flex">
-                            <span class="w-20 text-blue-600">Overtime:</span>
-                            <span class="text-blue-600">{{ $pic->overtime_start_date?->format('d M Y') }} - {{ $pic->overtime_end_date?->format('d M Y') }}</span>
-                        </div>
-                    @endif
-                    <div class="pt-2 border-t border-gray-100">
-                        <span class="font-medium">Total: {{ $pic->total_days ?? 0 }} days</span>
-                    </div>
-                </div>
-            </div>
-        @endforeach
-    </div>
-
-    @else
-    <div class="text-center py-8 text-gray-500">
-        No PICs assigned
-    </div>
-@endif
+            @endforeach
+        </div>
+    @endif
+</div>

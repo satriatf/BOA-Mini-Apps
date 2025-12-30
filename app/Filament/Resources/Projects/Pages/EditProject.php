@@ -16,6 +16,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class EditProject extends EditRecord
 {
@@ -55,46 +56,7 @@ class EditProject extends EditRecord
                         ->native(false)
                         ->displayFormat('d/m/Y')
                         ->closeOnDateSelection()
-                        ->disabledDates(function ($get) {
-                            $picId = $get('sk_user');
-                            $disabledDates = [];
-                            
-                            // Disable weekends
-                            $startDate = now()->subYear();
-                            $endDate = now()->addYears(2);
-                            
-                            while ($startDate <= $endDate) {
-                                if ($startDate->isWeekend()) {
-                                    $disabledDates[] = $startDate->format('Y-m-d');
-                                }
-                                $startDate->addDay();
-                            }
-                            
-                            if (!$picId) {
-                                return $disabledDates;
-                            }
-
-                            $project = $this->record;
-
-                            // Get all existing PIC assignments for this user
-                            $existingPics = ProjectPic::where('sk_project', $project->sk_project)
-                                ->where('sk_user', $picId)
-                                ->whereNull('deleted_at')
-                                ->get();
-
-                            // Collect all dates that are already assigned
-                            foreach ($existingPics as $pic) {
-                                $current = $pic->start_date->copy();
-                                $end = $pic->end_date ? $pic->end_date->copy() : $pic->start_date->copy();
-
-                                while ($current->lte($end)) {
-                                    $disabledDates[] = $current->format('Y-m-d');
-                                    $current->addDay();
-                                }
-                            }
-
-                            return array_unique($disabledDates);
-                        })
+                        ->disabledDates(fn ($get) => $this->getDisabledDatesForUser($get('sk_user')))
                         ->afterStateUpdated(function ($state, callable $set, $get) {
                             if ($get('end_date') && $state && $get('end_date') < $state) {
                                 $set('end_date', null);
@@ -112,46 +74,7 @@ class EditProject extends EditRecord
                         ->closeOnDateSelection()
                         ->minDate(fn($get) => $get('start_date'))
                         ->disabled(fn($get) => !$get('start_date'))
-                        ->disabledDates(function ($get) {
-                            $picId = $get('sk_user');
-                            $disabledDates = [];
-                            
-                            // Disable weekends
-                            $startDate = now()->subYear();
-                            $endDate = now()->addYears(2);
-                            
-                            while ($startDate <= $endDate) {
-                                if ($startDate->isWeekend()) {
-                                    $disabledDates[] = $startDate->format('Y-m-d');
-                                }
-                                $startDate->addDay();
-                            }
-                            
-                            if (!$picId) {
-                                return $disabledDates;
-                            }
-
-                            $project = $this->record;
-
-                            // Get all existing PIC assignments for this user
-                            $existingPics = ProjectPic::where('sk_project', $project->sk_project)
-                                ->where('sk_user', $picId)
-                                ->whereNull('deleted_at')
-                                ->get();
-
-                            // Collect all dates that are already assigned
-                            foreach ($existingPics as $pic) {
-                                $current = $pic->start_date->copy();
-                                $end = $pic->end_date ? $pic->end_date->copy() : $pic->start_date->copy();
-
-                                while ($current->lte($end)) {
-                                    $disabledDates[] = $current->format('Y-m-d');
-                                    $current->addDay();
-                                }
-                            }
-
-                            return array_unique($disabledDates);
-                        })
+                        ->disabledDates(fn ($get) => $this->getDisabledDatesForUser($get('sk_user')))
                         ->afterStateUpdated(function ($state, callable $set, $get) {
                             // Recalculate total days when end_date changes
                             $this->calculateTotalDays($get, $set);
@@ -170,7 +93,7 @@ class EditProject extends EditRecord
                         ->closeOnDateSelection()
                         ->visible(fn($get) => $get('has_overtime'))
                         ->required(fn($get) => $get('has_overtime'))
-                        ->disabledDates(function () {
+                        ->disabledDates(function ($get) {
                             // Hanya izinkan weekend (Sabtu-Minggu)
                             $disabledDates = [];
                             $startDate = now()->subYear();
@@ -183,7 +106,40 @@ class EditProject extends EditRecord
                                 $startDate->addDay();
                             }
                             
-                            return $disabledDates;
+                            // Block dates yang sudah dipilih di start_date dan end_date
+                            if ($get('start_date') && $get('end_date')) {
+                                $regularStart = Carbon::parse($get('start_date'));
+                                $regularEnd = Carbon::parse($get('end_date'));
+                                
+                                while ($regularStart->lte($regularEnd)) {
+                                    $disabledDates[] = $regularStart->format('Y-m-d');
+                                    $regularStart->addDay();
+                                }
+                            } elseif ($get('start_date')) {
+                                $disabledDates[] = Carbon::parse($get('start_date'))->format('Y-m-d');
+                            }
+                            
+                            // Block existing overtime dates untuk PIC yang sama
+                            if ($get('sk_user') && $this->record) {
+                                $existingPics = ProjectPic::where('sk_project', $this->record->sk_project)
+                                    ->where('sk_user', $get('sk_user'))
+                                    ->whereNull('deleted_at')
+                                    ->get();
+                                
+                                foreach ($existingPics as $pic) {
+                                    if ($pic->has_overtime && $pic->overtime_start_date && $pic->overtime_end_date) {
+                                        $overtimeStart = Carbon::parse($pic->overtime_start_date);
+                                        $overtimeEnd = Carbon::parse($pic->overtime_end_date);
+                                        
+                                        while ($overtimeStart->lte($overtimeEnd)) {
+                                            $disabledDates[] = $overtimeStart->format('Y-m-d');
+                                            $overtimeStart->addDay();
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            return array_values(array_unique($disabledDates));
                         })
                         ->afterStateUpdated(function ($state, callable $set, $get) {
                             if ($get('overtime_end_date') && $state && $get('overtime_end_date') < $state) {
@@ -203,7 +159,7 @@ class EditProject extends EditRecord
                         ->visible(fn($get) => $get('has_overtime'))
                         ->minDate(fn($get) => $get('overtime_start_date'))
                         ->disabled(fn($get) => !$get('overtime_start_date'))
-                        ->disabledDates(function () {
+                        ->disabledDates(function ($get) {
                             // Hanya izinkan weekend (Sabtu-Minggu)
                             $disabledDates = [];
                             $startDate = now()->subYear();
@@ -216,19 +172,46 @@ class EditProject extends EditRecord
                                 $startDate->addDay();
                             }
                             
-                            return $disabledDates;
+                            // Block dates yang sudah dipilih di start_date dan end_date
+                            if ($get('start_date') && $get('end_date')) {
+                                $regularStart = Carbon::parse($get('start_date'));
+                                $regularEnd = Carbon::parse($get('end_date'));
+                                
+                                while ($regularStart->lte($regularEnd)) {
+                                    $disabledDates[] = $regularStart->format('Y-m-d');
+                                    $regularStart->addDay();
+                                }
+                            } elseif ($get('start_date')) {
+                                $disabledDates[] = Carbon::parse($get('start_date'))->format('Y-m-d');
+                            }
+                            
+                            // Block existing overtime dates untuk PIC yang sama
+                            if ($get('sk_user') && $this->record) {
+                                $existingPics = ProjectPic::where('sk_project', $this->record->sk_project)
+                                    ->where('sk_user', $get('sk_user'))
+                                    ->whereNull('deleted_at')
+                                    ->get();
+                                
+                                foreach ($existingPics as $pic) {
+                                    if ($pic->has_overtime && $pic->overtime_start_date && $pic->overtime_end_date) {
+                                        $overtimeStart = Carbon::parse($pic->overtime_start_date);
+                                        $overtimeEnd = Carbon::parse($pic->overtime_end_date);
+                                        
+                                        while ($overtimeStart->lte($overtimeEnd)) {
+                                            $disabledDates[] = $overtimeStart->format('Y-m-d');
+                                            $overtimeStart->addDay();
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            return array_values(array_unique($disabledDates));
                         })
                         ->afterStateUpdated(function ($state, callable $set, $get) {
                             // Recalculate total days
                             $this->calculateTotalDays($get, $set);
                         }),
                     
-                    TextInput::make('total_days')
-                        ->label('Total Days')
-                        ->disabled()
-                        ->reactive()
-                        ->default(0)
-                        ->helperText(fn($get) => $get('has_overtime') ? 'Regular days (weekdays only) + Overtime days (weekends only)' : 'Weekdays only'),
                 ])
                 ->action(function (array $data) {
                     $project = $this->record;
@@ -249,6 +232,30 @@ class EditProject extends EditRecord
                     }
                     
                     Validator::make($data, $validationRules)->validate();
+
+                    $startDate = Carbon::parse($data['start_date']);
+                    $endDate = !empty($data['end_date'])
+                        ? Carbon::parse($data['end_date'])
+                        : $startDate->copy();
+
+                    $existingPics = ProjectPic::where('sk_project', $project->sk_project)
+                        ->where('sk_user', $data['sk_user'])
+                        ->whereNull('deleted_at')
+                        ->get();
+
+                    foreach ($existingPics as $existingPic) {
+                        $existingStart = $existingPic->start_date ?? Carbon::parse($existingPic->start_date);
+                        $existingEnd = $existingPic->end_date ?? $existingStart;
+
+                        if ($startDate->lte($existingEnd) && $endDate->gte($existingStart)) {
+                            Notification::make()
+                                ->danger()
+                                ->title('PIC already scheduled on these dates')
+                                ->body('Pick a different date range for this PIC to avoid overlap.')
+                                ->send();
+                            return;
+                        }
+                    }
                     
                     // Calculate total days
                     $totalDays = $this->calculateTotalDaysStatic(
@@ -259,7 +266,6 @@ class EditProject extends EditRecord
                         $data['overtime_end_date'] ?? null
                     );
 
-                    // Simple create - overlaps will be handled in display logic
                     ProjectPic::create([
                         'sk_project' => $project->sk_project,
                         'sk_user' => $data['sk_user'],
@@ -302,6 +308,44 @@ class EditProject extends EditRecord
     {
         return static::getResource()::getUrl('index');
     }
+
+    protected function getDisabledDatesForUser(?string $picId): array
+    {
+        $disabledDates = [];
+
+        $startDate = now()->subYear();
+        $endDate = now()->addYears(2);
+
+        while ($startDate <= $endDate) {
+            if ($startDate->isWeekend()) {
+                $disabledDates[] = $startDate->format('Y-m-d');
+            }
+            $startDate->addDay();
+        }
+
+        if (!$picId || !$this->record) {
+            return $disabledDates;
+        }
+
+        $existingPics = ProjectPic::where('sk_project', $this->record->sk_project)
+            ->where('sk_user', $picId)
+            ->whereNull('deleted_at')
+            ->get();
+
+        foreach ($existingPics as $pic) {
+            $current = ($pic->start_date ?? Carbon::parse($pic->start_date))->copy();
+            $end = $pic->end_date ?? $pic->start_date;
+            $end = $end instanceof Carbon ? $end->copy() : Carbon::parse($end);
+
+            while ($current->lte($end)) {
+                $disabledDates[] = $current->format('Y-m-d');
+                $current->addDay();
+            }
+        }
+
+        return array_values(array_unique($disabledDates));
+    }
+
     public function deleteProjectPic(int $id)
     {
         $pic = ProjectPic::find($id);

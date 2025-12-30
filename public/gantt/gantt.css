@@ -117,6 +117,17 @@
     cursor: pointer;
 }
 
+.gantt-table td.project-overtime {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+}
+
+.gantt-table td.project-overtime:hover {
+    background: #dc2626 !important;
+    cursor: pointer;
+}
+
 .gantt-table td.mtc {
     background: #f59e0b !important;
     color: #1f2937 !important;

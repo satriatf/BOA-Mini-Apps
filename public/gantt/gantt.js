@@ -89,6 +89,18 @@ function hideTooltip(tooltip) {
  */
 function showDetailPopup(tasks) {
     if (!tasks || tasks.length === 0) return;
+
+    // Deduplicate tasks (avoid double entries when regular + overtime overlap)
+    const uniqueTasks = [];
+    const seenKeys = new Set();
+    tasks.forEach(t => {
+        const key = `${t.title || ''}|${t.start || ''}|${t.end || ''}|${t.type || ''}`;
+        if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            uniqueTasks.push(t);
+        }
+    });
+    tasks = uniqueTasks;
     
     // Remove existing popups
     document.querySelectorAll('.gantt-detail-overlay').forEach(x => x.remove());
@@ -116,9 +128,16 @@ function showDetailPopup(tasks) {
             card.appendChild(separator);
         }
         
+        const isOvertime = !!task.has_overtime;
         const taskTitle = document.createElement('div');
-        taskTitle.style.cssText = 'font-size:14px;font-weight:600;margin-bottom:8px;color:#3b82f6;';
+        taskTitle.style.cssText = 'font-size:14px;font-weight:600;margin-bottom:8px;' + (isOvertime ? 'color:#ef4444;' : 'color:#3b82f6;');
         taskTitle.textContent = task.title || 'Task Detail';
+        if (isOvertime) {
+            const badge = document.createElement('span');
+            badge.textContent = 'Overtime';
+            badge.style.cssText = 'margin-left:8px;padding:2px 6px;border-radius:4px;background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;';
+            taskTitle.appendChild(badge);
+        }
         card.appendChild(taskTitle);
         
         // Format as "Month Day, Year" (e.g. Oct 24, 2024)
@@ -135,7 +154,7 @@ function showDetailPopup(tasks) {
         const endDate = task.end ? formatMonthDay(task.end) : '';
         
         const whenEl = document.createElement('div');
-        whenEl.style.cssText = 'color:#4b5563;margin-bottom:10px;font-size:12px;';
+        whenEl.style.cssText = 'color:' + (isOvertime ? '#b91c1c' : '#4b5563') + ';margin-bottom:10px;font-size:12px;';
         whenEl.textContent = startDate + (endDate && endDate !== startDate ? ' — ' + endDate : '');
         card.appendChild(whenEl);
         
@@ -318,15 +337,13 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
                     });
                     
                     if (overlappingTasks.length > 0) {
-                        cell.className = 'project';
+                        // Check if any overlapping task has overtime
+                        const hasOvertimeTask = overlappingTasks.some(task => task.has_overtime);
+                        cell.className = hasOvertimeTask ? 'project-overtime' : 'project';
                         console.log('Added project cell with class:', cell.className);
                         
-                        // Add text content for multiple tasks
-                        if (overlappingTasks.length > 1) {
-                            cell.textContent = `${overlappingTasks.length}+`;
-                            cell.style.fontSize = '0.75rem';
-                            cell.style.fontWeight = '600';
-                        }
+                        // We keep a single colored cell even if multiple tasks overlap
+                        // (avoid showing “2+” so overtime overlay doesn’t create duplicates)
                         
                         // Add tooltip functionality
                         cell.addEventListener('mouseenter', () => {
