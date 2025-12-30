@@ -106,17 +106,18 @@ class EditProject extends EditRecord
                                 $startDate->addDay();
                             }
                             
-                            // Block dates yang sudah dipilih di start_date dan end_date
+                            // Block only weekdays from regular date range (weekends can be used for overtime)
                             if ($get('start_date') && $get('end_date')) {
                                 $regularStart = Carbon::parse($get('start_date'));
                                 $regularEnd = Carbon::parse($get('end_date'));
                                 
                                 while ($regularStart->lte($regularEnd)) {
-                                    $disabledDates[] = $regularStart->format('Y-m-d');
+                                    // Only block weekdays, allow weekends for overtime
+                                    if (!$regularStart->isWeekend()) {
+                                        $disabledDates[] = $regularStart->format('Y-m-d');
+                                    }
                                     $regularStart->addDay();
                                 }
-                            } elseif ($get('start_date')) {
-                                $disabledDates[] = Carbon::parse($get('start_date'))->format('Y-m-d');
                             }
                             
                             // Block existing overtime dates untuk PIC yang sama
@@ -172,17 +173,18 @@ class EditProject extends EditRecord
                                 $startDate->addDay();
                             }
                             
-                            // Block dates yang sudah dipilih di start_date dan end_date
+                            // Block only weekdays from regular date range (weekends can be used for overtime)
                             if ($get('start_date') && $get('end_date')) {
                                 $regularStart = Carbon::parse($get('start_date'));
                                 $regularEnd = Carbon::parse($get('end_date'));
                                 
                                 while ($regularStart->lte($regularEnd)) {
-                                    $disabledDates[] = $regularStart->format('Y-m-d');
+                                    // Only block weekdays, allow weekends for overtime
+                                    if (!$regularStart->isWeekend()) {
+                                        $disabledDates[] = $regularStart->format('Y-m-d');
+                                    }
                                     $regularStart->addDay();
                                 }
-                            } elseif ($get('start_date')) {
-                                $disabledDates[] = Carbon::parse($get('start_date'))->format('Y-m-d');
                             }
                             
                             // Block existing overtime dates untuk PIC yang sama

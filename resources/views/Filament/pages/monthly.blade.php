@@ -43,6 +43,14 @@
         /* force full opacity for holiday backgrounds */
         .fc-bg-event { opacity: 1 !important; }
 
+        /* weekend (Sabtu & Minggu) merah: header & nomor tanggal saja, tanpa blok latar */
+        .fc-day-sat .fc-col-header-cell-cushion,
+        .fc-day-sun .fc-col-header-cell-cushion,
+        .fc-day-sat .fc-daygrid-day-number,
+        .fc-day-sun .fc-daygrid-day-number {
+            color: #ef4444 !important;
+        }
+
         /* overlay detail */
         .fc-detail-overlay{
             position:fixed;inset:0;background:rgba(0,0,0,.35);
@@ -170,6 +178,11 @@
             });
 
             calendar.render();
+
+            // Fix initial layout where Sunday header kadang tidak muncul sampai navigasi.
+            // Paksa recalculation setelah render dan saat resize.
+            setTimeout(() => calendar.updateSize(), 0);
+            window.addEventListener('resize', () => calendar.updateSize());
         });
     </script>
 </x-filament-panels::page>

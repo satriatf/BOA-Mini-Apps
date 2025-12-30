@@ -214,6 +214,8 @@ class Yearly extends Page
                 'end'     => $d->copy()->addDay()->toDateString(),
                 'allDay'  => true,
                 'display' => 'block',
+                'backgroundColor' => '#f59e0b',
+                'textColor'       => '#1f2937',
                 'extendedProps' => [
                     'type'    => 'mtc',
                     'details' => $detailsHtml,

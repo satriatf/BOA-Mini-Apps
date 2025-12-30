@@ -108,17 +108,41 @@ class Monthly extends Page
                         <tr><td><b>% Done</b></td><td>" . e($done) . "</td></tr>
                     </table>
                 ";
-            $events[] = [
-                'id'    => "project-{$p->sk_project}",
-                'title' => $title,
-                'start' => $s->toDateString(),
-                'end'   => $e->copy()->addDay()->toDateString(), // end exclusive
-                'allDay'=> true,
-                'url'   => ProjectResource::getUrl('edit', ['record' => $p]),
-                'backgroundColor' => '#3b82f6',
-                'textColor'       => '#ffffff',
-                'extendedProps'   => ['type' => 'project', 'details' => $detailsHtml],
-            ];
+            // Split range into weekday-only segments (Mon–Fri). Weekends are not shown as project bars.
+            $segments = [];
+            $currStart = null;
+            $currEnd = null;
+            for ($d = $s->copy(); $d->lte($e); $d->addDay()) {
+                // Carbon ISO dayOfWeek: 6 = Sat, 7 = Sun
+                if (in_array($d->dayOfWeekIso, [6, 7], true)) {
+                    if ($currStart) {
+                        $segments[] = [$currStart->copy(), $currEnd->copy()];
+                        $currStart = $currEnd = null;
+                    }
+                    continue;
+                }
+                if (! $currStart) {
+                    $currStart = $d->copy();
+                }
+                $currEnd = $d->copy();
+            }
+            if ($currStart) {
+                $segments[] = [$currStart->copy(), $currEnd->copy()];
+            }
+
+            foreach ($segments as [$segStart, $segEnd]) {
+                $events[] = [
+                    'id'    => "project-{$p->sk_project}-{$segStart->toDateString()}",
+                    'title' => $title,
+                    'start' => $segStart->toDateString(),
+                    'end'   => $segEnd->copy()->addDay()->toDateString(), // end exclusive
+                    'allDay'=> true,
+                    'url'   => ProjectResource::getUrl('edit', ['record' => $p]),
+                    'backgroundColor' => '#3b82f6',
+                    'textColor'       => '#ffffff',
+                    'extendedProps'   => ['type' => 'project', 'details' => $detailsHtml],
+                ];
+            }
         }
 
         // ---------------- MTC (NON-PROJECT) ----------------
@@ -200,18 +224,45 @@ class Monthly extends Page
                 </table>
             ";
 
-            $events[] = [
-                'id'    => "onleave-{$o->id}",
-                'title' => $title,
-                'start' => $ps->toDateString(),
-                'end'   => $pe->copy()->addDay()->toDateString(),
-                'allDay'=> true,
-                'display' => 'block',
-                'url'   => OnLeaveResource::getUrl('edit', ['record' => $o]),
-                'backgroundColor' => '#ef4444',
-                'textColor'       => '#ffffff',
-                'extendedProps'   => ['type' => 'onleave', 'details' => $detailsHtml],
-            ];
+            // Bagi rentang cuti menjadi segmen hari kerja saja (Sen–Jum)
+            $segments = [];
+            $currStart = null;
+            $currEnd = null;
+            for ($d = $s->copy(); $d->lte($e); $d->addDay()) {
+                if (in_array($d->dayOfWeekIso, [6, 7], true)) {
+                    if ($currStart) {
+                        $segments[] = [$currStart->copy(), $currEnd->copy()];
+                        $currStart = $currEnd = null;
+                    }
+                    continue;
+                }
+                if (! $currStart) {
+                    $currStart = $d->copy();
+                }
+                $currEnd = $d->copy();
+            }
+            if ($currStart) {
+                $segments[] = [$currStart->copy(), $currEnd->copy()];
+            }
+
+            if (empty($segments)) {
+                continue;
+            }
+
+            foreach ($segments as [$segStart, $segEnd]) {
+                $events[] = [
+                    'id'    => "onleave-{$o->id}-{$segStart->toDateString()}",
+                    'title' => $title,
+                    'start' => $segStart->toDateString(),
+                    'end'   => $segEnd->copy()->addDay()->toDateString(),
+                    'allDay'=> true,
+                    'display' => 'block',
+                    'url'   => OnLeaveResource::getUrl('edit', ['record' => $o]),
+                    'backgroundColor' => '#ef4444',
+                    'textColor'       => '#ffffff',
+                    'extendedProps'   => ['type' => 'onleave', 'details' => $detailsHtml],
+                ];
+            }
         }
 
         // ---------------- HOLIDAYS ----------------

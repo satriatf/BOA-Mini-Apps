@@ -282,23 +282,7 @@ class EmployeeGantt extends Page
                     }
 
                     foreach ($ranges as $range) {
-                        // Check if any PIC has overtime during this range
-                        $hasOvertimeInRange = false;
-                        foreach ($userPics as $pic) {
-                            if ($pic->has_overtime && $pic->overtime_start_date && $pic->overtime_end_date) {
-                                $overtimeStart = Carbon::parse($pic->overtime_start_date);
-                                $overtimeEnd = Carbon::parse($pic->overtime_end_date);
-                                $rangeStart = Carbon::parse($range['start']);
-                                $rangeEnd = Carbon::parse($range['end']);
-
-                                // Check if overtime overlaps with this range
-                                if ($overtimeStart->lte($rangeEnd) && $overtimeEnd->gte($rangeStart)) {
-                                    $hasOvertimeInRange = true;
-                                    break;
-                                }
-                            }
-                        }
-
+                        // Regular task for weekday PIC assignment (no overtime flag here)
                         $employeeTasks[$employeeId][] = [
                             'start' => $range['start'],
                             'end' => $range['end'],
@@ -306,11 +290,11 @@ class EmployeeGantt extends Page
                             'title' => $title,
                             'role' => 'PIC',
                             'details' => $this->getProjectDetails($project),
-                            'has_overtime' => $hasOvertimeInRange,
+                            'has_overtime' => false,  // Regular task is not overtime
                         ];
                     }
 
-                    // Add overtime spans as separate tasks so weekends (overtime) also get colored
+                    // Add overtime spans as separate tasks, but only mark weekend days as overtime (red)
                     foreach ($userPics as $pic) {
                         if (!$pic->has_overtime || !$pic->overtime_start_date || !$pic->overtime_end_date) {
                             continue;
@@ -327,15 +311,60 @@ class EmployeeGantt extends Page
                             continue;
                         }
 
-                        $employeeTasks[$employeeId][] = [
-                            'start' => $otStartClamped->toDateString(),
-                            'end' => $otEndClamped->toDateString(),
-                            'type' => 'project',
-                            'title' => $title,
-                            'role' => 'PIC',
-                            'details' => $this->getProjectDetails($project),
-                            'has_overtime' => true,
-                        ];
+                        // Collect weekend-only dates within overtime range
+                        $weekendDates = [];
+                        $cursor = $otStartClamped->copy();
+                        while ($cursor->lte($otEndClamped)) {
+                            if ($cursor->isWeekend()) {
+                                $weekendDates[] = $cursor->toDateString();
+                            }
+                            $cursor->addDay();
+                        }
+
+                        if (empty($weekendDates)) {
+                            continue;
+                        }
+
+                        // Group consecutive weekend dates into ranges
+                        $weekendRanges = [];
+                        $wStart = null;
+                        $wEnd = null;
+                        foreach ($weekendDates as $dStr) {
+                            $d = Carbon::parse($dStr);
+                            if ($wStart === null) {
+                                $wStart = $d->copy();
+                                $wEnd = $d->copy();
+                            } else {
+                                if ($d->copy()->subDay()->isSameDay($wEnd)) {
+                                    $wEnd = $d->copy();
+                                } else {
+                                    $weekendRanges[] = [
+                                        'start' => $wStart->toDateString(),
+                                        'end' => $wEnd->toDateString(),
+                                    ];
+                                    $wStart = $d->copy();
+                                    $wEnd = $d->copy();
+                                }
+                            }
+                        }
+                        if ($wStart !== null) {
+                            $weekendRanges[] = [
+                                'start' => $wStart->toDateString(),
+                                'end' => $wEnd->toDateString(),
+                            ];
+                        }
+
+                        foreach ($weekendRanges as $wr) {
+                            $employeeTasks[$employeeId][] = [
+                                'start' => $wr['start'],
+                                'end' => $wr['end'],
+                                'type' => 'project',
+                                'title' => $title,
+                                'role' => 'PIC',
+                                'details' => $this->getProjectDetails($project),
+                                'has_overtime' => true,
+                            ];
+                        }
                     }
                 }
             }

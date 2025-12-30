@@ -341,13 +341,18 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
                         const hasOvertimeTask = overlappingTasks.some(task => task.has_overtime);
                         cell.className = hasOvertimeTask ? 'project-overtime' : 'project';
                         console.log('Added project cell with class:', cell.className);
-                        
+
                         // We keep a single colored cell even if multiple tasks overlap
                         // (avoid showing “2+” so overtime overlay doesn’t create duplicates)
-                        
+
+                        // Filter tasks for tooltip/popup: if overtime cell, show only overtime tasks
+                        const displayTasks = hasOvertimeTask
+                            ? overlappingTasks.filter(t => t.has_overtime)
+                            : overlappingTasks;
+
                         // Add tooltip functionality
                         cell.addEventListener('mouseenter', () => {
-                            showTooltip(tooltip, cell, overlappingTasks);
+                            showTooltip(tooltip, cell, displayTasks);
                         });
                         
                         cell.addEventListener('mouseleave', () => {
@@ -356,7 +361,7 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
 
                         // Add click functionality for popup detail
                         cell.addEventListener('click', () => {
-                            showDetailPopup(overlappingTasks);
+                            showDetailPopup(displayTasks);
                         });
                     }
                     
