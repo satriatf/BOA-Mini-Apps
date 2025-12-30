@@ -11,9 +11,42 @@ use Filament\Schemas\Schema;
 use App\Models\User;
 use App\Models\MasterProjectStatus;
 use Illuminate\Validation\Rules\Unique;
+use Carbon\Carbon;
 
 class ProjectForm
 {
+    /**
+     * Calculate end date by adding working days (excluding weekends)
+     */
+    protected static function calculateEndDateExcludingWeekends(string $startDate, int $totalDays): string
+    {
+        $date = Carbon::parse($startDate);
+        $addedDays = 0;
+
+        // If total_days is 1, end date should be the same as start date if it's a weekday
+        if ($totalDays === 1) {
+            // If start date is a weekend, find the next Monday
+            if ($date->isWeekend()) {
+                while ($date->isWeekend()) {
+                    $date->addDay();
+                }
+            }
+            return $date->format('Y-m-d');
+        }
+
+        // For total_days > 1, we add (totalDays - 1) working days to the start date
+        $daysToAdd = $totalDays - 1;
+        
+        while ($daysToAdd > 0) {
+            $date->addDay();
+            // Only count weekdays
+            if (!$date->isWeekend()) {
+                $daysToAdd--;
+            }
+        }
+
+        return $date->format('Y-m-d');
+    }
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
@@ -48,10 +81,27 @@ class ProjectForm
                 ->displayFormat('d/m/Y')
                 ->closeOnDateSelection()
                 ->live()
+                ->disabledDates(function () {
+                    // Block all Saturdays and Sundays
+                    $disabledDates = [];
+                    $startDate = Carbon::now()->subYear();
+                    $endDate = Carbon::now()->addYears(5);
+                    
+                    while ($startDate <= $endDate) {
+                        if ($startDate->isWeekend()) {
+                            $disabledDates[] = $startDate->format('Y-m-d');
+                        }
+                        $startDate->addDay();
+                    }
+                    
+                    return $disabledDates;
+                })
                 ->afterStateUpdated(function ($state, callable $set, $get) {
-                    // Reset end_date if it's less than start_date
-                    if ($get('end_date') && $state && $get('end_date') < $state) {
-                        $set('end_date', null);
+                    // Calculate end_date when start_date changes
+                    $totalDays = $get('total_day');
+                    if ($state && $totalDays && $totalDays > 0) {
+                        $endDate = self::calculateEndDateExcludingWeekends($state, $totalDays);
+                        $set('end_date', $endDate);
                     }
                 }),
 
@@ -61,8 +111,8 @@ class ProjectForm
                 ->displayFormat('d/m/Y')
                 ->minDate(fn ($get) => $get('start_date'))
                 ->closeOnDateSelection()
-                ->live()
-                ->disabled(fn ($get) => !$get('start_date'))
+                ->disabled()
+                ->dehydrated()
                 ->rules(['after_or_equal:start_date']),
 
             TextInput::make('total_day')
@@ -74,6 +124,15 @@ class ProjectForm
                     'pattern' => '[0-9]*',
                     'oninput' => "this.value=this.value.replace(/[^0-9]/g,'');",
                 ])
+                ->live()
+                ->afterStateUpdated(function ($state, callable $set, $get) {
+                    // Calculate end_date when total_day changes
+                    $startDate = $get('start_date');
+                    if ($startDate && $state && $state > 0) {
+                        $endDate = self::calculateEndDateExcludingWeekends($startDate, $state);
+                        $set('end_date', $endDate);
+                    }
+                })
                 ->required(),
 
             TextInput::make('percent_done')
