@@ -281,20 +281,51 @@ class EmployeeGantt extends Page
                         $employeeTasks[$employeeId] = [];
                     }
 
+                    // Add regular PIC tasks, but only weekdays (Mon-Fri)
                     foreach ($ranges as $range) {
-                        // Regular task for weekday PIC assignment (no overtime flag here)
-                        $employeeTasks[$employeeId][] = [
-                            'start' => $range['start'],
-                            'end' => $range['end'],
-                            'type' => 'project',
-                            'title' => $title,
-                            'role' => 'PIC',
-                            'details' => $this->getProjectDetails($project),
-                            'has_overtime' => false,  // Regular task is not overtime
-                        ];
+                        $rangeStart = Carbon::parse($range['start']);
+                        $rangeEnd = Carbon::parse($range['end']);
+                        
+                        // Split into weekday-only segments
+                        $weekdaySegments = [];
+                        $currStart = null;
+                        $currEnd = null;
+                        
+                        for ($d = $rangeStart->copy(); $d->lte($rangeEnd); $d->addDay()) {
+                            // Skip weekends (6 = Sat, 7 = Sun)
+                            if (in_array($d->dayOfWeekIso, [6, 7], true)) {
+                                if ($currStart) {
+                                    $weekdaySegments[] = [$currStart->copy(), $currEnd->copy()];
+                                    $currStart = $currEnd = null;
+                                }
+                                continue;
+                            }
+                            
+                            if (!$currStart) {
+                                $currStart = $d->copy();
+                            }
+                            $currEnd = $d->copy();
+                        }
+                        
+                        if ($currStart) {
+                            $weekdaySegments[] = [$currStart->copy(), $currEnd->copy()];
+                        }
+                        
+                        // Add each weekday segment as a blue task
+                        foreach ($weekdaySegments as [$segStart, $segEnd]) {
+                            $employeeTasks[$employeeId][] = [
+                                'start' => $segStart->toDateString(),
+                                'end' => $segEnd->toDateString(),
+                                'type' => 'project',
+                                'title' => $title,
+                                'role' => 'PIC',
+                                'details' => $this->getProjectDetails($project),
+                                'has_overtime' => false,
+                            ];
+                        }
                     }
 
-                    // Add overtime spans as separate tasks, but only mark weekend days as overtime (red)
+                    // Add overtime spans as separate tasks (weekend dates only, red)
                     foreach ($userPics as $pic) {
                         if (!$pic->has_overtime || !$pic->overtime_start_date || !$pic->overtime_end_date) {
                             continue;
