@@ -3,10 +3,12 @@
 namespace App\Filament\Resources\Projects\Tables;
 
 use App\Models\MasterProjectStatus;
+use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -98,71 +100,176 @@ class ProjectsTable
 
             ])
             ->filters([
-                SelectFilter::make('project_status')
-                    ->label('Project Status')
-                    ->options(fn () => MasterProjectStatus::pluck('name', 'name')->toArray())
-                    ->searchable()
-                    ->indicator('Status'),
-                Filter::make('project_ticket_no')
-                    ->label('Project Ticket No')
+                // Filter By List & Search By
+                Filter::make('search_by')
+                    ->label('Filter By')
                     ->form([
-                        TextInput::make('value')
-                            ->label('Project Ticket No')
-                            ->placeholder('e.g. PMO-123456'),
+                        Select::make('field')
+                            ->label('Select By')
+                            ->options([
+                                'project_ticket_no' => 'Project Ticket No',
+                                'project_name' => 'Project Name',
+                                'project_status' => 'Project Status',
+                                'technical_lead' => 'Technical Lead',
+                                'pics' => 'PIC',
+                                'start_date' => 'Start Date',
+                                'end_date' => 'End Date',
+                                'total_day' => 'Total Day',
+                                'percent_done' => 'Percent Done',
+                            ])
+                            ->placeholder('Select field to filter')
+                            ->reactive(),
+                        TextInput::make('search_value')
+                            ->label('Search By')
+                            ->placeholder(function ($get) {
+                                $field = $get('field');
+                                return match ($field) {
+                                    'project_ticket_no' => 'Search by Project Ticket No...',
+                                    'project_name' => 'Search by Project Name...',
+                                    'total_day' => 'Search by Total Day...',
+                                    'percent_done' => 'Search by Percent Done...',
+                                    default => 'Type to search...',
+                                };
+                            })
+                            ->visible(fn ($get) => in_array($get('field'), [
+                                'project_ticket_no', 'project_name', 
+                                'total_day', 'percent_done'
+                            ])),
+                        Select::make('status_value')
+                            ->label('Select By')
+                            ->options(fn () => MasterProjectStatus::pluck('name', 'name')->toArray())
+                            ->searchable()
+                            ->placeholder('Select by Project Status...')
+                            ->visible(fn ($get) => $get('field') === 'project_status'),
+                        Select::make('technical_lead_value')
+                            ->label('Select By')
+                            ->options(fn () => User::where('is_active', 'Active')
+                                ->whereNotNull('employee_name')
+                                ->whereIn('level', ['SH', 'Section Head'])
+                                ->orderBy('employee_name')
+                                ->pluck('employee_name', 'sk_user')
+                                ->toArray())
+                            ->searchable()
+                            ->placeholder('Select by Technical Lead...')
+                            ->visible(fn ($get) => $get('field') === 'technical_lead'),
+                        Select::make('pics_value')
+                            ->label('Select By')
+                            ->options(fn () => User::where('is_active', 'Active')
+                                ->whereNotNull('employee_name')
+                                ->whereIn('level', ['STAFF', 'Staff'])
+                                ->orderBy('employee_name')
+                                ->pluck('employee_name', 'sk_user')
+                                ->toArray())
+                            ->searchable()
+                            ->placeholder('Select by PIC...')
+                            ->visible(fn ($get) => $get('field') === 'pics'),
+                        DatePicker::make('date_value')
+                            ->label('Search By')
+                            ->placeholder(function ($get) {
+                                $field = $get('field');
+                                return match ($field) {
+                                    'start_date' => 'Search by Start Date...',
+                                    'end_date' => 'Search by End Date...',
+                                    default => 'Select date...',
+                                };
+                            })
+                            ->visible(fn ($get) => in_array($get('field'), ['start_date', 'end_date'])),
                     ])
                     ->query(function (Builder $query, array $data) {
-                        return $query->when(
-                            $data['value'] ?? null,
-                            fn (Builder $q, $value) => $q->where('project_ticket_no', 'like', '%' . $value . '%'),
-                        );
-                    }),
-                Filter::make('project_name')
-                    ->label('Project Name')
-                    ->form([
-                        TextInput::make('value')
-                            ->label('Project Name')
-                            ->placeholder('e.g. Digitalisasi'),
-                    ])
-                    ->query(function (Builder $query, array $data) {
-                        return $query->when(
-                            $data['value'] ?? null,
-                            fn (Builder $q, $value) => $q->where('project_name', 'like', '%' . $value . '%'),
-                        );
-                    }),
-                Filter::make('tech_lead')
-                    ->label('Technical Lead')
-                    ->form([
-                        TextInput::make('value')
-                            ->label('Technical Lead')
-                            ->placeholder('Nama PIC / Lead'),
-                    ])
-                    ->query(function (Builder $query, array $data) {
-                        return $query->when(
-                            $data['value'] ?? null,
-                            fn (Builder $q, $value) => $q->whereHas(
-                                'techLead',
-                                fn (Builder $sub) => $sub->where('employee_name', 'like', '%' . $value . '%'),
+                        $field = $data['field'] ?? null;
+                        $searchValue = $data['search_value'] ?? null;
+                        $statusValue = $data['status_value'] ?? null;
+                        $technicalLeadValue = $data['technical_lead_value'] ?? null;
+                        $picsValue = $data['pics_value'] ?? null;
+                        $dateValue = $data['date_value'] ?? null;
+
+                        if (!$field) {
+                            return $query;
+                        }
+
+                        return match ($field) {
+                            'project_ticket_no' => $query->when(
+                                $searchValue,
+                                fn (Builder $q) => $q->whereRaw('LOWER(project_ticket_no) LIKE ?', ['%' . strtolower($searchValue) . '%'])
                             ),
-                        );
-                    }),
-                Filter::make('date_range')
-                    ->label('Date Range')
-                    ->form([
-                        DatePicker::make('start_from')
-                            ->label('Start Date From'),
-                        DatePicker::make('end_to')
-                            ->label('End Date To'),
-                    ])
-                    ->query(function (Builder $query, array $data) {
-                        return $query
-                            ->when(
-                                $data['start_from'] ?? null,
-                                fn (Builder $q, $date) => $q->whereDate('start_date', '>=', $date),
-                            )
-                            ->when(
-                                $data['end_to'] ?? null,
-                                fn (Builder $q, $date) => $q->whereDate('end_date', '<=', $date),
-                            );
+                            'project_name' => $query->when(
+                                $searchValue,
+                                fn (Builder $q) => $q->whereRaw('LOWER(project_name) LIKE ?', ['%' . strtolower($searchValue) . '%'])
+                            ),
+                            'project_status' => $query->when(
+                                $statusValue,
+                                fn (Builder $q) => $q->where('project_status', $statusValue)
+                            ),
+                            'technical_lead' => $query->when(
+                                $technicalLeadValue,
+                                fn (Builder $q) => $q->where('technical_lead', (string) $technicalLeadValue)
+                            ),
+                            'pics' => $query->when(
+                                $picsValue,
+                                fn (Builder $q) => $q->whereHas('projectPics', function (Builder $sub) use ($picsValue) {
+                                    $sub->where('sk_user', (string) $picsValue);
+                                })
+                            ),
+                            'start_date' => $query->when(
+                                $dateValue,
+                                fn (Builder $q) => $q->whereDate('start_date', $dateValue)
+                            ),
+                            'end_date' => $query->when(
+                                $dateValue,
+                                fn (Builder $q) => $q->whereDate('end_date', $dateValue)
+                            ),
+                            'total_day' => $query->when(
+                                $searchValue !== null && $searchValue !== '',
+                                fn (Builder $q) => $q->where('total_day', $searchValue)
+                            ),
+                            'percent_done' => $query->when(
+                                $searchValue !== null && $searchValue !== '',
+                                fn (Builder $q) => $q->where('percent_done', 'like', '%' . $searchValue . '%')
+                            ),
+                            default => $query,
+                        };
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $field = $data['field'] ?? null;
+                        $searchValue = $data['search_value'] ?? null;
+                        $statusValue = $data['status_value'] ?? null;
+                        $technicalLeadValue = $data['technical_lead_value'] ?? null;
+                        $picsValue = $data['pics_value'] ?? null;
+                        $dateValue = $data['date_value'] ?? null;
+
+                        if (!$field) {
+                            return null;
+                        }
+
+                        $fieldLabels = [
+                            'project_ticket_no' => 'Project Ticket No',
+                            'project_name' => 'Project Name',
+                            'project_status' => 'Project Status',
+                            'technical_lead' => 'Technical Lead',
+                            'pics' => 'PIC',
+                            'start_date' => 'Start Date',
+                            'end_date' => 'End Date',
+                            'total_day' => 'Total Day',
+                            'percent_done' => 'Percent Done',
+                        ];
+
+                        if ($field === 'project_status') {
+                            $value = $statusValue;
+                        } elseif ($field === 'technical_lead') {
+                            $value = $technicalLeadValue ? User::find($technicalLeadValue)?->employee_name : null;
+                        } elseif ($field === 'pics') {
+                            $value = $picsValue ? User::find($picsValue)?->employee_name : null;
+                        } elseif (in_array($field, ['start_date', 'end_date'])) {
+                            $value = $dateValue;
+                        } else {
+                            $value = $searchValue;
+                        }
+                        
+                        if ($value) {
+                            return $fieldLabels[$field] . ': ' . $value;
+                        }
+
+                        return null;
                     }),
             ])
             ->filtersTriggerAction(fn ($action) => $action
