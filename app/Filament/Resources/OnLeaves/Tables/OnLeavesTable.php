@@ -47,7 +47,7 @@ class OnLeavesTable
                     ->label('Filter By')
                     ->form([
                         Select::make('field')
-                            ->label('Select By')
+                            ->label('')
                             ->options([
                                 'user_name' => 'Name',
                                 'leave_type' => 'Leave Type',
@@ -73,11 +73,13 @@ class OnLeavesTable
                             ->placeholder('Select by Leave Type...')
                             ->visible(fn ($get) => $get('field') === 'leave_type'),
                         DatePicker::make('start_date_value')
-                            ->label('Search By')
+                            ->label('Select By')
+                            ->native(false)
                             ->placeholder('Select by Start Date...')
                             ->visible(fn ($get) => $get('field') === 'start_date'),
                         DatePicker::make('end_date_value')
-                            ->label('Search By')
+                            ->label('Select By')
+                            ->native(false)
                             ->placeholder('Select by End Date...')
                             ->visible(fn ($get) => $get('field') === 'end_date'),
                     ])

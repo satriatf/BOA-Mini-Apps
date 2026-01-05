@@ -163,17 +163,16 @@ class ProjectsTable
                             ->searchable()
                             ->placeholder('Select by PIC...')
                             ->visible(fn ($get) => $get('field') === 'pics'),
-                        DatePicker::make('date_value')
-                            ->label('Search By')
-                            ->placeholder(function ($get) {
-                                $field = $get('field');
-                                return match ($field) {
-                                    'start_date' => 'Search by Start Date...',
-                                    'end_date' => 'Search by End Date...',
-                                    default => 'Select date...',
-                                };
-                            })
-                            ->visible(fn ($get) => in_array($get('field'), ['start_date', 'end_date'])),
+                        DatePicker::make('start_date_value')
+                            ->label('Select By')
+                            ->native(false)
+                            ->placeholder('Select by Start Date...')
+                            ->visible(fn ($get) => $get('field') === 'start_date'),
+                        DatePicker::make('end_date_value')
+                            ->label('Select By')
+                            ->native(false)
+                            ->placeholder('Select by End Date...')
+                            ->visible(fn ($get) => $get('field') === 'end_date'),
                     ])
                     ->query(function (Builder $query, array $data) {
                         $field = $data['field'] ?? null;
@@ -181,7 +180,8 @@ class ProjectsTable
                         $statusValue = $data['status_value'] ?? null;
                         $technicalLeadValue = $data['technical_lead_value'] ?? null;
                         $picsValue = $data['pics_value'] ?? null;
-                        $dateValue = $data['date_value'] ?? null;
+                        $startDateValue = $data['start_date_value'] ?? null;
+                        $endDateValue = $data['end_date_value'] ?? null;
 
                         if (!$field) {
                             return $query;
@@ -211,12 +211,12 @@ class ProjectsTable
                                 })
                             ),
                             'start_date' => $query->when(
-                                $dateValue,
-                                fn (Builder $q) => $q->whereDate('start_date', $dateValue)
+                                $startDateValue,
+                                fn (Builder $q) => $q->whereDate('start_date', $startDateValue)
                             ),
                             'end_date' => $query->when(
-                                $dateValue,
-                                fn (Builder $q) => $q->whereDate('end_date', $dateValue)
+                                $endDateValue,
+                                fn (Builder $q) => $q->whereDate('end_date', $endDateValue)
                             ),
                             'total_day' => $query->when(
                                 $searchValue !== null && $searchValue !== '',
@@ -235,7 +235,8 @@ class ProjectsTable
                         $statusValue = $data['status_value'] ?? null;
                         $technicalLeadValue = $data['technical_lead_value'] ?? null;
                         $picsValue = $data['pics_value'] ?? null;
-                        $dateValue = $data['date_value'] ?? null;
+                        $startDateValue = $data['start_date_value'] ?? null;
+                        $endDateValue = $data['end_date_value'] ?? null;
 
                         if (!$field) {
                             return null;
@@ -259,8 +260,10 @@ class ProjectsTable
                             $value = $technicalLeadValue ? User::find($technicalLeadValue)?->employee_name : null;
                         } elseif ($field === 'pics') {
                             $value = $picsValue ? User::find($picsValue)?->employee_name : null;
-                        } elseif (in_array($field, ['start_date', 'end_date'])) {
-                            $value = $dateValue;
+                        } elseif ($field === 'start_date') {
+                            $value = $startDateValue;
+                        } elseif ($field === 'end_date') {
+                            $value = $endDateValue;
                         } else {
                             $value = $searchValue;
                         }

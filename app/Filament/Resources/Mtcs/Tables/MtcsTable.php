@@ -145,8 +145,9 @@ class MtcsTable
                             ->placeholder('Select by Application...')
                             ->visible(fn ($get) => $get('field') === 'application'),
                         DatePicker::make('date_value')
-                            ->label('Search By')
-                            ->placeholder('Search by Date...')
+                            ->label('Select By')
+                            ->native(false)
+                            ->placeholder('Select by Date...')
                             ->visible(fn ($get) => $get('field') === 'tanggal'),
                     ])
                     ->query(function (Builder $query, array $data) {
