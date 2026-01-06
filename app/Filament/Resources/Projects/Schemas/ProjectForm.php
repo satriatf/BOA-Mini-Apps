@@ -10,37 +10,37 @@ use Filament\Forms\Components\View as FormsView;
 use Filament\Schemas\Schema;
 use App\Models\User;
 use App\Models\MasterProjectStatus;
+use App\Models\Holiday;
 use Illuminate\Validation\Rules\Unique;
 use Carbon\Carbon;
 
 class ProjectForm
 {
     /**
-     * Calculate end date by adding working days (excluding weekends)
+     * Calculate end date by adding working days (skip weekend & holidays)
      */
-    protected static function calculateEndDateExcludingWeekends(string $startDate, int $totalDays): string
+    protected static function calculateEndDateSkippingNonWorking(string $startDate, int $totalDays): string
     {
         $date = Carbon::parse($startDate);
-        $addedDays = 0;
+        $holidays = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
 
-        // If total_days is 1, end date should be the same as start date if it's a weekday
+        $isNonWorking = function (Carbon $d) use ($holidays) {
+            return $d->isWeekend() || in_array($d->format('Y-m-d'), $holidays, true);
+        };
+
+        // If total_days is 1, end date = next working day (could be same day)
         if ($totalDays === 1) {
-            // If start date is a weekend, find the next Monday
-            if ($date->isWeekend()) {
-                while ($date->isWeekend()) {
-                    $date->addDay();
-                }
+            while ($isNonWorking($date)) {
+                $date->addDay();
             }
             return $date->format('Y-m-d');
         }
 
-        // For total_days > 1, we add (totalDays - 1) working days to the start date
+        // For total_days > 1, add (totalDays - 1) working days
         $daysToAdd = $totalDays - 1;
-        
         while ($daysToAdd > 0) {
             $date->addDay();
-            // Only count weekdays
-            if (!$date->isWeekend()) {
+            if (!$isNonWorking($date)) {
                 $daysToAdd--;
             }
         }
@@ -82,25 +82,27 @@ class ProjectForm
                 ->closeOnDateSelection()
                 ->live()
                 ->disabledDates(function () {
-                    // Block all Saturdays and Sundays
+                    // Block all weekends and holidays
                     $disabledDates = [];
                     $startDate = Carbon::now()->subYear();
                     $endDate = Carbon::now()->addYears(5);
-                    
+                    $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+
                     while ($startDate <= $endDate) {
-                        if ($startDate->isWeekend()) {
-                            $disabledDates[] = $startDate->format('Y-m-d');
+                        $formatted = $startDate->format('Y-m-d');
+                        if ($startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                            $disabledDates[] = $formatted;
                         }
                         $startDate->addDay();
                     }
-                    
+
                     return $disabledDates;
                 })
                 ->afterStateUpdated(function ($state, callable $set, $get) {
                     // Calculate end_date when start_date changes
                     $totalDays = $get('total_day');
                     if ($state && $totalDays && $totalDays > 0) {
-                        $endDate = self::calculateEndDateExcludingWeekends($state, $totalDays);
+                        $endDate = self::calculateEndDateSkippingNonWorking($state, $totalDays);
                         $set('end_date', $endDate);
                     }
                 }),
@@ -129,7 +131,7 @@ class ProjectForm
                     // Calculate end_date when total_day changes
                     $startDate = $get('start_date');
                     if ($startDate && $state && $state > 0) {
-                        $endDate = self::calculateEndDateExcludingWeekends($startDate, $state);
+                        $endDate = self::calculateEndDateSkippingNonWorking($startDate, $state);
                         $set('end_date', $endDate);
                     }
                 })

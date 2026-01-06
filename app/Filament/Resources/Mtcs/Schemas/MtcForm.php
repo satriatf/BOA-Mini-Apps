@@ -6,6 +6,7 @@ use App\Models\Mtc;
 use App\Models\User;
 use App\Models\MasterNonProjectType;
 use App\Models\MasterApplication;
+use App\Models\Holiday;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Schema;
 use Illuminate\Validation\Rules\Unique;
+use Carbon\Carbon;
 
 class MtcForm
 {
@@ -79,7 +81,23 @@ class MtcForm
                 ->label('Date')
                 ->native(false)
                 ->displayFormat('d/m/Y')
-                ->required(),
+                ->required()
+                ->disabledDates(function () {
+                    $disabledDates = [];
+                    $startDate = Carbon::now()->subYear();
+                    $endDate = Carbon::now()->addYears(2);
+                    $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+
+                    while ($startDate->lte($endDate)) {
+                        $formatted = $startDate->format('Y-m-d');
+                        if ($startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                            $disabledDates[] = $formatted;
+                        }
+                        $startDate->addDay();
+                    }
+
+                    return $disabledDates;
+                }),
 
             Textarea::make('solusi')
                 ->label('Solution')

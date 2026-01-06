@@ -6,6 +6,7 @@ use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\Project;
 use App\Models\ProjectPic;
 use App\Models\User;
+use App\Models\Holiday;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Actions\Action;
@@ -61,8 +62,6 @@ class EditProject extends EditRecord
                             if ($get('end_date') && $state && $get('end_date') < $state) {
                                 $set('end_date', null);
                             }
-                            // Recalculate total days
-                            $this->calculateTotalDays($get, $set);
                         }),
 
                     DatePicker::make('end_date')
@@ -76,8 +75,6 @@ class EditProject extends EditRecord
                         ->disabled(fn($get) => !$get('start_date'))
                         ->disabledDates(fn ($get) => $this->getDisabledDatesForUser($get('sk_user')))
                         ->afterStateUpdated(function ($state, callable $set, $get) {
-                            // Recalculate total days when end_date changes
-                            $this->calculateTotalDays($get, $set);
                         }),
                     
                     Checkbox::make('has_overtime')
@@ -98,10 +95,12 @@ class EditProject extends EditRecord
                             $disabledDates = [];
                             $startDate = now()->subYear();
                             $endDate = now()->addYears(2);
+                            $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
                             
                             while ($startDate <= $endDate) {
-                                if (!$startDate->isWeekend()) {
-                                    $disabledDates[] = $startDate->format('Y-m-d');
+                                $formatted = $startDate->format('Y-m-d');
+                                if (!$startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                                    $disabledDates[] = $formatted;
                                 }
                                 $startDate->addDay();
                             }
@@ -146,8 +145,6 @@ class EditProject extends EditRecord
                             if ($get('overtime_end_date') && $state && $get('overtime_end_date') < $state) {
                                 $set('overtime_end_date', null);
                             }
-                            // Recalculate total days
-                            $this->calculateTotalDays($get, $set);
                         }),
                     
                     DatePicker::make('overtime_end_date')
@@ -165,10 +162,12 @@ class EditProject extends EditRecord
                             $disabledDates = [];
                             $startDate = now()->subYear();
                             $endDate = now()->addYears(2);
+                            $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
                             
                             while ($startDate <= $endDate) {
-                                if (!$startDate->isWeekend()) {
-                                    $disabledDates[] = $startDate->format('Y-m-d');
+                                $formatted = $startDate->format('Y-m-d');
+                                if (!$startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                                    $disabledDates[] = $formatted;
                                 }
                                 $startDate->addDay();
                             }
@@ -210,8 +209,6 @@ class EditProject extends EditRecord
                             return array_values(array_unique($disabledDates));
                         })
                         ->afterStateUpdated(function ($state, callable $set, $get) {
-                            // Recalculate total days
-                            $this->calculateTotalDays($get, $set);
                         }),
                     
                 ])
@@ -259,7 +256,6 @@ class EditProject extends EditRecord
                         }
                     }
                     
-                    // Calculate total days
                     $totalDays = $this->calculateTotalDaysStatic(
                         $data['start_date'],
                         $data['end_date'] ?? null,
@@ -315,12 +311,15 @@ class EditProject extends EditRecord
     {
         $disabledDates = [];
 
+        $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+
         $startDate = now()->subYear();
         $endDate = now()->addYears(2);
 
         while ($startDate <= $endDate) {
-            if ($startDate->isWeekend()) {
-                $disabledDates[] = $startDate->format('Y-m-d');
+            $formatted = $startDate->format('Y-m-d');
+            if ($startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                $disabledDates[] = $formatted;
             }
             $startDate->addDay();
         }
@@ -348,6 +347,42 @@ class EditProject extends EditRecord
         return array_values(array_unique($disabledDates));
     }
 
+    /**
+     * Calculate total days for regular (weekdays, excluding holidays) and overtime (weekends, excluding holidays)
+     */
+    protected function calculateTotalDaysStatic($startDate, $endDate, $hasOvertime, $overtimeStartDate, $overtimeEndDate)
+    {
+        $regularDays = 0;
+        $overtimeDays = 0;
+        $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+
+        if ($startDate && $endDate) {
+            $start = \Carbon\Carbon::parse($startDate);
+            $end = \Carbon\Carbon::parse($endDate);
+
+            while ($start->lte($end)) {
+                if (!$start->isWeekend() && !in_array($start->format('Y-m-d'), $holidayDates, true)) {
+                    $regularDays++;
+                }
+                $start->addDay();
+            }
+        }
+
+        if ($hasOvertime && $overtimeStartDate && $overtimeEndDate) {
+            $overtimeStart = \Carbon\Carbon::parse($overtimeStartDate);
+            $overtimeEnd = \Carbon\Carbon::parse($overtimeEndDate);
+
+            while ($overtimeStart->lte($overtimeEnd)) {
+                if ($overtimeStart->isWeekend() && !in_array($overtimeStart->format('Y-m-d'), $holidayDates, true)) {
+                    $overtimeDays++;
+                }
+                $overtimeStart->addDay();
+            }
+        }
+
+        return $regularDays + $overtimeDays;
+    }
+
     public function deleteProjectPic(int $id)
     {
         $pic = ProjectPic::find($id);
@@ -367,71 +402,4 @@ class EditProject extends EditRecord
         }
     }
     
-    protected function calculateTotalDays($get, $set)
-    {
-        $regularDays = 0;
-        $overtimeDays = 0;
-        
-        // Calculate regular days (weekdays only)
-        if ($get('start_date') && $get('end_date')) {
-            $start = \Carbon\Carbon::parse($get('start_date'));
-            $end = \Carbon\Carbon::parse($get('end_date'));
-            
-            while ($start->lte($end)) {
-                if (!$start->isWeekend()) {
-                    $regularDays++;
-                }
-                $start->addDay();
-            }
-        }
-        
-        // Calculate overtime days (weekends only)
-        if ($get('has_overtime') && $get('overtime_start_date') && $get('overtime_end_date')) {
-            $overtimeStart = \Carbon\Carbon::parse($get('overtime_start_date'));
-            $overtimeEnd = \Carbon\Carbon::parse($get('overtime_end_date'));
-            
-            while ($overtimeStart->lte($overtimeEnd)) {
-                if ($overtimeStart->isWeekend()) {
-                    $overtimeDays++;
-                }
-                $overtimeStart->addDay();
-            }
-        }
-        
-        $set('total_days', $regularDays + $overtimeDays);
-    }
-    
-    protected function calculateTotalDaysStatic($startDate, $endDate, $hasOvertime, $overtimeStartDate, $overtimeEndDate)
-    {
-        $regularDays = 0;
-        $overtimeDays = 0;
-        
-        // Calculate regular days (weekdays only)
-        if ($startDate && $endDate) {
-            $start = \Carbon\Carbon::parse($startDate);
-            $end = \Carbon\Carbon::parse($endDate);
-            
-            while ($start->lte($end)) {
-                if (!$start->isWeekend()) {
-                    $regularDays++;
-                }
-                $start->addDay();
-            }
-        }
-        
-        // Calculate overtime days (weekends only)
-        if ($hasOvertime && $overtimeStartDate && $overtimeEndDate) {
-            $overtimeStart = \Carbon\Carbon::parse($overtimeStartDate);
-            $overtimeEnd = \Carbon\Carbon::parse($overtimeEndDate);
-            
-            while ($overtimeStart->lte($overtimeEnd)) {
-                if ($overtimeStart->isWeekend()) {
-                    $overtimeDays++;
-                }
-                $overtimeStart->addDay();
-            }
-        }
-        
-        return $regularDays + $overtimeDays;
-    }
 }
