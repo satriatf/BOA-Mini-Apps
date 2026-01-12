@@ -75,6 +75,26 @@ class ProjectForm
                 ->native(false)
                 ->required(),
 
+                TextInput::make('total_day')
+                ->label('Total Days')
+                ->type('text')
+                ->inputMode('numeric')
+                ->default(0)
+                ->extraInputAttributes([
+                    'pattern' => '[0-9]*',
+                    'oninput' => "this.value=this.value.replace(/[^0-9]/g,'');",
+                ])
+                ->live()
+                ->afterStateUpdated(function ($state, callable $set, $get) {
+                    // Calculate end_date when total_day changes
+                    $startDate = $get('start_date');
+                    if ($startDate && $state && $state > 0) {
+                        $endDate = self::calculateEndDateSkippingNonWorking($startDate, $state);
+                        $set('end_date', $endDate);
+                    }
+                })
+                ->required(),
+
             DatePicker::make('start_date')
                 ->label('Start Date')
                 ->native(false)
@@ -107,37 +127,7 @@ class ProjectForm
                     }
                 }),
 
-            DatePicker::make('end_date')
-                ->label('End Date')
-                ->native(false)
-                ->displayFormat('d/m/Y')
-                ->minDate(fn ($get) => $get('start_date'))
-                ->closeOnDateSelection()
-                ->disabled()
-                ->dehydrated()
-                ->rules(['after_or_equal:start_date']),
-
-            TextInput::make('total_day')
-                ->label('Total Days')
-                ->type('text')
-                ->inputMode('numeric')
-                ->default(0)
-                ->extraInputAttributes([
-                    'pattern' => '[0-9]*',
-                    'oninput' => "this.value=this.value.replace(/[^0-9]/g,'');",
-                ])
-                ->live()
-                ->afterStateUpdated(function ($state, callable $set, $get) {
-                    // Calculate end_date when total_day changes
-                    $startDate = $get('start_date');
-                    if ($startDate && $state && $state > 0) {
-                        $endDate = self::calculateEndDateSkippingNonWorking($startDate, $state);
-                        $set('end_date', $endDate);
-                    }
-                })
-                ->required(),
-
-            TextInput::make('percent_done')
+                TextInput::make('percent_done')
                 ->label('% Done')
                 ->type('text')
                 ->inputMode('numeric')
@@ -148,6 +138,16 @@ class ProjectForm
                 ])
                 ->suffix('%')
                 ->required(),
+
+            DatePicker::make('end_date')
+                ->label('End Date')
+                ->native(false)
+                ->displayFormat('d/m/Y')
+                ->minDate(fn ($get) => $get('start_date'))
+                ->closeOnDateSelection()
+                ->disabled()
+                ->dehydrated()
+                ->rules(['after_or_equal:start_date']),
         ]);
     }
 }
