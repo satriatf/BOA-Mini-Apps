@@ -351,7 +351,9 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
         const days = getMonthDays(year, month);
         days.forEach(day => {
             const dayHeader = document.createElement('th');
-            dayHeader.className = 'day-header';
+            const dayOfWeek = day.date.getDay(); // 0 = Sun, 6 = Sat
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            dayHeader.className = 'day-header' + (isWeekend ? ' weekend' : '');
             dayHeader.textContent = day.label;
             dayRow.appendChild(dayHeader);
         });

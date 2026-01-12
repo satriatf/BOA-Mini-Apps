@@ -54,6 +54,10 @@
     min-width: 20px;
 }
 
+.gantt-table th.day-header.weekend {
+    color: #ef4444;
+}
+
 .gantt-table td.employee {
     background: #ffffff;
     position: sticky;
