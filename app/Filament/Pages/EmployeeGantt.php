@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Mtc;
 use App\Models\Project;
 use App\Models\User;
+use App\Models\Holiday;
 use Carbon\Carbon;
 use Filament\Pages\Page;
 
@@ -45,6 +46,12 @@ class EmployeeGantt extends Page
         $year = $this->year;
         $yearStart = Carbon::create($year, 1, 1)->startOfDay();
         $yearEnd = Carbon::create($year, 12, 31)->endOfDay();
+
+        // Load holidays to exclude from working days
+        $holidays = Holiday::whereYear('date', $year)
+            ->get()
+            ->map(fn($h) => Carbon::parse($h->date)->format('Y-m-d'))
+            ->toArray();
 
         $activeEmployees = User::where('is_active', 'Active')
             ->where(function ($q) {
@@ -141,14 +148,43 @@ class EmployeeGantt extends Page
                         $employeeTasks[$employeeId] = [];
                     }
 
-                    $employeeTasks[$employeeId][] = [
-                        'start' => $start->toDateString(),
-                        'end' => $end->toDateString(),
-                        'type' => 'project',
-                        'title' => $title,
-                        'role' => 'Technical Lead',
-                        'details' => $this->getProjectDetails($project),
-                    ];
+                    // Split Technical Lead tasks into working-day segments (skip weekends and holidays)
+                    $workingdaySegments = [];
+                    $currStart = null;
+                    $currEnd = null;
+                    
+                    for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
+                        $dateKey = $d->format('Y-m-d');
+                        // Skip weekends (6 = Sat, 7 = Sun) and holidays
+                        if (in_array($d->dayOfWeekIso, [6, 7], true) || in_array($dateKey, $holidays, true)) {
+                            if ($currStart) {
+                                $workingdaySegments[] = [$currStart->copy(), $currEnd->copy()];
+                                $currStart = $currEnd = null;
+                            }
+                            continue;
+                        }
+                        
+                        if (!$currStart) {
+                            $currStart = $d->copy();
+                        }
+                        $currEnd = $d->copy();
+                    }
+                    
+                    if ($currStart) {
+                        $workingdaySegments[] = [$currStart->copy(), $currEnd->copy()];
+                    }
+
+                    // Add each working day segment as a task
+                    foreach ($workingdaySegments as [$segStart, $segEnd]) {
+                        $employeeTasks[$employeeId][] = [
+                            'start' => $segStart->toDateString(),
+                            'end' => $segEnd->toDateString(),
+                            'type' => 'project',
+                            'title' => $title,
+                            'role' => 'Technical Lead',
+                            'details' => $this->getProjectDetails($project),
+                        ];
+                    }
                 }
             }
         }
@@ -281,21 +317,22 @@ class EmployeeGantt extends Page
                         $employeeTasks[$employeeId] = [];
                     }
 
-                    // Add regular PIC tasks, but only weekdays (Mon-Fri)
+                    // Add regular PIC tasks, but only weekdays (Mon-Fri) and non-holidays
                     foreach ($ranges as $range) {
                         $rangeStart = Carbon::parse($range['start']);
                         $rangeEnd = Carbon::parse($range['end']);
                         
-                        // Split into weekday-only segments
-                        $weekdaySegments = [];
+                        // Split into working-day-only segments (skip weekends and holidays)
+                        $workingdaySegments = [];
                         $currStart = null;
                         $currEnd = null;
                         
                         for ($d = $rangeStart->copy(); $d->lte($rangeEnd); $d->addDay()) {
-                            // Skip weekends (6 = Sat, 7 = Sun)
-                            if (in_array($d->dayOfWeekIso, [6, 7], true)) {
+                            $dateKey = $d->format('Y-m-d');
+                            // Skip weekends (6 = Sat, 7 = Sun) and holidays
+                            if (in_array($d->dayOfWeekIso, [6, 7], true) || in_array($dateKey, $holidays, true)) {
                                 if ($currStart) {
-                                    $weekdaySegments[] = [$currStart->copy(), $currEnd->copy()];
+                                    $workingdaySegments[] = [$currStart->copy(), $currEnd->copy()];
                                     $currStart = $currEnd = null;
                                 }
                                 continue;
@@ -308,11 +345,11 @@ class EmployeeGantt extends Page
                         }
                         
                         if ($currStart) {
-                            $weekdaySegments[] = [$currStart->copy(), $currEnd->copy()];
+                            $workingdaySegments[] = [$currStart->copy(), $currEnd->copy()];
                         }
                         
-                        // Add each weekday segment as a blue task
-                        foreach ($weekdaySegments as [$segStart, $segEnd]) {
+                        // Add each working day segment as a blue task
+                        foreach ($workingdaySegments as [$segStart, $segEnd]) {
                             $employeeTasks[$employeeId][] = [
                                 'start' => $segStart->toDateString(),
                                 'end' => $segEnd->toDateString(),
@@ -491,7 +528,10 @@ class EmployeeGantt extends Page
             ];
         }
 
-        return $rows;
+        return [
+            'rows' => $rows,
+            'holidays' => $holidays,
+        ];
     }
 
     /**

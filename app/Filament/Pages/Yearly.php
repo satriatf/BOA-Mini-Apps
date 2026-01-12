@@ -41,6 +41,13 @@ class Yearly extends Page
         $startOfYear = Carbon::create($year, 1, 1)->startOfDay();
         $endOfYear   = Carbon::create($year, 12, 31)->endOfDay();
 
+        // Load holidays untuk filtering - pastikan format Y-m-d konsisten
+        $holidayRecords = Holiday::whereYear('date', $year)->get();
+        $holidays = [];
+        foreach ($holidayRecords as $h) {
+            $holidays[] = Carbon::parse($h->date)->format('Y-m-d');
+        }
+
         $activeEmployees = User::where('is_active', 'Active')
             ->where(function ($q) {
                 $q->whereNull('is_admin')
@@ -73,15 +80,15 @@ class Yearly extends Page
             $s = $start->clone()->max($startOfYear);
             $e = $end->clone()->min($endOfYear);
 
-            // Bagi rentang menjadi beberapa segmen HANYA hari kerja (Mon–Fri),
-            // sehingga event tidak tampil di weekend.
+            // Bagi rentang menjadi beberapa segmen HANYA hari kerja (Mon–Fri) AND exclude holidays
             $segments = [];
             $currentStart = null;
             $currentEnd   = null;
 
             for ($day = $s->copy(); $day->lte($e); $day->addDay()) {
-                // Carbon: 1 = Mon, ..., 6 = Sat, 7 = Sun
-                if (in_array($day->dayOfWeekIso, [6, 7], true)) {
+                $dateKey = $day->format('Y-m-d');
+                // Skip weekends (6 = Sat, 7 = Sun) and holidays
+                if (in_array($day->dayOfWeekIso, [6, 7], true) || in_array($dateKey, $holidays, true)) {
                     if ($currentStart) {
                         $segments[] = [$currentStart->copy(), $currentEnd->copy()];
                         $currentStart = $currentEnd = null;
@@ -154,6 +161,8 @@ class Yearly extends Page
                     'end'     => $segEnd->clone()->addDay()->toDateString(),
                     'allDay'  => true,
                     'display' => 'block',
+                    'backgroundColor' => '#3b82f6',
+                    'textColor' => '#ffffff',
                     'extendedProps' => [
                         'type'    => 'project',
                         'details' => $detailsHtml,
@@ -176,8 +185,8 @@ class Yearly extends Page
 
             $d = Carbon::parse($t->tanggal)->startOfDay();
 
-            // Skip jika jatuh di weekend (Sabtu/Minggu)
-            if ($d->isWeekend()) {
+            // Skip jika jatuh di weekend (Sabtu/Minggu) atau holiday
+            if ($d->isWeekend() || in_array($d->format('Y-m-d'), $holidays, true)) {
                 continue;
             }
 

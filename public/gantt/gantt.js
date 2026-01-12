@@ -85,6 +85,99 @@ function hideTooltip(tooltip) {
 }
 
 /**
+ * Show holiday detail popup with green title
+ */
+function showHolidayDetailPopup(dateStr, holidays) {
+    // Remove existing popups
+    document.querySelectorAll('.gantt-detail-overlay').forEach(x => x.remove());
+    
+    // Fetch holiday data from backend (we need the holiday name)
+    fetch('/admin/holidays-data?date=' + dateStr)
+        .then(res => res.json())
+        .then(holiday => {
+            if (!holiday) return;
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'gantt-detail-overlay';
+            
+            const card = document.createElement('div');
+            card.className = 'gantt-detail-card';
+            
+            // Holiday title in GREEN
+            const taskTitle = document.createElement('div');
+            taskTitle.style.cssText = 'font-size:14px;font-weight:600;margin-bottom:8px;color:#22c55e;';
+            taskTitle.textContent = holiday.description || holiday.name || 'Holiday';
+            card.appendChild(taskTitle);
+            
+            // Format date
+            function formatMonthDay(dateStr) {
+                const d = new Date(dateStr);
+                if (Number.isNaN(d.getTime())) return '';
+                const month = MONTH_NAMES[d.getMonth()];
+                const day = d.getDate();
+                const year = d.getFullYear();
+                return `${month} ${day}, ${year}`;
+            }
+            
+            const dateFormatted = formatMonthDay(holiday.date);
+            const whenEl = document.createElement('div');
+            whenEl.style.cssText = 'color:#22c55e;margin-bottom:10px;font-size:12px;';
+            whenEl.textContent = dateFormatted + ' — ' + dateFormatted;
+            card.appendChild(whenEl);
+            
+            // Holiday description
+            const contentEl = document.createElement('div');
+            contentEl.style.cssText = 'color:#4b5563;font-size:13px;';
+            
+            const typeRow = document.createElement('div');
+            typeRow.style.cssText = 'display:flex;margin-bottom:4px;';
+            typeRow.innerHTML = '<div style="font-weight:700;width:100px;"><strong>Type</strong></div><div>' + (holiday.type || 'Holiday') + '</div>';
+            contentEl.appendChild(typeRow);
+            
+            const dateRow = document.createElement('div');
+            dateRow.style.cssText = 'display:flex;margin-bottom:4px;';
+            dateRow.innerHTML = '<div style="font-weight:700;width:100px;"><strong>Date</strong></div><div>' + dateFormatted + '</div>';
+            contentEl.appendChild(dateRow);
+            
+            const descRow = document.createElement('div');
+            descRow.style.cssText = 'display:flex;';
+            descRow.innerHTML = '<div style="font-weight:700;width:100px;"><strong>Description</strong></div><div>' + (holiday.description || '-') + '</div>';
+            contentEl.appendChild(descRow);
+            
+            card.appendChild(contentEl);
+            
+            const actionsEl = document.createElement('div');
+            actionsEl.className = 'gantt-detail-actions';
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'gantt-btn gantt-btn-gray';
+            closeBtn.textContent = 'Close';
+            closeBtn.onclick = () => overlay.remove();
+            actionsEl.appendChild(closeBtn);
+            
+            card.appendChild(actionsEl);
+            overlay.appendChild(card);
+            document.body.appendChild(overlay);
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+            
+            // Close on Escape key
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    overlay.remove();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+        })
+        .catch(err => console.error('Failed to fetch holiday data:', err));
+}
+
+/**
  * Show detail popup (similar to yearly/monthly)
  */
 function showDetailPopup(tasks) {
@@ -195,9 +288,13 @@ function showDetailPopup(tasks) {
 /**
  * Render the Gantt chart
  */
-function renderGantt(container, rows, year, showProject = true, showNonProject = true) {
+function renderGantt(container, data, year, showProject = true, showNonProject = true) {
     // Clear existing content
     container.innerHTML = '';
+    
+    // Handle data structure - can be array or object with rows/holidays
+    const rows = data.rows ? data.rows : data;
+    const holidays = data.holidays ? data.holidays : [];
     
     // Create tooltip
     const tooltip = createTooltip();
@@ -320,6 +417,13 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
                 days.forEach(day => {
                     const cell = document.createElement('td');
                     
+                    // Check if this day is a holiday (use local date formatting)
+                    const year = day.date.getFullYear();
+                    const month = String(day.date.getMonth() + 1).padStart(2, '0');
+                    const dayNum = String(day.date.getDate()).padStart(2, '0');
+                    const dayDateStr = `${year}-${month}-${dayNum}`;
+                    const isHoliday = holidays.includes(dayDateStr);
+                    
                     // Find overlapping project tasks for this day
                     const overlappingTasks = projectTasks.filter(task => {
                         const taskStart = new Date(task.start + 'T00:00:00');
@@ -363,6 +467,14 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
                         cell.addEventListener('click', () => {
                             showDetailPopup(displayTasks);
                         });
+                    } else if (isHoliday) {
+                        // Show holiday if no task on this day
+                        cell.className = 'holiday';
+                        
+                        // Add click functionality for holiday detail
+                        cell.addEventListener('click', () => {
+                            showHolidayDetailPopup(dayDateStr, holidays);
+                        });
                     }
                     
                     projectTr.appendChild(cell);
@@ -377,6 +489,13 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
                 
                 days.forEach(day => {
                     const cell = document.createElement('td');
+                    
+                    // Check if this day is a holiday (use local date formatting)
+                    const year = day.date.getFullYear();
+                    const month = String(day.date.getMonth() + 1).padStart(2, '0');
+                    const dayNum = String(day.date.getDate()).padStart(2, '0');
+                    const dayDateStr = `${year}-${month}-${dayNum}`;
+                    const isHoliday = holidays.includes(dayDateStr);
                     
                     // Find overlapping non-project tasks for this day
                     const overlappingTasks = nonProjectTasks.filter(task => {
@@ -417,6 +536,14 @@ function renderGantt(container, rows, year, showProject = true, showNonProject =
                         // Add click functionality for popup detail
                         cell.addEventListener('click', () => {
                             showDetailPopup(overlappingTasks);
+                        });
+                    } else if (isHoliday) {
+                        // Show holiday if no task on this day
+                        cell.className = 'holiday';
+                        
+                        // Add click functionality for holiday detail
+                        cell.addEventListener('click', () => {
+                            showHolidayDetailPopup(dayDateStr, holidays);
                         });
                     }
                     

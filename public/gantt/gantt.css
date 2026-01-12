@@ -148,6 +148,14 @@
     background-color: #f59e0b !important;
 }
 
+.gantt-table td.holiday {
+    background: #00ff00 !important;
+}
+
+.gantt-table td.holiday:hover {
+    background: #00cc00 !important;
+}
+
 .gantt-table td.mixed-tasks {
     background: linear-gradient(to bottom, #3b82f6 50%, #f59e0b 50%);
     color: #ffffff;

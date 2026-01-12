@@ -144,14 +144,15 @@
                     // Title as blue link (if edit url provided) to match Project Timeline style
                     const titleWrap = document.createElement('div');
                     titleWrap.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:8px;';
-                    // ensure title text color uses Filament primary blue
-                    titleWrap.style.color = colorProject;
+                    // Holiday titles in green, others in blue
+                    const isHoliday = ev.extendedProps?.type === 'holiday';
+                    titleWrap.style.color = isHoliday ? '#22c55e' : colorProject;
                     const detailTitle = ev.extendedProps?.detailTitle || ev.title || 'Detail';
                     if (ev.extendedProps?.url) {
                         const a = document.createElement('a');
                         a.href = ev.extendedProps.url;
                         a.target = '_blank';
-                        a.style.cssText = 'color:' + colorProject + ';text-decoration:none;font-weight:700;display:inline-block;';
+                        a.style.cssText = 'color:' + (isHoliday ? '#22c55e' : colorProject) + ';text-decoration:none;font-weight:700;display:inline-block;';
                         a.textContent = detailTitle;
                         titleWrap.appendChild(a);
                     } else {
@@ -159,7 +160,7 @@
                     }
 
                     const when = document.createElement('div');
-                    when.style.cssText = 'color:#4b5563;margin-bottom:10px;';
+                    when.style.cssText = 'color:' + (isHoliday ? '#22c55e' : '#4b5563') + ';margin-bottom:10px;';
                     when.textContent = s + (e ? ' — ' + e : '');
 
                     const content = document.createElement('div');

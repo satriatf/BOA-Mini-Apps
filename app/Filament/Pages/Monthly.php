@@ -40,6 +40,13 @@ class Monthly extends Page
         $yearStart = Carbon::create($year, 1, 1);
         $yearEnd   = Carbon::create($year, 12, 31);
 
+        // Load holidays untuk filtering - pastikan format Y-m-d konsisten
+        $holidayRecords = Holiday::whereYear('date', $year)->get();
+        $holidays = [];
+        foreach ($holidayRecords as $h) {
+            $holidays[] = Carbon::parse($h->date)->format('Y-m-d');
+        }
+
         $activeEmployees = User::where('is_active', 'Active')
             ->where(function ($q) {
                 $q->whereNull('is_admin')
@@ -108,13 +115,14 @@ class Monthly extends Page
                         <tr><td><b>% Done</b></td><td>" . e($done) . "</td></tr>
                     </table>
                 ";
-            // Split range into weekday-only segments (Mon–Fri). Weekends are not shown as project bars.
+            // Split range into weekday-only segments (Mon–Fri) AND exclude holidays
             $segments = [];
             $currStart = null;
             $currEnd = null;
             for ($d = $s->copy(); $d->lte($e); $d->addDay()) {
-                // Carbon ISO dayOfWeek: 6 = Sat, 7 = Sun
-                if (in_array($d->dayOfWeekIso, [6, 7], true)) {
+                $dateKey = $d->format('Y-m-d');
+                // Skip weekends (6 = Sat, 7 = Sun) and holidays
+                if (in_array($d->dayOfWeekIso, [6, 7], true) || in_array($dateKey, $holidays, true)) {
                     if ($currStart) {
                         $segments[] = [$currStart->copy(), $currEnd->copy()];
                         $currStart = $currEnd = null;
@@ -154,6 +162,11 @@ class Monthly extends Page
         ) {
             if (!$t->tanggal) continue;
             $d = Carbon::parse($t->tanggal)->startOfDay();
+            
+            // Skip if date is holiday or weekend
+            if (in_array($d->format('Y-m-d'), $holidays, true) || $d->isWeekend()) {
+                continue;
+            }
 
             // Only include MTC events that involve an active non-admin user (resolver or created_by)
             $hasActive = false;

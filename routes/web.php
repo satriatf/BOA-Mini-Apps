@@ -125,3 +125,24 @@ use App\Http\Controllers\ProjectPicController;
 
 Route::post('/project-pics/{project_sk}/store', [ProjectPicController::class, 'store'])->name('project-pics.store');
 Route::delete('/project-pics/{project_sk}/delete/{id}', [ProjectPicController::class, 'destroy'])->name('project-pics.destroy');
+
+// Route untuk mendapatkan detail holiday berdasarkan tanggal
+Route::get('/admin/holidays-data', function () {
+    $date = request('date');
+    if (!$date) {
+        return response()->json(null, 400);
+    }
+    
+    $holiday = \App\Models\Holiday::where('date', $date)->first();
+    
+    if (!$holiday) {
+        return response()->json(null, 404);
+    }
+    
+    return response()->json([
+        'name' => $holiday->desc,
+        'date' => $holiday->date,
+        'type' => 'Holiday',
+        'description' => $holiday->desc
+    ]);
+});
