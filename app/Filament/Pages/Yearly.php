@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Mtc;
 use App\Models\Project;
 use App\Models\Holiday;
+use App\Models\OnLeave;
 use App\Models\User;
 use Carbon\Carbon;
 use Filament\Pages\Page;
@@ -230,6 +231,78 @@ class Yearly extends Page
                     'details' => $detailsHtml,
                 ],
             ];
+        }
+
+        /* =========================
+         * ON LEAVES (rentang, hari kerja saja)
+         * ========================= */
+        foreach (
+            OnLeave::query()
+                ->select(['id','user_id','leave_type','start_date','end_date'])
+                ->get() as $o
+        ) {
+            if (! $o->start_date && ! $o->end_date) continue;
+
+            $ps = $o->start_date ? Carbon::parse($o->start_date)->startOfDay() : $startOfYear->clone();
+            $pe = $o->end_date   ? Carbon::parse($o->end_date)->endOfDay()   : $endOfYear->clone();
+
+            $s = $ps->max($startOfYear);
+            $e = $pe->min($endOfYear);
+
+            // Only include if user is active
+            $user = $activeEmployees->get($o->user_id) ?? $o->user;
+            if (! $user) continue;
+
+            $title = ($user->employee_name ?? ('User #'.$o->user_id)) . ' — ' . ($o->leave_type ?? 'Leave');
+
+            $detailsHtml = "
+                <table style='width:100%;border-collapse:collapse' cellpadding='6'>
+                    <tr><td style='width:140px'><b>Task</b></td><td>On Leave</td></tr>
+                    <tr><td><b>User</b></td><td>" . e($user->employee_name ?? '—') . "</td></tr>
+                    <tr><td><b>Type</b></td><td>" . e($o->leave_type ?? '—') . "</td></tr>
+                    <tr><td><b>Start</b></td><td>" . e($ps?->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>End</b></td><td>" . e($pe?->format('M j, Y')) . "</td></tr>
+                </table>
+            ";
+
+            // Split leave range into weekday-only segments (Mon–Fri)
+            $segments = [];
+            $currStart = null;
+            $currEnd   = null;
+            for ($d = $s->copy(); $d->lte($e); $d->addDay()) {
+                if (in_array($d->dayOfWeekIso, [6, 7], true)) {
+                    if ($currStart) {
+                        $segments[] = [$currStart->copy(), $currEnd->copy()];
+                        $currStart = $currEnd = null;
+                    }
+                    continue;
+                }
+                if (! $currStart) {
+                    $currStart = $d->copy();
+                }
+                $currEnd = $d->copy();
+            }
+            if ($currStart) {
+                $segments[] = [$currStart->copy(), $currEnd->copy()];
+            }
+
+            if (empty($segments)) continue;
+
+            foreach ($segments as [$segStart, $segEnd]) {
+                $events[] = [
+                    'title'   => $title,
+                    'start'   => $segStart->toDateString(),
+                    'end'     => $segEnd->copy()->addDay()->toDateString(),
+                    'allDay'  => true,
+                    'display' => 'block',
+                    'backgroundColor' => '#ef4444',
+                    'textColor'       => '#ffffff',
+                    'extendedProps' => [
+                        'type'    => 'onleave',
+                        'details' => $detailsHtml,
+                    ],
+                ];
+            }
         }
 
         /* =========================
