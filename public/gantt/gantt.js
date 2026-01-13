@@ -6,6 +6,11 @@
 // English month short names (match PHP 'M' format, e.g. 'Oct')
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+// Color tokens
+const PROJECT_COLOR = '#3b82f6';
+const OVERTIME_COLOR = '#8b0bd6';
+const OVERTIME_BADGE_BG = '#f3d1ff';
+
 /**
  * Get number of days in a month for a given year
  */
@@ -223,12 +228,12 @@ function showDetailPopup(tasks) {
         
         const isOvertime = !!task.has_overtime;
         const taskTitle = document.createElement('div');
-        taskTitle.style.cssText = 'font-size:14px;font-weight:600;margin-bottom:8px;' + (isOvertime ? 'color:#ef4444;' : 'color:#3b82f6;');
+        taskTitle.style.cssText = 'font-size:14px;font-weight:600;margin-bottom:8px;' + (isOvertime ? `color:${OVERTIME_COLOR};` : `color:${PROJECT_COLOR};`);
         taskTitle.textContent = task.title || 'Task Detail';
         if (isOvertime) {
             const badge = document.createElement('span');
             badge.textContent = 'Overtime';
-            badge.style.cssText = 'margin-left:8px;padding:2px 6px;border-radius:4px;background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;';
+            badge.style.cssText = `margin-left:8px;padding:2px 6px;border-radius:4px;background:${OVERTIME_BADGE_BG};color:${OVERTIME_COLOR};font-size:11px;font-weight:700;`;
             taskTitle.appendChild(badge);
         }
         card.appendChild(taskTitle);
@@ -247,7 +252,7 @@ function showDetailPopup(tasks) {
         const endDate = task.end ? formatMonthDay(task.end) : '';
         
         const whenEl = document.createElement('div');
-        whenEl.style.cssText = 'color:' + (isOvertime ? '#b91c1c' : '#4b5563') + ';margin-bottom:10px;font-size:12px;';
+        whenEl.style.cssText = 'color:' + (isOvertime ? OVERTIME_COLOR : '#4b5563') + ';margin-bottom:10px;font-size:12px;';
         whenEl.textContent = startDate + (endDate && endDate !== startDate ? ' — ' + endDate : '');
         card.appendChild(whenEl);
         

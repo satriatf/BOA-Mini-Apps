@@ -34,7 +34,7 @@
             <span style="width:12px;height:12px;background:#f59e0b;display:inline-block;border-radius:2px"></span> Non-Project
         </span>
         <span class="inline-flex items-center gap-2">
-            <span style="width:12px;height:12px;background:#ef4444;display:inline-block;border-radius:2px"></span> Project with Overtime
+            <span style="width:12px;height:12px;background:#8b0bd6;display:inline-block;border-radius:2px"></span> Project with Overtime
         </span>
         <span class="inline-flex items-center gap-2">
             <span style="width:12px;height:12px;background:#00ff00;display:inline-block;border-radius:2px"></span> Holiday
