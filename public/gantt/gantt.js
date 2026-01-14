@@ -420,7 +420,8 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
             projectTr = document.createElement('tr');
         }
         // Only create non-project row jika filter Non-Project aktif dan ada task non-project
-        if (showNonProject && nonProjectTasks.length > 0) {
+        // OR jika ada holiday (agar holiday tetap muncul di non-project row)
+        if (showNonProject && (nonProjectTasks.length > 0 || data.holidays.length > 0)) {
             nonProjectTr = document.createElement('tr');
         }
 
