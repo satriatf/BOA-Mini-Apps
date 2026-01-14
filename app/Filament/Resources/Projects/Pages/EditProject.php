@@ -237,6 +237,8 @@ class EditProject extends EditRecord
                         ? Carbon::parse($data['end_date'])
                         : $startDate->copy();
 
+                    // Overlap validation disabled - PIC can work on multiple projects simultaneously
+                    /*
                     $existingPics = ProjectPic::where('sk_project', $project->sk_project)
                         ->where('sk_user', $data['sk_user'])
                         ->whereNull('deleted_at')
@@ -255,6 +257,7 @@ class EditProject extends EditRecord
                             return;
                         }
                     }
+                    */
                     
                     $totalDays = $this->calculateTotalDaysStatic(
                         $data['start_date'],

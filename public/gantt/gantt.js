@@ -8,8 +8,17 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 
 // Color tokens
 const PROJECT_COLOR = '#3b82f6';
-const OVERTIME_COLOR = '#8b0bd6';
-const OVERTIME_BADGE_BG = '#f3d1ff';
+const PROJECT_BADGE_BG = '#dbeafe';
+const PROJECT_BADGE_COLOR = '#1e40af';
+const OVERTIME_COLOR = '#a855f7';
+const OVERTIME_BADGE_BG = '#f3e8ff';
+const OVERTIME_BADGE_COLOR = '#7e22ce';
+const NON_PROJECT_COLOR = '#f59e0b';
+const NON_PROJECT_BADGE_BG = '#fef3c7';
+const NON_PROJECT_BADGE_COLOR = '#b45309';
+const HOLIDAY_COLOR = '#22c55e';
+const HOLIDAY_BADGE_BG = '#dcfce7';
+const HOLIDAY_BADGE_COLOR = '#166534';
 
 /**
  * Get number of days in a month for a given year
@@ -108,10 +117,16 @@ function showHolidayDetailPopup(dateStr, holidays) {
             const card = document.createElement('div');
             card.className = 'gantt-detail-card';
             
-            // Holiday title in GREEN
+            // Holiday title in GREEN with badge
             const taskTitle = document.createElement('div');
-            taskTitle.style.cssText = 'font-size:14px;font-weight:600;margin-bottom:8px;color:#22c55e;';
+            taskTitle.style.cssText = `font-size:14px;font-weight:600;margin-bottom:8px;color:${HOLIDAY_COLOR};`;
             taskTitle.textContent = holiday.description || holiday.name || 'Holiday';
+            
+            const badge = document.createElement('span');
+            badge.textContent = 'Holiday';
+            badge.style.cssText = `margin-left:8px;padding:2px 6px;border-radius:4px;background:${HOLIDAY_BADGE_BG};color:${HOLIDAY_BADGE_COLOR};font-size:11px;font-weight:700;`;
+            taskTitle.appendChild(badge);
+            
             card.appendChild(taskTitle);
             
             // Format date
@@ -126,7 +141,7 @@ function showHolidayDetailPopup(dateStr, holidays) {
             
             const dateFormatted = formatMonthDay(holiday.date);
             const whenEl = document.createElement('div');
-            whenEl.style.cssText = 'color:#22c55e;margin-bottom:10px;font-size:12px;';
+            whenEl.style.cssText = `color:${HOLIDAY_BADGE_COLOR};margin-bottom:10px;font-size:12px;`;
             whenEl.textContent = dateFormatted + ' — ' + dateFormatted;
             card.appendChild(whenEl);
             
@@ -227,13 +242,27 @@ function showDetailPopup(tasks) {
         }
         
         const isOvertime = !!task.has_overtime;
+        const isNonProject = task.type === 'mtc';
+        const titleColor = isOvertime ? OVERTIME_COLOR : (isNonProject ? NON_PROJECT_COLOR : PROJECT_COLOR);
+        const dateColor = isOvertime ? OVERTIME_BADGE_COLOR : (isNonProject ? NON_PROJECT_BADGE_COLOR : PROJECT_BADGE_COLOR);
+        
         const taskTitle = document.createElement('div');
-        taskTitle.style.cssText = 'font-size:14px;font-weight:600;margin-bottom:8px;' + (isOvertime ? `color:${OVERTIME_COLOR};` : `color:${PROJECT_COLOR};`);
+        taskTitle.style.cssText = `font-size:14px;font-weight:600;margin-bottom:8px;color:${titleColor};`;
         taskTitle.textContent = task.title || 'Task Detail';
+        
+        // Add badge
+        const badge = document.createElement('span');
         if (isOvertime) {
-            const badge = document.createElement('span');
             badge.textContent = 'Overtime';
-            badge.style.cssText = `margin-left:8px;padding:2px 6px;border-radius:4px;background:${OVERTIME_BADGE_BG};color:${OVERTIME_COLOR};font-size:11px;font-weight:700;`;
+            badge.style.cssText = `margin-left:8px;padding:2px 6px;border-radius:4px;background:${OVERTIME_BADGE_BG};color:${OVERTIME_BADGE_COLOR};font-size:11px;font-weight:700;`;
+            taskTitle.appendChild(badge);
+        } else if (isNonProject) {
+            badge.textContent = 'Non-Project';
+            badge.style.cssText = `margin-left:8px;padding:2px 6px;border-radius:4px;background:${NON_PROJECT_BADGE_BG};color:${NON_PROJECT_BADGE_COLOR};font-size:11px;font-weight:700;`;
+            taskTitle.appendChild(badge);
+        } else {
+            badge.textContent = 'Project';
+            badge.style.cssText = `margin-left:8px;padding:2px 6px;border-radius:4px;background:${PROJECT_BADGE_BG};color:${PROJECT_BADGE_COLOR};font-size:11px;font-weight:700;`;
             taskTitle.appendChild(badge);
         }
         card.appendChild(taskTitle);
@@ -252,7 +281,7 @@ function showDetailPopup(tasks) {
         const endDate = task.end ? formatMonthDay(task.end) : '';
         
         const whenEl = document.createElement('div');
-        whenEl.style.cssText = 'color:' + (isOvertime ? OVERTIME_COLOR : '#4b5563') + ';margin-bottom:10px;font-size:12px;';
+        whenEl.style.cssText = `color:${dateColor};margin-bottom:10px;font-size:12px;`;
         whenEl.textContent = startDate + (endDate && endDate !== startDate ? ' — ' + endDate : '');
         card.appendChild(whenEl);
         
@@ -452,7 +481,17 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
                         const hasOvertimeTask = overlappingTasks.some(task => task.has_overtime);
                         cell.className = hasOvertimeTask ? 'project-overtime' : 'project';
                         console.log('Added project cell with class:', cell.className);
-
+                        // Count unique projects (by title) to show 2+ badge
+                        const uniqueProjects = new Set(overlappingTasks.map(t => t.title));
+                        if (uniqueProjects.size > 1) {
+                            // Add badge showing number of projects
+                            const badge = document.createElement('div');
+                            badge.className = 'task-count-badge';
+                            badge.textContent = uniqueProjects.size + '+';
+                            badge.style.cssText = 'position:absolute;top:2px;right:2px;color:white;font-size:11px;font-weight:700;';
+                            cell.style.position = 'relative';
+                            cell.appendChild(badge);
+                        }
                         // We keep a single colored cell even if multiple tasks overlap
                         // (avoid showing “2+” so overtime overlay doesn’t create duplicates)
 

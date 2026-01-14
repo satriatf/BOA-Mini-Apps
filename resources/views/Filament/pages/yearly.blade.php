@@ -144,26 +144,77 @@
                     const card = document.createElement('div');
                     card.className = 'fc-detail-card';
 
-                    // Title as blue link (if edit url provided) to match Project Timeline style
+                    // Determine task type and colors (matching Project Timeline)
+                    const taskType = ev.extendedProps?.type || 'project';
+                    const isHoliday = taskType === 'holiday';
+                    const isNonProject = taskType === 'mtc';
+                    const isOnLeave = taskType === 'onleave';
+                    
+                    // Color constants matching gantt.js
+                    const PROJECT_COLOR = '#3b82f6';
+                    const PROJECT_BADGE_BG = '#dbeafe';
+                    const PROJECT_BADGE_COLOR = '#1e40af';
+                    const NON_PROJECT_COLOR = '#f59e0b';
+                    const NON_PROJECT_BADGE_BG = '#fef3c7';
+                    const NON_PROJECT_BADGE_COLOR = '#b45309';
+                    const HOLIDAY_COLOR = '#22c55e';
+                    const HOLIDAY_BADGE_BG = '#dcfce7';
+                    const HOLIDAY_BADGE_COLOR = '#166534';
+                    const ONLEAVE_COLOR = '#ef4444';
+                    const ONLEAVE_BADGE_BG = '#fee2e2';
+                    const ONLEAVE_BADGE_COLOR = '#991b1b';
+                    
+                    let titleColor, badgeText, badgeBg, badgeColor, dateColor;
+                    if (isHoliday) {
+                        titleColor = HOLIDAY_COLOR;
+                        badgeText = 'Holiday';
+                        badgeBg = HOLIDAY_BADGE_BG;
+                        badgeColor = HOLIDAY_BADGE_COLOR;
+                        dateColor = HOLIDAY_BADGE_COLOR;
+                    } else if (isNonProject) {
+                        titleColor = NON_PROJECT_COLOR;
+                        badgeText = 'Non-Project';
+                        badgeBg = NON_PROJECT_BADGE_BG;
+                        badgeColor = NON_PROJECT_BADGE_COLOR;
+                        dateColor = NON_PROJECT_BADGE_COLOR;
+                    } else if (isOnLeave) {
+                        titleColor = ONLEAVE_COLOR;
+                        badgeText = 'On Leave';
+                        badgeBg = ONLEAVE_BADGE_BG;
+                        badgeColor = ONLEAVE_BADGE_COLOR;
+                        dateColor = ONLEAVE_BADGE_COLOR;
+                    } else {
+                        titleColor = PROJECT_COLOR;
+                        badgeText = 'Project';
+                        badgeBg = PROJECT_BADGE_BG;
+                        badgeColor = PROJECT_BADGE_COLOR;
+                        dateColor = PROJECT_BADGE_COLOR;
+                    }
+                    
+                    // Title with badge
                     const titleWrap = document.createElement('div');
-                    titleWrap.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:8px;';
-                    // Holiday titles in green, others in blue
-                    const isHoliday = ev.extendedProps?.type === 'holiday';
-                    titleWrap.style.color = isHoliday ? '#22c55e' : colorProject;
+                    titleWrap.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:8px;color:' + titleColor + ';';
                     const detailTitle = ev.extendedProps?.detailTitle || ev.title || 'Detail';
+                    
                     if (ev.extendedProps?.url) {
                         const a = document.createElement('a');
                         a.href = ev.extendedProps.url;
                         a.target = '_blank';
-                        a.style.cssText = 'color:' + (isHoliday ? '#22c55e' : colorProject) + ';text-decoration:none;font-weight:700;display:inline-block;';
+                        a.style.cssText = 'color:' + titleColor + ';text-decoration:none;font-weight:700;';
                         a.textContent = detailTitle;
                         titleWrap.appendChild(a);
                     } else {
                         titleWrap.textContent = detailTitle;
                     }
+                    
+                    // Add badge
+                    const badge = document.createElement('span');
+                    badge.textContent = badgeText;
+                    badge.style.cssText = 'margin-left:8px;padding:2px 6px;border-radius:4px;background:' + badgeBg + ';color:' + badgeColor + ';font-size:11px;font-weight:700;';
+                    titleWrap.appendChild(badge);
 
                     const when = document.createElement('div');
-                    when.style.cssText = 'color:' + (isHoliday ? '#22c55e' : '#4b5563') + ';margin-bottom:10px;';
+                    when.style.cssText = 'color:' + dateColor + ';margin-bottom:10px;font-size:12px;';
                     when.textContent = s + (e ? ' — ' + e : '');
 
                     const content = document.createElement('div');
