@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Projects\Tables;
 
 use App\Models\MasterProjectStatus;
 use App\Models\User;
+use App\Models\Holiday;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -15,6 +16,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Carbon\Carbon;
 
 class ProjectsTable
 {
@@ -98,6 +100,11 @@ class ProjectsTable
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . '%'),
 
+                TextColumn::make('deploy_date')
+                    ->label('Deploy Date')
+                    ->date()
+                    ->sortable(),
+
             ])
             ->filters([
                 // Filter By List & Search By
@@ -116,6 +123,7 @@ class ProjectsTable
                                 'end_date' => 'End Date',
                                 'total_day' => 'Total Day',
                                 'percent_done' => 'Percent Done',
+                                'deploy_date' => 'Deploy Date',
                             ])
                             ->placeholder('Select field to filter')
                             ->reactive(),
@@ -167,12 +175,59 @@ class ProjectsTable
                             ->label('Select By')
                             ->native(false)
                             ->placeholder('Select by Start Date...')
+                            ->disabledDates(function () {
+                                $disabledDates = [];
+                                $startDate = Carbon::now()->subYear();
+                                $endDate = Carbon::now()->addYears(5);
+                                $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+                                while ($startDate <= $endDate) {
+                                    $formatted = $startDate->format('Y-m-d');
+                                    if ($startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                                        $disabledDates[] = $formatted;
+                                    }
+                                    $startDate->addDay();
+                                }
+                                return $disabledDates;
+                            })
                             ->visible(fn ($get) => $get('field') === 'start_date'),
                         DatePicker::make('end_date_value')
                             ->label('Select By')
                             ->native(false)
                             ->placeholder('Select by End Date...')
+                            ->disabledDates(function () {
+                                $disabledDates = [];
+                                $startDate = Carbon::now()->subYear();
+                                $endDate = Carbon::now()->addYears(5);
+                                $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+                                while ($startDate <= $endDate) {
+                                    $formatted = $startDate->format('Y-m-d');
+                                    if ($startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                                        $disabledDates[] = $formatted;
+                                    }
+                                    $startDate->addDay();
+                                }
+                                return $disabledDates;
+                            })
                             ->visible(fn ($get) => $get('field') === 'end_date'),
+                        DatePicker::make('deploy_date_value')
+                            ->label('Select By')
+                            ->native(false)
+                            ->placeholder('Select by Deploy Date...')
+                            ->disabledDates(function () {
+                                $disabledDates = [];
+                                $startDate = Carbon::now()->subYear();
+                                $endDate = Carbon::now()->addYears(5);
+                                $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+                                while ($startDate <= $endDate) {
+                                    $formatted = $startDate->format('Y-m-d');
+                                    if ($startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                                        $disabledDates[] = $formatted;
+                                    }
+                                    $startDate->addDay();
+                                }
+                                return $disabledDates;
+                            })
+                            ->visible(fn ($get) => $get('field') === 'deploy_date'),
                     ])
                     ->query(function (Builder $query, array $data) {
                         $field = $data['field'] ?? null;
@@ -182,6 +237,7 @@ class ProjectsTable
                         $picsValue = $data['pics_value'] ?? null;
                         $startDateValue = $data['start_date_value'] ?? null;
                         $endDateValue = $data['end_date_value'] ?? null;
+                        $deployDateValue = $data['deploy_date_value'] ?? null;
 
                         if (!$field) {
                             return $query;
@@ -218,6 +274,10 @@ class ProjectsTable
                                 $endDateValue,
                                 fn (Builder $q) => $q->whereDate('end_date', $endDateValue)
                             ),
+                            'deploy_date' => $query->when(
+                                $deployDateValue,
+                                fn (Builder $q) => $q->whereDate('deploy_date', $deployDateValue)
+                            ),
                             'total_day' => $query->when(
                                 $searchValue !== null && $searchValue !== '',
                                 fn (Builder $q) => $q->where('total_day', $searchValue)
@@ -237,6 +297,7 @@ class ProjectsTable
                         $picsValue = $data['pics_value'] ?? null;
                         $startDateValue = $data['start_date_value'] ?? null;
                         $endDateValue = $data['end_date_value'] ?? null;
+                        $deployDateValue = $data['deploy_date_value'] ?? null;
 
                         if (!$field) {
                             return null;
@@ -252,6 +313,7 @@ class ProjectsTable
                             'end_date' => 'End Date',
                             'total_day' => 'Total Day',
                             'percent_done' => 'Percent Done',
+                            'deploy_date' => 'Deploy Date',
                         ];
 
                         if ($field === 'project_status') {
@@ -264,6 +326,8 @@ class ProjectsTable
                             $value = $startDateValue;
                         } elseif ($field === 'end_date') {
                             $value = $endDateValue;
+                        } elseif ($field === 'deploy_date') {
+                            $value = $deployDateValue;
                         } else {
                             $value = $searchValue;
                         }

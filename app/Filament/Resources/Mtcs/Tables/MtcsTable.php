@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Mtcs\Tables;
 use App\Models\MasterNonProjectType;
 use App\Models\MasterApplication;
 use App\Models\User;
+use App\Models\Holiday;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -15,6 +16,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Carbon\Carbon;
 
 class MtcsTable
 {
@@ -148,6 +150,20 @@ class MtcsTable
                             ->label('Select By')
                             ->native(false)
                             ->placeholder('Select by Date...')
+                            ->disabledDates(function () {
+                                $disabledDates = [];
+                                $startDate = Carbon::now()->subYear();
+                                $endDate = Carbon::now()->addYears(5);
+                                $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+                                while ($startDate <= $endDate) {
+                                    $formatted = $startDate->format('Y-m-d');
+                                    if ($startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                                        $disabledDates[] = $formatted;
+                                    }
+                                    $startDate->addDay();
+                                }
+                                return $disabledDates;
+                            })
                             ->visible(fn ($get) => $get('field') === 'tanggal'),
                     ])
                     ->query(function (Builder $query, array $data) {

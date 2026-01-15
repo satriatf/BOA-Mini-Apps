@@ -12,7 +12,7 @@ use App\Models\Project;
 
 class ProjectsExport implements FromCollection, WithHeadings, ShouldAutoSize, WithStyles
 {
-    protected Collection $rows;
+    protected Collection $rows; 
 
     public function __construct(Collection $rows)
     {
@@ -49,6 +49,7 @@ class ProjectsExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
                 $fmt($r->end_date ?? null),
                 $r->total_day ?? null,
                 $r->percent_done ?? null,
+                $fmt($r->deploy_date ?? null),
             ];
 
             $pics = null;
@@ -117,6 +118,7 @@ class ProjectsExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
                         $fmt($picEnd) ?? null,
                         null,
                         null,
+                        null,
                     ];
                 }
             }
@@ -127,12 +129,12 @@ class ProjectsExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
 
     public function headings(): array
     {
-        return ['Project Ticket No', 'Project Name', 'Project Status', 'Technical Lead', 'PIC', 'Start Date', 'End Date', 'Total Days', '% Done'];
+        return ['Project Ticket No', 'Project Name', 'Project Status', 'Technical Lead', 'PIC', 'Start Date', 'End Date', 'Total Days', '% Done', 'Deploy Date'];
     }
 
     public function styles(Worksheet $sheet)
     {
-        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:J1')->getFont()->setBold(true);
         $sheet->freezePane('A2');
         try {
             $sheet->getStyle('E')->getAlignment()->setWrapText(true);

@@ -29,6 +29,7 @@ class Project extends Model
         'end_date',
         'total_day',
         'percent_done',
+        'deploy_date',
         'is_delete',
         'create_by',
         'create_date',
@@ -40,6 +41,7 @@ class Project extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date'   => 'date',
+        'deploy_date' => 'date',
         'pics'       => 'array',   // Laravel decode JSON -> array
         'create_date' => 'datetime',
         'modified_date' => 'datetime',

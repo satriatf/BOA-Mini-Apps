@@ -148,6 +148,29 @@ class ProjectForm
                 ->disabled()
                 ->dehydrated()
                 ->rules(['after_or_equal:start_date']),
+
+            DatePicker::make('deploy_date')
+                ->label('Deploy Date')
+                ->native(false)
+                ->displayFormat('d/m/Y')
+                ->closeOnDateSelection()
+                ->disabledDates(function () {
+                    // Block all weekends and holidays
+                    $disabledDates = [];
+                    $startDate = Carbon::now()->subYear();
+                    $endDate = Carbon::now()->addYears(5);
+                    $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+
+                    while ($startDate <= $endDate) {
+                        $formatted = $startDate->format('Y-m-d');
+                        if ($startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                            $disabledDates[] = $formatted;
+                        }
+                        $startDate->addDay();
+                    }
+
+                    return $disabledDates;
+                }),
         ]);
     }
 }
