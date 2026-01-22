@@ -31,10 +31,18 @@ class MtcForm
                     }
                     
                     // Apply unique validation for other types
+                    // Now checking combination of no_tiket AND tanggal (date)
                     $rules = ['max:50'];
+                    $tanggal = $get('tanggal'); // Get the date value from form
+                    
                     $uniqueRule = \Illuminate\Validation\Rule::unique('mtcs', 'no_tiket')
                         ->whereNull('deleted_at')
                         ->whereNot('no_tiket', '0'); // Ignore '0' in unique check
+                    
+                    // Add date constraint: only check uniqueness if date is the same
+                    if ($tanggal) {
+                        $uniqueRule->where('tanggal', $tanggal);
+                    }
                     
                     if ($record) {
                         $uniqueRule->ignore($record->sk_mtc, 'sk_mtc');
@@ -45,6 +53,7 @@ class MtcForm
                 })
                 ->disabled(fn ($get) => strtolower((string) $get('type')) === 'operational issue')
                 ->dehydrated(true)
+                ->live() // Make it reactive to date changes
                 ->afterStateUpdated(function ($state, $set, $get) {
                     if (strtolower((string) $get('type')) === 'operational issue') {
                         $set('no_tiket', '0');
@@ -82,6 +91,7 @@ class MtcForm
                 ->native(false)
                 ->displayFormat('d/m/Y')
                 ->required()
+                ->live() // Make it reactive so changing date triggers validation
                 ->disabledDates(function () {
                     $disabledDates = [];
                     $startDate = Carbon::now()->subYear();
