@@ -39,10 +39,17 @@ class AppServiceProvider extends ServiceProvider
                 return null; // let other auth rules handle guest
             }
 
-            // Admin users allowed
-            if (($user->is_admin ?? false)) {
+            // Admin users are always allowed
+            if ($user->is_admin ?? false) {
                 return null;
             }
+
+            // Allow Managers and Section Heads (SH) to access Master data
+            $allowedLevels = ['Manager', 'Asisten Manager', 'Section Head'];
+            if (in_array($user->level, $allowedLevels)) {
+                return null;
+            }
+
 
             $model = null;
             if (isset($arguments[0]) && is_string($arguments[0]) && class_exists($arguments[0])) {

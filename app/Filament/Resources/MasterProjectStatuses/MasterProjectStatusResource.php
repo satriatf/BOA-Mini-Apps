@@ -30,6 +30,15 @@ class MasterProjectStatusResource extends Resource
 
     protected static ?int $navigationSort = 30;
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (! $user) return false;
+
+        return ($user->is_admin) || in_array($user->level, ['Manager', 'Asisten Manager', 'Section Head']);
+    }
+
+
     public static function getNavigationBadge(): ?string
     {
         return (string) MasterProjectStatus::count();

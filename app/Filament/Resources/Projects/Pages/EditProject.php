@@ -286,7 +286,7 @@ class EditProject extends EditRecord
                 ->label('View PIC')
                 ->icon('heroicon-o-eye')
                 ->modalHeading('View PIC')
-                ->modalContent(fn () => view('Filament.projects.pics_modal', ['project' => $this->record]))
+                ->modalContent(fn () => view('filament.projects.pics_modal', ['project' => $this->record]))
                 ->modalActions([
                     Action::make('close')
                         ->label('Close')

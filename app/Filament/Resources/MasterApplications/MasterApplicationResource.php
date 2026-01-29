@@ -26,9 +26,16 @@ class MasterApplicationResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Master';
 
-    protected static ?string $navigationLabel = 'Applications';
-
     protected static ?int $navigationSort = 50;
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (! $user) return false;
+
+        return ($user->is_admin) || in_array($user->level, ['Manager', 'Asisten Manager', 'Section Head']);
+    }
+
 
     public static function getNavigationBadge(): ?string
     {

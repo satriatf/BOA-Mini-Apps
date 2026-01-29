@@ -30,6 +30,15 @@ class UserResource extends Resource
     // Urutan dalam grup Master (lebih kecil = lebih atas)
     protected static ?int $navigationSort = 10;
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (! $user) return false;
+
+        return ($user->is_admin) || in_array($user->level, ['Manager', 'Asisten Manager', 'Section Head']);
+    }
+
+
     public static function getNavigationLabel(): string
     {
         return "Employees";
