@@ -68,6 +68,7 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make()->label('Tasks'),
                 NavigationGroup::make()->label('Calendar'),
+                NavigationGroup::make()->label('Report'),
                 NavigationGroup::make()->label('Master'),
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
