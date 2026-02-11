@@ -1,4 +1,4 @@
-﻿<x-filament-panels::page>
+<x-filament-panels::page>
     <style>
         /* Force inherit global Filament fonts */
         .report-dashboard, .fi-section, .fi-card { font-family: inherit !important; }
@@ -94,7 +94,7 @@
             <x-filament::section>
                 <x-slot name="heading">
                     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                        <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Project Status Distribution</span>
+                        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Project Status Distribution</span>
                         <div style="display: flex; gap: 8px;">
                             <x-heroicon-o-arrows-pointing-out style="width: 14px; height: 14px; color: #94a3b8;" />
                         </div>
@@ -109,13 +109,18 @@
                     total: {{ $reportData['workload']['total'] }},
                     get currentLabel() { 
                         let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
-                        return idx !== -1 ? this.labels[idx] : 'Projects';
+                        return idx !== -1 ? this.labels[idx] : 'Total Projects';
                     },
                     get currentPct() {
                         let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
-                        if (idx === -1) return this.total;
                         if (this.total === 0) return '0%';
+                        if (idx === -1) return '100%';
                         return Math.round((this.data[idx] / this.total) * 100) + '%';
+                    },
+                    get currentCount() {
+                        let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
+                        if (idx === -1) return this.total;
+                        return this.data[idx];
                     },
                     setHover(idx) {
                         this.hoverIndex = idx;
@@ -138,9 +143,10 @@
                     <div class="chart-main-row flex-col xl:flex-row items-center xl:items-start">
                         <div class="chart-visual-container">
                             <canvas id="workloadJiraDonut"></canvas>
-                            <div class="chart-center-overlay" :style="hoverIndex !== -1 ? 'transform: translate(-50%, -50%) scale(1.05); border: 2px solid #eff6ff;' : 'transform: translate(-50%, -50%);'">
+                            <div class="chart-center-overlay" :style="hoverIndex !== -1 ? 'transform: scale(1.05); border: 2px solid #eff6ff;' : ''">
                                 <div class="pct-main" x-text="currentPct" :style="hoverIndex !== -1 ? 'color: #2563eb; font-size: 4.8rem;' : ''"></div>
                                 <div class="lbl-sub" x-text="currentLabel"></div>
+                                <div style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; margin-top: 4px;" x-text="'Total: ' + currentCount + ' (' + currentPct + ')'"></div>
                             </div>
                         </div>
 
@@ -172,7 +178,7 @@
                 {{-- TABLES... --}}
                 <x-filament::section>
                     <x-slot name="heading">
-                        <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Application Problems</span>
+                        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase;">Application Problems</span>
                     </x-slot>
                     <table class="premium-table">
                         <thead>
@@ -202,11 +208,11 @@
                 {{-- ACTIVITY PERCENTAGE --}}
                 <x-filament::section>
                     <x-slot name="heading">
-                        <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Activity Percentage</span>
+                        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase;">Activity Percentage</span>
                     </x-slot>
                     <table class="premium-table">
                         <thead>
-                            <tr><th>Activity</th><th style="text-align: center;">Count</th><th>Percentage</th></tr>
+                            <tr><th>Activity</th><th style="text-align: center;">Count</th><th>Share</th></tr>
                         </thead>
                         <tbody>
                             @foreach($reportData['activities'] as $type => $count)

@@ -26,7 +26,7 @@ class ProjectReport extends Page
     public function mount()
     {
         $this->startMonth = Request::query('startMonth', 1);
-        $this->startYear = Request::query('startYear', now()->year);
+        $this->startYear = Request::query('startYear', 2025);
         $this->endMonth = Request::query('endMonth', now()->month);
         $this->endYear = Request::query('endYear', now()->year);
     }
@@ -36,20 +36,35 @@ class ProjectReport extends Page
         $startDate = Carbon::create($this->startYear, $this->startMonth, 1)->startOfMonth();
         $endDate = Carbon::create($this->endYear, $this->endMonth, 1)->endOfMonth();
 
-        // 1. Fetch all active projects (not deleted)
+        // 1. Fetch active projects overlapping the date range
         $projects = Project::where('is_delete', false)
             ->whereNull('deleted_at')
+            ->where(function($query) use ($startDate, $endDate) {
+                $query->where('start_date', '<=', $endDate)
+                      ->where(function($inner) use ($startDate) {
+                          $inner->whereNull('end_date')
+                                ->orWhere('end_date', '>=', $startDate);
+                      });
+            })
             ->get();
 
-        // 2. Fetch Mtc & Leaves
-        $mtcs = Mtc::whereBetween('tanggal', [$startDate, $endDate])
+        // 2. Fetch Mtc (Non-Projects) within range
+        $mtcs = Mtc::where('is_delete', false)
             ->whereNull('deleted_at')
+            ->whereBetween('tanggal', [$startDate, $endDate])
             ->get();
 
-        $leaves = OnLeave::where(function($query) use ($startDate, $endDate) {
-            $query->where('start_date', '<=', $endDate)
-                  ->where('end_date', '>=', $startDate);
-        })->count();
+        // 3. Fetch Leaves (Cuti) overlapping the date range
+        $leaves = OnLeave::whereNull('deleted_at')
+            ->where(function($query) use ($startDate, $endDate) {
+                // Ensuring any part of the leave overlapping the filter range is counted
+                $query->where('start_date', '<=', $endDate)
+                      ->where(function($inner) use ($startDate) {
+                          $inner->whereNull('end_date')
+                                ->orWhere('end_date', '>=', $startDate);
+                      });
+            })
+            ->count();
 
         // 3. Project Status Distribution (Workload Chart)
         $workloadMap = [];
@@ -60,29 +75,32 @@ class ProjectReport extends Page
         arsort($workloadMap);
 
         // 4. Application Problems (Mtc)
+        $masterApps = MasterApplication::pluck('name')->toArray();
         $problemsMap = [];
+        
         foreach ($mtcs as $mtc) {
-            $app = $mtc->application ?: 'Other';
-            $problemsMap[$app] = ($problemsMap[$app] ?? 0) + 1;
+            $rawApp = trim($mtc->application) ?: 'Other';
+            $resolvedName = $rawApp;
+            
+            // Try to resolve name from master applications for consistent casing
+            foreach ($masterApps as $masterApp) {
+                if (strcasecmp($rawApp, $masterApp) === 0) {
+                    $resolvedName = $masterApp;
+                    break;
+                }
+            }
+            
+            $problemsMap[$resolvedName] = ($problemsMap[$resolvedName] ?? 0) + 1;
         }
+        
         arsort($problemsMap);
 
-        // 5. Activity Percentage (Now based on Project Statuses + Leaves + MTC)
+        // 5. Activity Percentage (Summary Categories)
         $activityMap = [
-            'CUTI' => $leaves,
+            'PROJECTS'     => $projects->count(),
+            'NON-PROJECTS' => $mtcs->count(),
+            'CUTI'         => $leaves,
         ];
-        
-        // Add Project Statuses to Activity Map
-        foreach ($projects as $project) {
-            $status = $project->project_status ?: 'UNKNOWN';
-            $activityMap[$status] = ($activityMap[$status] ?? 0) + 1;
-        }
-
-        // Add MTC Types (Problem, etc)
-        foreach ($mtcs as $mtc) {
-            $type = $mtc->type ?: 'OTHER';
-            $activityMap[$type] = ($activityMap[$type] ?? 0) + 1;
-        }
 
         arsort($activityMap);
         $totalActivity = array_sum($activityMap);
