@@ -25,10 +25,16 @@ class ProjectReport extends Page
 
     public function mount()
     {
-        $this->startMonth = Request::query('startMonth', 1);
-        $this->startYear = Request::query('startYear', 2025);
-        $this->endMonth = Request::query('endMonth', now()->month);
-        $this->endYear = Request::query('endYear', now()->year);
+        $this->startMonth = request('startMonth', now()->month);
+        $this->startYear = request('startYear', now()->year);
+        $this->endMonth = request('endMonth', now()->month);
+        $this->endYear = request('endYear', now()->year);
+
+        // Ensure variables are integers
+        $this->startMonth = (int) $this->startMonth;
+        $this->startYear = (int) $this->startYear;
+        $this->endMonth = (int) $this->endMonth;
+        $this->endYear = (int) $this->endYear;
     }
 
     public function getChartData(): array
@@ -99,7 +105,7 @@ class ProjectReport extends Page
         $activityMap = [
             'PROJECTS'     => $projects->count(),
             'NON-PROJECTS' => $mtcs->count(),
-            'CUTI'         => $leaves,
+            'ON LEAVES'     => $leaves,
         ];
 
         arsort($activityMap);

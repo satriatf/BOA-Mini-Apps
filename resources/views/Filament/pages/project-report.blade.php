@@ -50,7 +50,7 @@
         .progress-bar-fill { background: #3b82f6; height: 100%; border-radius: 999px; transition: width 0.8s ease; }
     </style>
 
-    <div class="report-dashboard space-y-6">
+    <div class="report-dashboard" style="display: flex; flex-direction: column; gap: 24px;">
         
         {{-- FILTER SECTION --}}
         <x-filament::section>
@@ -58,29 +58,45 @@
                 <h2 style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Report Filter</h2>
                 <form method="GET" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; background: #fff; border: 2px solid #e5e7eb; border-radius: 0.5rem; padding: 0.4rem 0.75rem;">
-                        <input type="hidden" name="startYear" value="{{ $startYear }}">
-                        <select name="startMonth" style="background: transparent; border: none; font-size: 0.8rem; font-weight: 700; color: #111827; outline: none;">
+                        <select name="startMonth" id="startMonth" onchange="validateDates()" style="background: transparent; border: none; font-size: 0.8rem; font-weight: 700; color: #111827; outline: none;">
                             @foreach(range(1, 12) as $m)
                                 <option value="{{ $m }}" @selected($m == $startMonth)>{{ \Carbon\Carbon::create(2000, $m, 1)->format('M') }}</option>
                             @endforeach
                         </select>
-                        <select onchange="this.previousElementSibling.value = this.value" style="background: transparent; border: none; font-size: 0.8rem; font-weight: 700; color: #111827; outline: none;">
-                            @for($y = 2024; $y <= now()->year + 2; $y++)
+                        <select name="startYear" id="startYear" onchange="validateDates()" style="background: transparent; border: none; font-size: 0.8rem; font-weight: 700; color: #111827; outline: none;">
+                            @for($y = 2023; $y <= 2030; $y++)
                                 <option value="{{ $y }}" @selected($y == $startYear)>{{ $y }}</option>
                             @endfor
                         </select>
                         <span style="color: #cbd5e1; margin: 0 0.75rem; font-weight: 900;">—</span>
-                        <select name="endMonth" style="background: transparent; border: none; font-size: 0.8rem; font-weight: 700; color: #111827; outline: none;">
+                        <select name="endMonth" id="endMonth" onchange="validateDates()" style="background: transparent; border: none; font-size: 0.8rem; font-weight: 700; color: #111827; outline: none;">
                             @foreach(range(1, 12) as $m)
                                 <option value="{{ $m }}" @selected($m == $endMonth)>{{ \Carbon\Carbon::create(2000, $m, 1)->format('M') }}</option>
                             @endforeach
                         </select>
-                        <select name="endYear" style="background: transparent; border: none; font-size: 0.8rem; font-weight: 700; color: #111827; outline: none;">
-                            @for($y = 2024; $y <= now()->year + 2; $y++)
+                        <select name="endYear" id="endYear" onchange="validateDates()" style="background: transparent; border: none; font-size: 0.8rem; font-weight: 700; color: #111827; outline: none;">
+                            @for($y = 2023; $y <= 2030; $y++)
                                 <option value="{{ $y }}" @selected($y == $endYear)>{{ $y }}</option>
                             @endfor
                         </select>
                     </div>
+
+                    <script>
+                        function validateDates() {
+                            const sm = parseInt(document.getElementById('startMonth').value);
+                            const sy = parseInt(document.getElementById('startYear').value);
+                            const em = parseInt(document.getElementById('endMonth').value);
+                            const ey = parseInt(document.getElementById('endYear').value);
+
+                            const startVal = sy * 100 + sm;
+                            const endVal = ey * 100 + em;
+
+                            if (endVal < startVal) {
+                                document.getElementById('endMonth').value = sm;
+                                document.getElementById('endYear').value = sy;
+                            }
+                        }
+                    </script>
                     <x-filament::button type="submit" color="primary" icon="heroicon-o-funnel" size="sm" style="font-weight: 800; text-transform: uppercase;">
                         Apply
                     </x-filament::button>
@@ -88,16 +104,13 @@
             </div>
         </x-filament::section>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div style="display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 24px;" class="lg:grid-cols-2">
             
             {{-- WORKLOAD CHART (Jira-Style Enhanced) --}}
             <x-filament::section>
                 <x-slot name="heading">
                     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                         <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Project Status Distribution</span>
-                        <div style="display: flex; gap: 8px;">
-                            <x-heroicon-o-arrows-pointing-out style="width: 14px; height: 14px; color: #94a3b8;" />
-                        </div>
                     </div>
                 </x-slot>
 
