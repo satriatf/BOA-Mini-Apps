@@ -39,6 +39,11 @@ class ProjectsTable
                     ->label('Project Status')
                     ->sortable(),
 
+                TextColumn::make('application')
+                    ->label('Application')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('techLead.employee_name')
                     ->label('Technical Lead')
                     ->state(function ($record) {
@@ -117,6 +122,7 @@ class ProjectsTable
                                 'project_ticket_no' => 'Project Ticket No',
                                 'project_name' => 'Project Name',
                                 'project_status' => 'Project Status',
+                                'application' => 'Application',
                                 'technical_lead' => 'Technical Lead',
                                 'pics' => 'PIC',
                                 'start_date' => 'Start Date',
@@ -141,7 +147,7 @@ class ProjectsTable
                             })
                             ->visible(fn ($get) => in_array($get('field'), [
                                 'project_ticket_no', 'project_name', 
-                                'total_day', 'percent_done'
+                                'application', 'total_day', 'percent_done'
                             ])),
                         Select::make('status_value')
                             ->label('Select By')
@@ -256,6 +262,10 @@ class ProjectsTable
                                 $statusValue,
                                 fn (Builder $q) => $q->where('project_status', $statusValue)
                             ),
+                            'application' => $query->when(
+                                $searchValue,
+                                fn (Builder $q) => $q->whereRaw('LOWER(application) LIKE ?', ['%' . strtolower($searchValue) . '%'])
+                            ),
                             'technical_lead' => $query->when(
                                 $technicalLeadValue,
                                 fn (Builder $q) => $q->where('technical_lead', (string) $technicalLeadValue)
@@ -307,6 +317,7 @@ class ProjectsTable
                             'project_ticket_no' => 'Project Ticket No',
                             'project_name' => 'Project Name',
                             'project_status' => 'Project Status',
+                            'application' => 'Application',
                             'technical_lead' => 'Technical Lead',
                             'pics' => 'PIC',
                             'start_date' => 'Start Date',

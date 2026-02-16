@@ -66,6 +66,13 @@ class ProjectForm
                 ->options(fn() => MasterProjectStatus::pluck('name', 'name'))
                 ->native(false)
                 ->searchable(),
+            
+            Select::make('application')
+                ->label('Application')
+                ->required()
+                ->options(fn() => \App\Models\MasterApplication::pluck('name', 'name'))
+                ->native(false)
+                ->searchable(),
 
             Select::make('technical_lead')
                 ->label('Technical Lead')

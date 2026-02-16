@@ -23,6 +23,7 @@ class Project extends Model
         'project_ticket_no',
         'project_name',
         'project_status',
+        'application',
         'technical_lead',
         'pics',          // JSON array of user IDs
         'start_date',
