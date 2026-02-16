@@ -5,7 +5,6 @@ namespace App\Filament\Pages;
 use Filament\Pages\Page;
 use App\Models\Project;
 use App\Models\Mtc;
-use App\Models\OnLeave;
 use App\Models\MasterApplication;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Request;
@@ -14,8 +13,8 @@ class ProjectReport extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-line';
     protected static string|\UnitEnum|null $navigationGroup = 'Report';
-    protected static ?string $navigationLabel = 'Project Application';
-    protected static ?string $title = 'Project Application';
+    protected static ?string $navigationLabel = 'Application Report';
+    protected static ?string $title = 'Application Report';
     protected string $view = 'filament.pages.project-report';
 
     public $startMonth;
@@ -60,23 +59,15 @@ class ProjectReport extends Page
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->get();
 
-        // 3. Fetch Leaves (Cuti) overlapping the date range
-        $leaves = OnLeave::whereNull('deleted_at')
-            ->where(function($query) use ($startDate, $endDate) {
-                // Ensuring any part of the leave overlapping the filter range is counted
-                $query->where('start_date', '<=', $endDate)
-                      ->where(function($inner) use ($startDate) {
-                          $inner->whereNull('end_date')
-                                ->orWhere('end_date', '>=', $startDate);
-                      });
-            })
-            ->count();
 
-        // 3. Project Status Distribution (Workload Chart)
+
+        // 3. Project Application Distribution (Workload Chart)
         $workloadMap = [];
         foreach ($projects as $project) {
-            $status = $project->project_status ?: 'UNKNOWN';
-            $workloadMap[$status] = ($workloadMap[$status] ?? 0) + 1;
+            $app = $project->application;
+            if (!empty($app)) {
+                $workloadMap[$app] = ($workloadMap[$app] ?? 0) + 1;
+            }
         }
         arsort($workloadMap);
 
@@ -101,25 +92,53 @@ class ProjectReport extends Page
         
         arsort($problemsMap);
 
-        // 5. Activity Percentage (Summary Categories)
-        $activityMap = [
-            'PROJECTS'     => $projects->count(),
-            'NON-PROJECTS' => $mtcs->count(),
-            'ON LEAVES'     => $leaves,
+        // Define specific colors for applications
+        $appColors = [
+            'Ad1forFlow' => '#3b82f6',      // Blue
+            'Ad1Access' => '#ef4444',       // Red
+            'Ad1Internship' => '#f59e0b',   // Amber
+            'QPC' => '#10b981',             // Emerald
+            'Ad1Falcon' => '#8b5cf6',       // Purple
+            'BPKBLib' => '#ec4899',         // Pink
+            'Ad1Primajaga' => '#06b6d4',    // Cyan
+            'Ihtisar Asuransi' => '#d946ef', // Fuchsia
+            'Public Access' => '#84cc16',   // Lime
+            'Other' => '#64748b',           // Slate
         ];
 
-        arsort($activityMap);
-        $totalActivity = array_sum($activityMap);
+        // Fallback palette for unknown apps
+        $fallbackColors = ['#84cc16', '#14b8a6', '#d946ef', '#f97316', '#6366f1'];
+
+        $getColors = function($labels) use ($appColors, $fallbackColors) {
+            $colors = [];
+            $fallbackIndex = 0;
+            foreach ($labels as $label) {
+                if (isset($appColors[$label])) {
+                    $colors[] = $appColors[$label];
+                } else {
+                    $colors[] = $fallbackColors[$fallbackIndex % count($fallbackColors)];
+                    $fallbackIndex++;
+                }
+            }
+            return $colors;
+        };
+
+        $workloadLabels = array_keys($workloadMap);
+        $nonProjectLabels = array_keys($problemsMap);
 
         return [
             'workload' => [
-                'labels' => array_keys($workloadMap),
+                'labels' => $workloadLabels,
                 'data' => array_values($workloadMap),
+                'colors' => $getColors($workloadLabels),
                 'total' => array_sum($workloadMap),
             ],
-            'problems' => $problemsMap,
-            'activities' => $activityMap,
-            'totalActivity' => $totalActivity,
+            'nonProjectWorkload' => [
+                'labels' => $nonProjectLabels,
+                'data' => array_values($problemsMap),
+                'colors' => $getColors($nonProjectLabels),
+                'total' => array_sum($problemsMap),
+            ],
         ];
     }
 

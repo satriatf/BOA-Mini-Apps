@@ -10,12 +10,12 @@
         .chart-center-overlay {
             position: absolute; display: flex; flex-direction: column;
             align-items: center; justify-content: center; pointer-events: none;
-            background: #fff; border-radius: 50%; width: 68%; height: 68%;
-            z-index: 10; box-shadow: inset 0 4px 15px rgba(0,0,0,0.03), 0 2px 4px rgba(0,0,0,0.02);
+            background: transparent; border-radius: 50%; width: 50%; height: 50%;
+            z-index: 10;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             top: 50%; left: 50%; transform: translate(-50%, -50%);
         }
-        .pct-main { font-size: 4.2rem; font-weight: 900; color: #0f172a; line-height: 0.9; transition: all 0.3s ease; }
+        .pct-main { font-size: 2.5rem; font-weight: 900; color: #0f172a; line-height: 0.9; transition: all 0.3s ease; }
         .lbl-sub { font-size: 0.8rem; font-weight: 800; color: #94a3b8; margin-top: 8px; text-align: center; max-width: 140px; text-transform: uppercase; letter-spacing: 1.5px; }
 
         .legend-list { flex: 1; display: flex; flex-direction: column; gap: 4px; }
@@ -110,68 +110,43 @@
             <x-filament::section>
                 <x-slot name="heading">
                     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                        <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Project Status Distribution</span>
+                        <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Project Workload</span>
                     </div>
                 </x-slot>
 
-                <div id="workload-component" x-data="{ 
-                    activeIndex: -1, 
-                    hoverIndex: -1,
-                    labels: @json($reportData['workload']['labels']),
-                    data: @json($reportData['workload']['data']),
-                    total: {{ $reportData['workload']['total'] }},
-                    get currentLabel() { 
-                        let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
-                        return idx !== -1 ? this.labels[idx] : 'Projects';
-                    },
-                    get currentPct() {
-                        let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
-                        if (idx === -1) return this.total;
-                        if (this.total === 0) return '0%';
-                        return Math.round((this.data[idx] / this.total) * 100) + '%';
-                    },
-                    setHover(idx) {
-                        this.hoverIndex = idx;
-                        if (window.workloadChart) {
-                            if (idx !== -1) {
-                                window.workloadChart.setActiveElements([{ datasetIndex: 0, index: idx }]);
-                            } else {
-                                window.workloadChart.setActiveElements([]);
-                            }
-                            window.workloadChart.update();
-                        }
-                    }
-                }" class="w-full">
+                <div id="workload-component" x-data="workloadChartComponent" class="w-full">
                     
                     <div class="mb-4">
-                        <h3 style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">Project Status</h3>
-                        <p style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Total Projects: {{ $reportData['workload']['total'] }}</p>
+                        <h3 style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">Application Name</h3>
+                        <p style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Total Issues: <span style="font-weight: 900; color: #0f172a;">{{ $reportData['workload']['total'] }}</span></p>
                     </div>
 
                     <div class="chart-main-row flex-col xl:flex-row items-center xl:items-start">
                         <div class="chart-visual-container">
-                            <canvas id="workloadJiraDonut"></canvas>
-                            <div class="chart-center-overlay" :style="hoverIndex !== -1 ? 'transform: translate(-50%, -50%) scale(1.05); border: 2px solid #eff6ff;' : 'transform: translate(-50%, -50%);'">
-                                <div class="pct-main" x-text="currentPct" :style="hoverIndex !== -1 ? 'color: #2563eb; font-size: 4.8rem;' : ''"></div>
-                                <div class="lbl-sub" x-text="currentLabel"></div>
+                            <canvas id="workloadJiraDonut" style="width: 100%; height: 100%;"></canvas>
+                            <div class="chart-center-overlay" :style="hoverIndex !== -1 ? 'transform: translate(-50%, -50%) scale(1.05);' : 'transform: translate(-50%, -50%);'">
+                                <div class="pct-main" x-text="currentPct" :style="hoverIndex !== -1 ? 'color: ' + currentColor + '; font-size: 3rem;' : ''"></div>
+                                <div class="lbl-sub" x-text="currentLabel" :style="hoverIndex !== -1 ? 'color: ' + currentColor : ''"></div>
                             </div>
                         </div>
 
                         <div class="legend-list w-full">
-                            @php $colors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#a855f7']; @endphp
                             @foreach($reportData['workload']['labels'] as $idx => $label)
-                                @php $pct = $reportData['workload']['total'] > 0 ? round(($reportData['workload']['data'][$idx] / $reportData['workload']['total']) * 100) : 0; @endphp
+                                @php 
+                                    $pct = $reportData['workload']['total'] > 0 ? round(($reportData['workload']['data'][$idx] / $reportData['workload']['total']) * 100) : 0; 
+                                    $color = $reportData['workload']['colors'][$idx] ?? '#cccccc';
+                                @endphp
                                 <div class="legend-item" 
                                      :class="{ 'active-item': activeIndex === {{ $idx }} || hoverIndex === {{ $idx }} }"
                                      @mouseenter="setHover({{ $idx }})" 
                                      @mouseleave="setHover(-1)"
                                      @click="activeIndex = (activeIndex === {{ $idx }} ? -1 : {{ $idx }})">
                                     <div class="legend-info">
-                                        <div class="legend-color" style="background: {{ $colors[$idx % count($colors)] }}"></div>
+                                        <div class="legend-color" style="background: {{ $color }}"></div>
                                         <span class="legend-label">{{ $label }}</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 10px;">
-                                        <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">{{ $pct }}%</span>
+                                        {{-- <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">{{ $pct }}%</span> --}}
                                         <span class="legend-value">{{ $reportData['workload']['data'][$idx] }}</span>
                                     </div>
                                 </div>
@@ -183,61 +158,61 @@
 
             <div style="display: flex; flex-direction: column; gap: 24px;">
                 {{-- TABLES... --}}
+                {{-- NON-PROJECT WORKLOAD CHART --}}
                 <x-filament::section>
                     <x-slot name="heading">
-                        <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Application Problems</span>
+                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Non-Project Workload</span>
+                        </div>
                     </x-slot>
-                    <table class="premium-table">
-                        <thead>
-                            <tr><th>App Name</th><th>Issues</th><th>T:</th></tr>
-                        </thead>
-                        <tbody>
-                            @foreach($reportData['problems'] as $app => $count)
-                                <tr>
-                                    <td style="font-weight: 600;">{{ $app }}</td>
-                                    <td style="color: #3b82f6; font-weight: 800;">{{ $count }}</td>
-                                    <td style="background: #eff6ff; color: #2563eb; font-weight: 900;">{{ $count }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                        @if(count($reportData['problems']) > 0)
-                        <tfoot>
-                            <tr style="background: #f8fafc; font-weight: 800;">
-                                <td style="border-top: 2px solid #e2e8f0;">Total Issues:</td>
-                                <td style="border-top: 2px solid #e2e8f0; color: #3b82f6;">{{ array_sum($reportData['problems']) }}</td>
-                                <td style="border-top: 2px solid #e2e8f0; color: #2563eb; background: #eff6ff;">{{ array_sum($reportData['problems']) }}</td>
-                            </tr>
-                        </tfoot>
-                        @endif
-                    </table>
+    
+                    <div id="nonproject-workload-component" 
+                         x-data="nonProjectWorkloadChartComponent" 
+                        @chart-hover="hoverIndex = $event.detail.index"
+                        @chart-click="activeIndex = (activeIndex === $event.detail.index ? -1 : $event.detail.index)"
+                        class="w-full">
+                        
+                        <div class="mb-4">
+                            <h3 style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">Application Name</h3>
+                            <p style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Total Issues: <span style="font-weight: 900; color: #0f172a;">{{ $reportData['nonProjectWorkload']['total'] }}</span></p>
+                        </div>
+    
+                        <div class="chart-main-row flex-col xl:flex-row items-center xl:items-start">
+                            <div class="chart-visual-container">
+                                <canvas id="nonprojectWorkloadJiraDonut" style="width: 100%; height: 100%;"></canvas>
+                                <div class="chart-center-overlay" :style="hoverIndex !== -1 ? 'transform: translate(-50%, -50%) scale(1.05);' : 'transform: translate(-50%, -50%);'">
+                                    <div class="pct-main" x-text="currentPct" :style="hoverIndex !== -1 ? 'color: ' + currentColor + '; font-size: 3rem;' : ''"></div>
+                                    <div class="lbl-sub" x-text="currentLabel" :style="hoverIndex !== -1 ? 'color: ' + currentColor : ''"></div>
+                                </div>
+                            </div>
+    
+                            <div class="legend-list w-full">
+                                @foreach($reportData['nonProjectWorkload']['labels'] as $idx => $label)
+                                    @php 
+                                        $pct = $reportData['nonProjectWorkload']['total'] > 0 ? round(($reportData['nonProjectWorkload']['data'][$idx] / $reportData['nonProjectWorkload']['total']) * 100) : 0; 
+                                        $color = $reportData['nonProjectWorkload']['colors'][$idx] ?? '#cccccc';
+                                    @endphp
+                                    <div class="legend-item" 
+                                         :class="{ 'active-item': activeIndex === {{ $idx }} || hoverIndex === {{ $idx }} }"
+                                         @mouseenter="setHover({{ $idx }})" 
+                                         @mouseleave="setHover(-1)"
+                                         @click="activeIndex = (activeIndex === {{ $idx }} ? -1 : {{ $idx }})">
+                                        <div class="legend-info">
+                                            <div class="legend-color" style="background: {{ $color }}"></div>
+                                            <span class="legend-label">{{ $label }}</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span class="legend-value">{{ $reportData['nonProjectWorkload']['data'][$idx] }}</span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
                 </x-filament::section>
 
                 {{-- ACTIVITY PERCENTAGE --}}
-                <x-filament::section>
-                    <x-slot name="heading">
-                        <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Activity Percentage</span>
-                    </x-slot>
-                    <table class="premium-table">
-                        <thead>
-                            <tr><th>Activity</th><th style="text-align: center;">Count</th><th>Percentage</th></tr>
-                        </thead>
-                        <tbody>
-                            @foreach($reportData['activities'] as $type => $count)
-                                @php $pct = $reportData['totalActivity'] > 0 ? round(($count / $reportData['totalActivity']) * 100) : 0; @endphp
-                                <tr>
-                                    <td style="color: #3b82f6; font-weight: 800; text-transform: uppercase;">{{ $type }}</td>
-                                    <td style="font-weight: 700; text-align: center;">{{ $count }}</td>
-                                    <td>
-                                        <div style="display: flex; align-items: center; gap: 12px;">
-                                            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: {{ $pct }}%"></div></div>
-                                            <span style="font-size: 10px; font-weight: 900; color: #64748b; min-width: 30px; text-align: right;">{{ $pct }}%</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </x-filament::section>
+
             </div>
         </div>
     </div>
@@ -245,96 +220,193 @@
     {{-- TOOLTIP ELEMENT --}}
     <div id="jira-custom-tooltip">
         <h4 id="tt-name">Application</h4>
-        <p id="tt-detail">0 Projects (0%)</p>
+        <p id="tt-detail">0 Issues (0%)</p>
     </div>
 
-    @once
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const ctx = document.getElementById('workloadJiraDonut');
-            const ttEl = document.getElementById('jira-custom-tooltip');
-            const ttName = document.getElementById('tt-name');
-            const ttDetail = document.getElementById('tt-detail');
-
-            if (!ctx) return;
-
-            const labels = @json($reportData['workload']['labels']);
-            const dataValues = @json($reportData['workload']['data']);
-            const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#a855f7'];
-
-            window.workloadChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: dataValues,
-                        backgroundColor: colors,
-                        hoverBackgroundColor: colors.map(c => c + 'ee'),
-                        borderWidth: 0,
-                        hoverOffset: 20,
-                        spacing: 2
-                    }]
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('workloadChartComponent', () => ({
+                activeIndex: -1, 
+                hoverIndex: -1,
+                labels: @json($reportData['workload']['labels']),
+                data: @json($reportData['workload']['data']),
+                total: {{ $reportData['workload']['total'] }},
+                colors: @json($reportData['workload']['colors']),
+                get currentLabel() { 
+                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
+                    return idx !== -1 ? this.labels[idx] : 'Project';
                 },
-                options: {
-                    cutout: '72%',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 800,
-                        easing: 'easeOutQuart'
-                    },
-                    plugins: { 
-                        legend: { display: false }, 
-                        tooltip: { 
-                            enabled: false,
-                            external: function(context) {
-                                const { chart, tooltip } = context;
-                                
-                                if (tooltip.opacity === 0) {
-                                    ttEl.style.opacity = '0';
-                                    return;
-                                }
-
-                                const idx = tooltip.dataPoints[0].dataIndex;
-                                const label = labels[idx];
-                                const value = dataValues[idx];
-                                const total = dataValues.reduce((a, b) => a + b, 0);
-                                const pct = total > 0 ? Math.round((value / total) * 100) : 0;
-
-                                ttName.innerText = label;
-                                ttDetail.innerText = `${value} Projects (${pct}%)`;
-
-                                const pos = chart.canvas.getBoundingClientRect();
-                                ttEl.style.opacity = '1';
-                                ttEl.style.left = (pos.left + window.pageXOffset + tooltip.caretX + 20) + 'px';
-                                ttEl.style.top = (pos.top + window.pageYOffset + tooltip.caretY - 100) + 'px';
-                            }
-                        } 
-                    },
-                    onHover: (event, elements) => {
-                        const alpineEl = document.getElementById('workload-component');
-                        if (alpineEl && window.Alpine) {
-                            const data = window.Alpine.$data(alpineEl);
-                            if (elements.length > 0) {
-                                data.hoverIndex = elements[0].index;
-                                event.native.target.style.cursor = 'pointer';
-                            } else {
-                                data.hoverIndex = -1;
-                                event.native.target.style.cursor = 'default';
-                            }
+                get currentPct() {
+                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
+                    if (idx === -1) return this.total;
+                    if (this.total === 0) return '0%';
+                    return Math.round((this.data[idx] / this.total) * 100) + '%';
+                },
+                get currentColor() {
+                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
+                    if (idx !== -1) return this.colors[idx % this.colors.length];
+                    return '#eff6ff'; // Default border color when nothing selected, mostly ignored by logic above but good fallback
+                },
+                setHover(idx) {
+                    this.hoverIndex = idx;
+                    if (window.workloadChart) {
+                        if (idx !== -1) {
+                            window.workloadChart.setActiveElements([{ datasetIndex: 0, index: idx }]);
+                        } else {
+                            window.workloadChart.setActiveElements([]);
                         }
-                    },
-                    onClick: (event, elements) => {
-                        const alpineEl = document.getElementById('workload-component');
-                        if (alpineEl && window.Alpine && elements.length > 0) {
-                            const data = window.Alpine.$data(alpineEl);
-                            const idx = elements[0].index;
-                            data.activeIndex = (data.activeIndex === idx ? -1 : idx);
-                        }
+                        window.workloadChart.update();
                     }
                 }
-            });
+            }));
+            
+            Alpine.data('nonProjectWorkloadChartComponent', () => ({
+                activeIndex: -1, 
+                hoverIndex: -1,
+                labels: @json($reportData['nonProjectWorkload']['labels']),
+                data: @json($reportData['nonProjectWorkload']['data']),
+                total: {{ $reportData['nonProjectWorkload']['total'] }},
+                colors: @json($reportData['nonProjectWorkload']['colors']),
+                get currentLabel() { 
+                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
+                    return idx !== -1 ? this.labels[idx] : 'Non Project';
+                },
+                get currentPct() {
+                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
+                    if (idx === -1) return this.total;
+                    if (this.total === 0) return '0%';
+                    return Math.round((this.data[idx] / this.total) * 100) + '%';
+                },
+                get currentColor() {
+                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
+                    if (idx !== -1) return this.colors[idx % this.colors.length];
+                    return '#eff6ff';
+                },
+                setHover(idx) {
+                    this.hoverIndex = idx;
+                    if (window.nonprojectWorkloadChart) {
+                        if (idx !== -1) {
+                            window.nonprojectWorkloadChart.setActiveElements([{ datasetIndex: 0, index: idx }]);
+                        } else {
+                            window.nonprojectWorkloadChart.setActiveElements([]);
+                        }
+                        window.nonprojectWorkloadChart.update();
+                    }
+                }
+            }));
+        });
+    </script>
+    @once
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Helper to ensure Chart is loaded
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js not loaded');
+                return;
+            }
+
+            const initChart = (ctxId, labels, dataValues, colors, chartVarName) => {
+                const ctx = document.getElementById(ctxId);
+                if (!ctx) return;
+
+                window[chartVarName] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: dataValues,
+                            backgroundColor: colors,
+                            hoverBackgroundColor: colors,
+                            borderWidth: 0,
+                            hoverOffset: 20,
+                            spacing: 2
+                        }]
+                    },
+                    options: {
+                        cutout: '60%', // Increased cutout slightly
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 800,
+                            easing: 'easeOutQuart'
+                        },
+                        plugins: { 
+                            legend: { display: false }, 
+                            tooltip: { 
+                                enabled: false,
+                                external: function(context) {
+                                    const { chart, tooltip } = context;
+                                    const ttEl = document.getElementById('jira-custom-tooltip');
+                                    const ttName = document.getElementById('tt-name');
+                                    const ttDetail = document.getElementById('tt-detail');
+
+                                    if (!ttEl) return;
+                                    
+                                    if (tooltip.opacity === 0) {
+                                        ttEl.style.opacity = '0';
+                                        return;
+                                    }
+
+                                    const idx = tooltip.dataPoints[0].dataIndex;
+                                    const label = labels[idx];
+                                    const value = dataValues[idx];
+                                    const total = dataValues.reduce((a, b) => a + b, 0);
+                                    const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+
+                                    ttName.innerText = label;
+                                    ttDetail.innerText = `${value} Issues (${pct}%)`;
+
+                                    const pos = chart.canvas.getBoundingClientRect();
+                                    ttEl.style.opacity = '1';
+                                    ttEl.style.left = (pos.left + window.pageXOffset + tooltip.caretX + 20) + 'px';
+                                    ttEl.style.top = (pos.top + window.pageYOffset + tooltip.caretY - 100) + 'px';
+                                }
+                            } 
+                        },
+                        onHover: (event, elements) => {
+                            const componentId = ctxId === 'workloadJiraDonut' ? 'workload-component' : 'nonproject-workload-component';
+                            const alpineEl = document.getElementById(componentId);
+                            if (alpineEl && window.Alpine) {
+                                const data = window.Alpine.$data(alpineEl);
+                                if (elements.length > 0) {
+                                    data.hoverIndex = elements[0].index;
+                                    event.native.target.style.cursor = 'pointer';
+                                } else {
+                                    data.hoverIndex = -1;
+                                    event.native.target.style.cursor = 'default';
+                                }
+                            }
+                        },
+                        onClick: (event, elements) => {
+                            const componentId = ctxId === 'workloadJiraDonut' ? 'workload-component' : 'nonproject-workload-component';
+                            const alpineEl = document.getElementById(componentId);
+                            if (alpineEl && window.Alpine && elements.length > 0) {
+                                const data = window.Alpine.$data(alpineEl);
+                                const idx = elements[0].index;
+                                data.activeIndex = (data.activeIndex === idx ? -1 : idx);
+                            }
+                        }
+                    }
+                });
+            };
+
+            // Initialize both charts
+            initChart(
+                'workloadJiraDonut', 
+                @json($reportData['workload']['labels']), 
+                @json($reportData['workload']['data']), 
+                @json($reportData['workload']['colors']),
+                'workloadChart'
+            );
+
+            initChart(
+                'nonprojectWorkloadJiraDonut', 
+                @json($reportData['nonProjectWorkload']['labels']), 
+                @json($reportData['nonProjectWorkload']['data']), 
+                @json($reportData['nonProjectWorkload']['colors']),
+                'nonprojectWorkloadChart'
+            );
         });
     </script>
     @endonce
