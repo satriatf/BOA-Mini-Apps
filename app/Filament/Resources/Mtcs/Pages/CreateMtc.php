@@ -39,6 +39,7 @@ class CreateMtc extends CreateRecord
             // SUBMIT -> simpan lalu ke List
             $this->getCreateFormAction()
                 ->label('Submit')
+                ->color('info')
                 ->action(function () {
                     $this->create();
                     $this->redirect(static::getResource()::getUrl('index'));
@@ -47,6 +48,7 @@ class CreateMtc extends CreateRecord
             // DRAFT -> simpan, notif, ke Edit
             Action::make('draft')
                 ->label('Draft')
+                ->color('warning')
                 ->action(function () {
                     $this->create();
 

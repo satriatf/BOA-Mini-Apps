@@ -41,6 +41,7 @@ class CreateProject extends CreateRecord
             // Submit → simpan → list
             $this->getCreateFormAction()
                 ->label('Submit')
+                ->color('info')
                 ->action(function () {
                     $this->create();
                     $this->redirect(static::getResource()::getUrl('index'));
@@ -49,6 +50,7 @@ class CreateProject extends CreateRecord
             // Draft → simpan → notif → edit
             Action::make('draft')
                 ->label('Draft')
+                ->color('warning')
                 ->action(function () {
                     $this->create();
 
