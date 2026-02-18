@@ -110,14 +110,14 @@
             <x-filament::section>
                 <x-slot name="heading">
                     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                        <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Project Workload</span>
+                        <span style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">Project Workload</span>
                     </div>
                 </x-slot>
 
                 <div id="workload-component" x-data="workloadChartComponent" class="w-full">
                     
                     <div class="mb-4">
-                        <h3 style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">Application Name</h3>
+                        <h3 style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Application Name</h3>
                         <p style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Total Issues: <span style="font-weight: 900; color: #0f172a;">{{ $reportData['workload']['total'] }}</span></p>
                     </div>
 
@@ -161,7 +161,7 @@
                 <x-filament::section>
                     <x-slot name="heading">
                         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                            <span style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Non-Project Workload</span>
+                            <span style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">Non-Project Workload</span>
                         </div>
                     </x-slot>
     
@@ -172,7 +172,7 @@
                         class="w-full">
                         
                         <div class="mb-4">
-                            <h3 style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">Application Name</h3>
+                            <h3 style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Application Name</h3>
                             <p style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Total Issues: <span style="font-weight: 900; color: #0f172a;">{{ $reportData['nonProjectWorkload']['total'] }}</span></p>
                         </div>
     
