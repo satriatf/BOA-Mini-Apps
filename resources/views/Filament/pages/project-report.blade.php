@@ -124,7 +124,7 @@
                     <div class="chart-main-row flex-col xl:flex-row items-center xl:items-start">
                         <div class="chart-visual-container">
                             <canvas id="workloadJiraDonut" style="width: 100%; height: 100%;"></canvas>
-                            <div class="chart-center-overlay" :style="hoverIndex !== -1 ? 'transform: translate(-50%, -50%) scale(1.05);' : 'transform: translate(-50%, -50%);'">
+                            <div class="chart-center-overlay" :style="hoverIndex !== -1 ? 'transform: translate(-50%, -50%) scale(1.05); box-shadow: 0 4px 20px -2px rgba(0,0,0,0.1);' : 'transform: translate(-50%, -50%); border: none; box-shadow: none;'">
                                 <div class="pct-main" x-text="currentPct" :style="hoverIndex !== -1 ? 'color: ' + currentColor + '; font-size: 3rem;' : ''"></div>
                                 <div class="lbl-sub" x-text="currentLabel" :style="hoverIndex !== -1 ? 'color: ' + currentColor : ''"></div>
                             </div>
@@ -137,17 +137,16 @@
                                     $color = $reportData['workload']['colors'][$idx] ?? '#cccccc';
                                 @endphp
                                 <div class="legend-item" 
-                                     :class="{ 'active-item': activeIndex === {{ $idx }} || hoverIndex === {{ $idx }} }"
+                                     :class="{ 'active-item': hoverIndex === {{ $idx }} }"
                                      @mouseenter="setHover({{ $idx }})" 
                                      @mouseleave="setHover(-1)"
-                                     @click="activeIndex = (activeIndex === {{ $idx }} ? -1 : {{ $idx }})">
+                                     :style="hoverIndex === {{ $idx }} ? 'border-right: 4px solid {{ $color }};' : ''">
                                     <div class="legend-info">
                                         <div class="legend-color" style="background: {{ $color }}"></div>
-                                        <span class="legend-label">{{ $label }}</span>
+                                        <span class="legend-label" :style="hoverIndex === {{ $idx }} ? 'color: {{ $color }}' : ''">{{ $label }}</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 10px;">
-                                        {{-- <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">{{ $pct }}%</span> --}}
-                                        <span class="legend-value">{{ $reportData['workload']['data'][$idx] }}</span>
+                                        <span class="legend-value" :style="hoverIndex === {{ $idx }} ? 'color: {{ $color }}' : ''">{{ $reportData['workload']['data'][$idx] }}</span>
                                     </div>
                                 </div>
                             @endforeach
@@ -180,7 +179,7 @@
                         <div class="chart-main-row flex-col xl:flex-row items-center xl:items-start">
                             <div class="chart-visual-container">
                                 <canvas id="nonprojectWorkloadJiraDonut" style="width: 100%; height: 100%;"></canvas>
-                                <div class="chart-center-overlay" :style="hoverIndex !== -1 ? 'transform: translate(-50%, -50%) scale(1.05);' : 'transform: translate(-50%, -50%);'">
+                                <div class="chart-center-overlay" :style="hoverIndex !== -1 ? 'transform: translate(-50%, -50%) scale(1.05); box-shadow: 0 4px 20px -2px rgba(0,0,0,0.1);' : 'transform: translate(-50%, -50%); border: none; box-shadow: none;'">
                                     <div class="pct-main" x-text="currentPct" :style="hoverIndex !== -1 ? 'color: ' + currentColor + '; font-size: 3rem;' : ''"></div>
                                     <div class="lbl-sub" x-text="currentLabel" :style="hoverIndex !== -1 ? 'color: ' + currentColor : ''"></div>
                                 </div>
@@ -193,16 +192,16 @@
                                         $color = $reportData['nonProjectWorkload']['colors'][$idx] ?? '#cccccc';
                                     @endphp
                                     <div class="legend-item" 
-                                         :class="{ 'active-item': activeIndex === {{ $idx }} || hoverIndex === {{ $idx }} }"
+                                         :class="{ 'active-item': hoverIndex === {{ $idx }} }"
                                          @mouseenter="setHover({{ $idx }})" 
                                          @mouseleave="setHover(-1)"
-                                         @click="activeIndex = (activeIndex === {{ $idx }} ? -1 : {{ $idx }})">
+                                         :style="hoverIndex === {{ $idx }} ? 'border-right: 4px solid {{ $color }};' : ''">
                                         <div class="legend-info">
                                             <div class="legend-color" style="background: {{ $color }}"></div>
-                                            <span class="legend-label">{{ $label }}</span>
+                                            <span class="legend-label" :style="hoverIndex === {{ $idx }} ? 'color: {{ $color }}' : ''">{{ $label }}</span>
                                         </div>
                                         <div style="display: flex; align-items: center; gap: 10px;">
-                                            <span class="legend-value">{{ $reportData['nonProjectWorkload']['data'][$idx] }}</span>
+                                            <span class="legend-value" :style="hoverIndex === {{ $idx }} ? 'color: {{ $color }}' : ''">{{ $reportData['nonProjectWorkload']['data'][$idx] }}</span>
                                         </div>
                                     </div>
                                 @endforeach
@@ -226,26 +225,22 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('workloadChartComponent', () => ({
-                activeIndex: -1, 
                 hoverIndex: -1,
                 labels: @json($reportData['workload']['labels']),
                 data: @json($reportData['workload']['data']),
                 total: {{ $reportData['workload']['total'] }},
                 colors: @json($reportData['workload']['colors']),
                 get currentLabel() { 
-                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
-                    return idx !== -1 ? this.labels[idx] : 'Project';
+                    return this.hoverIndex !== -1 ? this.labels[this.hoverIndex] : 'Project';
                 },
                 get currentPct() {
-                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
-                    if (idx === -1) return this.total;
+                    if (this.hoverIndex === -1) return this.total;
                     if (this.total === 0) return '0%';
-                    return Math.round((this.data[idx] / this.total) * 100) + '%';
+                    return Math.round((this.data[this.hoverIndex] / this.total) * 100) + '%';
                 },
                 get currentColor() {
-                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
-                    if (idx !== -1) return this.colors[idx % this.colors.length];
-                    return '#eff6ff'; // Default border color when nothing selected, mostly ignored by logic above but good fallback
+                    if (this.hoverIndex !== -1) return this.colors[this.hoverIndex % this.colors.length];
+                    return '#eff6ff';
                 },
                 setHover(idx) {
                     this.hoverIndex = idx;
@@ -261,25 +256,21 @@
             }));
             
             Alpine.data('nonProjectWorkloadChartComponent', () => ({
-                activeIndex: -1, 
                 hoverIndex: -1,
                 labels: @json($reportData['nonProjectWorkload']['labels']),
                 data: @json($reportData['nonProjectWorkload']['data']),
                 total: {{ $reportData['nonProjectWorkload']['total'] }},
                 colors: @json($reportData['nonProjectWorkload']['colors']),
                 get currentLabel() { 
-                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
-                    return idx !== -1 ? this.labels[idx] : 'Non Project';
+                    return this.hoverIndex !== -1 ? this.labels[this.hoverIndex] : 'Non Project';
                 },
                 get currentPct() {
-                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
-                    if (idx === -1) return this.total;
+                    if (this.hoverIndex === -1) return this.total;
                     if (this.total === 0) return '0%';
-                    return Math.round((this.data[idx] / this.total) * 100) + '%';
+                    return Math.round((this.data[this.hoverIndex] / this.total) * 100) + '%';
                 },
                 get currentColor() {
-                    let idx = this.hoverIndex !== -1 ? this.hoverIndex : this.activeIndex;
-                    if (idx !== -1) return this.colors[idx % this.colors.length];
+                    if (this.hoverIndex !== -1) return this.colors[this.hoverIndex % this.colors.length];
                     return '#eff6ff';
                 },
                 setHover(idx) {
@@ -379,13 +370,7 @@
                             }
                         },
                         onClick: (event, elements) => {
-                            const componentId = ctxId === 'workloadJiraDonut' ? 'workload-component' : 'nonproject-workload-component';
-                            const alpineEl = document.getElementById(componentId);
-                            if (alpineEl && window.Alpine && elements.length > 0) {
-                                const data = window.Alpine.$data(alpineEl);
-                                const idx = elements[0].index;
-                                data.activeIndex = (data.activeIndex === idx ? -1 : idx);
-                            }
+                            // Disabled as per user request
                         }
                     }
                 });
