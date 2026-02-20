@@ -1,10 +1,11 @@
 ﻿<x-filament-panels::page>
+    <div class="app-report-root">
     <style>
         /* Force inherit global Filament fonts */
         .report-dashboard, .fi-section, .fi-card { font-family: inherit !important; }
         
         .chart-main-row { display: flex; align-items: flex-start; gap: 40px; width: 100%; padding: 20px 0; }
-        .chart-visual-container { position: relative; width: 380px; height: 380px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .chart-visual-container { position: relative; max-width: 380px; width: 100%; height: 380px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
         .chart-visual-container canvas { position: relative; z-index: 1; }
         
         .chart-center-overlay {
@@ -18,7 +19,7 @@
         .pct-main { font-size: 2.5rem; font-weight: 900; color: #0f172a; line-height: 0.9; transition: all 0.3s ease; }
         .lbl-sub { font-size: 0.8rem; font-weight: 800; color: #94a3b8; margin-top: 8px; text-align: center; max-width: 140px; text-transform: uppercase; letter-spacing: 1.5px; }
 
-        .legend-list { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .legend-list { flex: 1; display: flex; flex-direction: column; gap: 4px; max-height: 400px; overflow-y: auto; padding-right: 8px; }
         .legend-item { 
             display: flex; align-items: center; justify-content: space-between; 
             padding: 10px 16px; border-radius: 10px; cursor: pointer; transition: all 0.2s;
@@ -100,6 +101,9 @@
                     <x-filament::button type="submit" color="primary" icon="heroicon-o-funnel" size="sm" style="font-weight: 800; text-transform: uppercase;">
                         Apply
                     </x-filament::button>
+                    <x-filament::button tag="a" href="{{ request()->url() }}" color="gray" icon="heroicon-o-arrow-path" size="sm" style="font-weight: 800; text-transform: uppercase;">
+                        Reset
+                    </x-filament::button>
                 </form>
             </div>
         </x-filament::section>
@@ -120,6 +124,8 @@
                         <h3 style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Application Name</h3>
                         <p style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Total Issues: <span style="font-weight: 900; color: #0f172a;">{{ $reportData['workload']['total'] }}</span></p>
                     </div>
+
+                    @if($reportData['workload']['total'] > 0)
 
                     <div class="chart-main-row flex-col xl:flex-row items-center xl:items-start">
                         <div class="chart-visual-container">
@@ -152,6 +158,14 @@
                             @endforeach
                         </div>
                     </div>
+                    @else
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: #94a3b8; gap: 1rem;">
+                        <div style="width: 160px; height: 160px; border-radius: 50%; border: 12px solid #f1f5f9; display: flex; align-items: center; justify-content: center;">
+                            <span style="font-size: 2rem; font-weight: 800; color: #cbd5e1;">0</span>
+                        </div>
+                        <span style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase;">No Data Available</span>
+                    </div>
+                    @endif
                 </div>
             </x-filament::section>
 
@@ -167,14 +181,14 @@
     
                     <div id="nonproject-workload-component" 
                          x-data="nonProjectWorkloadChartComponent" 
-                        @chart-hover="hoverIndex = $event.detail.index"
-                        @chart-click="activeIndex = (activeIndex === $event.detail.index ? -1 : $event.detail.index)"
-                        class="w-full">
+                         class="w-full">
                         
                         <div class="mb-4">
                             <h3 style="font-size: 0.875rem; font-weight: 800; color: #111827; text-transform: uppercase;">Application Name</h3>
                             <p style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Total Issues: <span style="font-weight: 900; color: #0f172a;">{{ $reportData['nonProjectWorkload']['total'] }}</span></p>
                         </div>
+    
+                        @if($reportData['nonProjectWorkload']['total'] > 0)
     
                         <div class="chart-main-row flex-col xl:flex-row items-center xl:items-start">
                             <div class="chart-visual-container">
@@ -207,6 +221,14 @@
                                 @endforeach
                             </div>
                         </div>
+                        @else
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: #94a3b8; gap: 1rem;">
+                            <div style="width: 160px; height: 160px; border-radius: 50%; border: 12px solid #f1f5f9; display: flex; align-items: center; justify-content: center;">
+                                <span style="font-size: 2rem; font-weight: 800; color: #cbd5e1;">0</span>
+                            </div>
+                            <span style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase;">No Data Available</span>
+                        </div>
+                        @endif
                     </div>
                 </x-filament::section>
 
@@ -214,6 +236,7 @@
 
             </div>
         </div>
+
     </div>
 
     {{-- TOOLTIP ELEMENT --}}
@@ -226,6 +249,7 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('workloadChartComponent', () => ({
                 hoverIndex: -1,
+                activeIndex: -1, 
                 labels: @json($reportData['workload']['labels']),
                 data: @json($reportData['workload']['data']),
                 total: {{ $reportData['workload']['total'] }},
@@ -257,6 +281,7 @@
             
             Alpine.data('nonProjectWorkloadChartComponent', () => ({
                 hoverIndex: -1,
+                activeIndex: -1,
                 labels: @json($reportData['nonProjectWorkload']['labels']),
                 data: @json($reportData['nonProjectWorkload']['data']),
                 total: {{ $reportData['nonProjectWorkload']['total'] }},
@@ -310,14 +335,21 @@
                             backgroundColor: colors,
                             hoverBackgroundColor: colors,
                             borderWidth: 0,
-                            hoverOffset: 20,
-                            spacing: 2
+                            borderColor: 'transparent',
+                            hoverBorderWidth: 0,
+                            hoverOffset: dataValues.length > 1 ? 20 : 0,
+                            spacing: dataValues.length > 1 ? 2 : 0
                         }]
                     },
                     options: {
                         cutout: '60%', // Increased cutout slightly
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'nearest',
+                            intersect: true
+                        },
+                        events: ['mousemove', 'mouseout', 'mouseenter', 'touchstart', 'touchmove'],
                         animation: {
                             duration: 800,
                             easing: 'easeOutQuart'
@@ -368,9 +400,6 @@
                                     event.native.target.style.cursor = 'default';
                                 }
                             }
-                        },
-                        onClick: (event, elements) => {
-                            // Disabled as per user request
                         }
                     }
                 });
@@ -395,4 +424,5 @@
         });
     </script>
     @endonce
+    </div>
 </x-filament-panels::page>

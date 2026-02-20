@@ -60,7 +60,6 @@ class ProjectReport extends Page
             ->get();
 
 
-
         // 3. Project Application Distribution (Workload Chart)
         $workloadMap = [];
         foreach ($projects as $project) {
