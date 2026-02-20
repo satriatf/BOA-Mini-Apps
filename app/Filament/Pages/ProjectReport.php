@@ -102,11 +102,33 @@ class ProjectReport extends Page
             'Ad1Primajaga' => '#06b6d4',    // Cyan
             'Ihtisar Asuransi' => '#d946ef', // Fuchsia
             'Public Access' => '#84cc16',   // Lime
+            
+            // Additional requested apps
+            'Secure Access' => '#0f172a',    // Dark Slate
+            'Ad1Suite' => '#6366f1',         // Indigo
+            'Ad1Dis' => '#f97316',           // Orange
+            'Service Desk' => '#14b8a6',     // Teal
+            'Ivanti Service Desk' => '#0d9488', // Dark Teal
+            'Smile Apps' => '#fbbf24',       // Yellow
+            'E Recruitment' => '#84cc16',    // Lime 600
+            'WA Message Generator' => '#25d366', // WhatsApp Green
+            'ECM' => '#475569',              // Slate 600
+            'Digilearn' => '#8b5cf6',        // Violet
+            'Digilearn Keday' => '#7c3aed',  // Violet 700
+            'Final Riplay' => '#db2777',     // Pink 600
+            'CMS Scan BPKB' => '#be123c',    // Rose 700
+            'Fiducia Console Konven' => '#1d4ed8', // Blue 700
+            'Fiducia Console DLB orms' => '#1e40af', // Blue 800
+            'Adirabox' => '#facc15',         // Yellow 400
+            'Asset Management' => '#4ade80', // Green 400
+            'Audit Management' => '#2dd4bf', // Teal 400
+            'Reengenering Ad1forFlow' => '#2563eb', // Blue 600
+            
             'Other' => '#64748b',           // Slate
         ];
 
         // Fallback palette for unknown apps
-        $fallbackColors = ['#84cc16', '#14b8a6', '#d946ef', '#f97316', '#6366f1'];
+        $fallbackColors = ['#84cc16', '#14b8a6', '#d946ef', '#f97316', '#6366f1', '#f43f5e', '#8b5cf6', '#06b6d4'];
 
         $getColors = function($labels) use ($appColors, $fallbackColors) {
             $colors = [];
