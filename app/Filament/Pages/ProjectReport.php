@@ -91,40 +91,40 @@ class ProjectReport extends Page
         
         arsort($problemsMap);
 
-        // Define specific colors for applications
+        // Define specific colors for applications to ensure no clashing
         $appColors = [
-            'Ad1forFlow' => '#3b82f6',      // Blue
-            'Ad1Access' => '#ef4444',       // Red
-            'Ad1Internship' => '#f59e0b',   // Amber
-            'QPC' => '#10b981',             // Emerald
-            'Ad1Falcon' => '#8b5cf6',       // Purple
-            'BPKBLib' => '#ec4899',         // Pink
-            'Ad1Primajaga' => '#06b6d4',    // Cyan
-            'Ihtisar Asuransi' => '#d946ef', // Fuchsia
-            'Public Access' => '#84cc16',   // Lime
+            'Ad1forFlow'            => '#60a5fa', // Blue
+            'Ad1Access'             => '#f87171', // Red
+            'Ad1Internship'         => '#fbbf24', // Amber
+            'QPC'                   => '#34d399', // Emerald
+            'Ad1Falcon'             => '#a78bfa', // Violet
+            'BPKBLib'               => '#fb923c', // Orange
+            'Ad1Primajaga'          => '#2dd4bf', // Teal
+            'Ihtisar Asuransi'      => '#f472b6', // Pink
+            'Public Access'         => '#a3e635', // Lime
             
-            // Additional requested apps
-            'Secure Access' => '#0f172a',    // Dark Slate
-            'Ad1Suite' => '#6366f1',         // Indigo
-            'Ad1Dis' => '#f97316',           // Orange
-            'Service Desk' => '#14b8a6',     // Teal
-            'Ivanti Service Desk' => '#0d9488', // Dark Teal
-            'Smile Apps' => '#fbbf24',       // Yellow
-            'E Recruitment' => '#84cc16',    // Lime 600
-            'WA Message Generator' => '#25d366', // WhatsApp Green
-            'ECM' => '#475569',              // Slate 600
-            'Digilearn' => '#8b5cf6',        // Violet
-            'Digilearn Keday' => '#7c3aed',  // Violet 700
-            'Final Riplay' => '#db2777',     // Pink 600
-            'CMS Scan BPKB' => '#be123c',    // Rose 700
-            'Fiducia Console Konven' => '#1d4ed8', // Blue 700
-            'Fiducia Console DLB orms' => '#1e40af', // Blue 800
-            'Adirabox' => '#facc15',         // Yellow 400
-            'Asset Management' => '#4ade80', // Green 400
-            'Audit Management' => '#2dd4bf', // Teal 400
-            'Reengenering Ad1forFlow' => '#2563eb', // Blue 600
+            // Additional requested apps with distinct colors
+            'Secure Access'         => '#94a3b8', // Slate Gray
+            'Ad1Suite'              => '#fde047', // Yellow
+            'Ad1Dis'                => '#c084fc', // Purple
+            'Service Desk'          => '#86efac', // Mint Green
+            'Ivanti Service Desk'   => '#fca5a5', // Salmon
+            'Smile Apps'            => '#fcd34d', // Gold
+            'E Recruitment'         => '#67e8f9', // Cyan
+            'WA Message Generator'  => '#4ade80', // Green
+            'ECM'                   => '#d6d3d1', // Stone
+            'Digilearn'             => '#818cf8', // Indigo
+            'Digilearn Keday'       => '#fdba74', // Peach
+            'Final Riplay'          => '#e879f9', // Magenta
+            'CMS Scan BPKB'         => '#bef264', // Yellow Green
+            'Fiducia Console Konven' => '#7dd3fc', // Sky Blue
+            'Fiducia Console DLB orms' => '#d8b4fe', // Lavender
+            'Adirabox'              => '#fda4af', // Rose
+            'Asset Management'      => '#5eead4', // Aqua
+            'Audit Management'      => '#fca5a1', // Coral
+            'Reengenering Ad1forFlow' => '#93c5fd', // Periwinkle
             
-            'Other' => '#64748b',           // Slate
+            'Other'                 => '#cbd5e1', // Silver
         ];
 
         // Fallback palette for unknown apps
