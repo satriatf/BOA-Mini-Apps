@@ -91,44 +91,39 @@ class ProjectReport extends Page
         
         arsort($problemsMap);
 
-        // Define specific colors for applications to ensure no clashing
         $appColors = [
-            'Ad1forFlow'            => '#60a5fa', // Blue
-            'Ad1Access'             => '#f87171', // Red
-            'Ad1Internship'         => '#fbbf24', // Amber
-            'QPC'                   => '#34d399', // Emerald
-            'Ad1Falcon'             => '#a78bfa', // Violet
-            'BPKBLib'               => '#fb923c', // Orange
-            'Ad1Primajaga'          => '#2dd4bf', // Teal
-            'Ihtisar Asuransi'      => '#f472b6', // Pink
-            'Public Access'         => '#a3e635', // Lime
-            
-            // Additional requested apps with distinct colors
-            'Secure Access'         => '#94a3b8', // Slate Gray
-            'Ad1Suite'              => '#fde047', // Yellow
-            'Ad1Dis'                => '#c084fc', // Purple
-            'Service Desk'          => '#86efac', // Mint Green
-            'Ivanti Service Desk'   => '#fca5a5', // Salmon
-            'Smile Apps'            => '#fcd34d', // Gold
-            'E Recruitment'         => '#67e8f9', // Cyan
-            'WA Message Generator'  => '#4ade80', // Green
-            'ECM'                   => '#d6d3d1', // Stone
-            'Digilearn'             => '#818cf8', // Indigo
-            'Digilearn Keday'       => '#fdba74', // Peach
-            'Final Riplay'          => '#e879f9', // Magenta
-            'CMS Scan BPKB'         => '#bef264', // Yellow Green
-            'Fiducia Console Konven' => '#7dd3fc', // Sky Blue
-            'Fiducia Console DLB orms' => '#d8b4fe', // Lavender
-            'Adirabox'              => '#fda4af', // Rose
-            'Asset Management'      => '#5eead4', // Aqua
-            'Audit Management'      => '#fca5a1', // Coral
-            'Reengenering Ad1forFlow' => '#93c5fd', // Periwinkle
-            
-            'Other'                 => '#cbd5e1', // Silver
+            'Ad1forFlow'            => '#a5d8e8',
+            'Ad1Access'             => '#fecaca',
+            'Ad1Internship'         => '#fde68a',
+            'QPC'                   => '#bbf7d0',
+            'Ad1Falcon'             => '#ddd6fe',
+            'BPKBLib'               => '#fed7aa',
+            'Ad1Primajaga'          => '#99f6e4',
+            'Ihtisar Asuransi'      => '#fbcfe8',
+            'Public Access'         => '#d9f99d',
+            'Secure Access'         => '#e2e8f0',
+            'Ad1Suite'              => '#fef3c7',
+            'Ad1Dis'                => '#e9d5ff',
+            'Service Desk'          => '#dcfce7',
+            'Ivanti Service Desk'   => '#fee2e2',
+            'Smile Apps'            => '#fef08a',
+            'E Recruitment'         => '#cffafe',
+            'WA Message Generator'  => '#a7f3d0',
+            'ECM'                   => '#f5f5f4',
+            'Digilearn'             => '#c7d2fe',
+            'Digilearn Keday'       => '#ffedd5',
+            'Final Riplay'          => '#f5d0fe',
+            'CMS Scan BPKB'         => '#ecfccb',
+            'Fiducia Console Konven'=> '#e0f2fe',
+            'Fiducia Console DLB orms'=> '#f3e8ff',
+            'Adirabox'              => '#ffe4e6',
+            'Asset Management'      => '#ccfbf1',
+            'Audit Management'      => '#fecdd3',
+            'Reengenering Ad1forFlow'=> '#dbeafe',
+            'Other'                 => '#f1f5f9',
         ];
 
-        // Fallback palette for unknown apps
-        $fallbackColors = ['#84cc16', '#14b8a6', '#d946ef', '#f97316', '#6366f1', '#f43f5e', '#8b5cf6', '#06b6d4'];
+        $fallbackColors = ['#d9f99d', '#99f6e4', '#ddd6fe', '#fed7aa', '#bfdbfe', '#fbcfe8', '#c7d2fe', '#cffafe'];
 
         $getColors = function($labels) use ($appColors, $fallbackColors) {
             $colors = [];
