@@ -143,6 +143,17 @@
     cursor: pointer;
 }
 
+.gantt-table td.onleave {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+}
+
+.gantt-table td.onleave:hover {
+    background: #dc2626 !important;
+    cursor: pointer;
+}
+
 /* Ensure colors are applied even if other CSS tries to override */
 .gantt-container .gantt-table td.project {
     background-color: #3b82f6 !important;
@@ -150,6 +161,10 @@
 
 .gantt-container .gantt-table td.mtc {
     background-color: #f59e0b !important;
+}
+
+.gantt-container .gantt-table td.onleave {
+    background-color: #ef4444 !important;
 }
 
 .gantt-table td.holiday {

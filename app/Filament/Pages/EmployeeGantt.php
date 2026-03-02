@@ -6,6 +6,7 @@ use App\Models\Mtc;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Holiday;
+use App\Models\OnLeave;
 use Carbon\Carbon;
 use Filament\Pages\Page;
 
@@ -491,6 +492,95 @@ class EmployeeGantt extends Page
                         'details' => $this->getMtcDetails($mtc),
                     ];
                 }
+            }
+        }
+
+        // Process On Leave records - add leave ranges as tasks (weekdays only)
+        $onLeaves = OnLeave::query()
+            ->select(['id', 'user_id', 'leave_type', 'start_date', 'end_date'])
+            ->get();
+
+        foreach ($onLeaves as $leave) {
+            if (!$leave->start_date && !$leave->end_date) {
+                continue;
+            }
+
+            $ps = $leave->start_date
+                ? Carbon::parse($leave->start_date)->startOfDay()
+                : $yearStart->clone();
+            $pe = $leave->end_date
+                ? Carbon::parse($leave->end_date)->endOfDay()
+                : $yearEnd->clone();
+
+            // Clamp to selected year
+            $s = $ps->clone()->max($yearStart);
+            $e = $pe->clone()->min($yearEnd);
+
+            if ($s->gt($yearEnd) || $e->lt($yearStart)) {
+                continue;
+            }
+
+            // Only include if user is active
+            $user = $activeEmployees->get($leave->user_id) ?? $leave->user;
+            if (!$user) {
+                continue;
+            }
+
+            $employeeId = $user->sk_user ?? $leave->user_id;
+
+            $title = ($user->employee_name ?? ('User #' . $employeeId)) . ' — ' . ($leave->leave_type ?? 'Leave');
+
+            $detailsHtml = "
+                <table style='width:100%;border-collapse:collapse' cellpadding='6'>
+                    <tr><td style='width:140px'><b>Task</b></td><td>On Leave</td></tr>
+                    <tr><td><b>User</b></td><td>" . e($user->employee_name ?? '—') . "</td></tr>
+                    <tr><td><b>Type</b></td><td>" . e($leave->leave_type ?? '—') . "</td></tr>
+                    <tr><td><b>Start</b></td><td>" . e($ps?->format('M j, Y')) . "</td></tr>
+                    <tr><td><b>End</b></td><td>" . e($pe?->format('M j, Y')) . "</td></tr>
+                </table>
+            ";
+
+            // Split leave range into weekday-only segments (Mon–Fri)
+            $segments = [];
+            $currStart = null;
+            $currEnd = null;
+
+            for ($d = $s->copy(); $d->lte($e); $d->addDay()) {
+                if (in_array($d->dayOfWeekIso, [6, 7], true)) {
+                    if ($currStart) {
+                        $segments[] = [$currStart->copy(), $currEnd->copy()];
+                        $currStart = $currEnd = null;
+                    }
+                    continue;
+                }
+
+                if (!$currStart) {
+                    $currStart = $d->copy();
+                }
+                $currEnd = $d->copy();
+            }
+
+            if ($currStart) {
+                $segments[] = [$currStart->copy(), $currEnd->copy()];
+            }
+
+            if (empty($segments)) {
+                continue;
+            }
+
+            if (!isset($employeeTasks[$employeeId])) {
+                $employeeTasks[$employeeId] = [];
+            }
+
+            foreach ($segments as [$segStart, $segEnd]) {
+                $employeeTasks[$employeeId][] = [
+                    'start' => $segStart->toDateString(),
+                    'end' => $segEnd->toDateString(),
+                    'type' => 'onleave',
+                    'title' => $title,
+                    'role' => 'On Leave',
+                    'details' => $detailsHtml,
+                ];
             }
         }
 

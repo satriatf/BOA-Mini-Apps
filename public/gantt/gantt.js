@@ -19,6 +19,9 @@ const NON_PROJECT_BADGE_COLOR = '#b45309';
 const HOLIDAY_COLOR = '#22c55e';
 const HOLIDAY_BADGE_BG = '#dcfce7';
 const HOLIDAY_BADGE_COLOR = '#166534';
+const ONLEAVE_COLOR = '#ef4444';
+const ONLEAVE_BADGE_BG = '#fee2e2';
+const ONLEAVE_BADGE_COLOR = '#991b1b';
 
 /**
  * Get number of days in a month for a given year
@@ -243,8 +246,17 @@ function showDetailPopup(tasks) {
         
         const isOvertime = !!task.has_overtime;
         const isNonProject = task.type === 'mtc';
-        const titleColor = isOvertime ? OVERTIME_COLOR : (isNonProject ? NON_PROJECT_COLOR : PROJECT_COLOR);
-        const dateColor = isOvertime ? OVERTIME_BADGE_COLOR : (isNonProject ? NON_PROJECT_BADGE_COLOR : PROJECT_BADGE_COLOR);
+        const isOnLeave = task.type === 'onleave';
+        const titleColor = isOvertime
+            ? OVERTIME_COLOR
+            : (isOnLeave
+                ? ONLEAVE_COLOR
+                : (isNonProject ? NON_PROJECT_COLOR : PROJECT_COLOR));
+        const dateColor = isOvertime
+            ? OVERTIME_BADGE_COLOR
+            : (isOnLeave
+                ? ONLEAVE_BADGE_COLOR
+                : (isNonProject ? NON_PROJECT_BADGE_COLOR : PROJECT_BADGE_COLOR));
         
         const taskTitle = document.createElement('div');
         taskTitle.style.cssText = `font-size:14px;font-weight:600;margin-bottom:8px;color:${titleColor};`;
@@ -255,6 +267,10 @@ function showDetailPopup(tasks) {
         if (isOvertime) {
             badge.textContent = 'Overtime';
             badge.style.cssText = `margin-left:8px;padding:2px 6px;border-radius:4px;background:${OVERTIME_BADGE_BG};color:${OVERTIME_BADGE_COLOR};font-size:11px;font-weight:700;`;
+            taskTitle.appendChild(badge);
+        } else if (isOnLeave) {
+            badge.textContent = 'On Leave';
+            badge.style.cssText = `margin-left:8px;padding:2px 6px;border-radius:4px;background:${ONLEAVE_BADGE_BG};color:${ONLEAVE_BADGE_COLOR};font-size:11px;font-weight:700;`;
             taskTitle.appendChild(badge);
         } else if (isNonProject) {
             badge.textContent = 'Non-Project';
@@ -410,7 +426,7 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
         
         // Separate tasks by type
         const projectTasks = (row.tasks || []).filter(task => task.type === 'project');
-        const nonProjectTasks = (row.tasks || []).filter(task => task.type === 'mtc');
+        const nonProjectTasks = (row.tasks || []).filter(task => task.type === 'mtc' || task.type === 'onleave');
 
         let projectTr = null;
         let nonProjectTr = null;
@@ -544,7 +560,7 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
                     const dayDateStr = `${year}-${month}-${dayNum}`;
                     const isHoliday = holidays.includes(dayDateStr);
                     
-                    // Find overlapping non-project tasks for this day
+                    // Find overlapping non-project / on-leave tasks for this day
                     const overlappingTasks = nonProjectTasks.filter(task => {
                         const taskStart = new Date(task.start + 'T00:00:00');
                         const taskEnd = new Date(task.end + 'T00:00:00');
@@ -561,10 +577,11 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
                     });
                     
                     if (overlappingTasks.length > 0) {
-                        cell.className = 'mtc';
-                        console.log('Added MTC cell with class:', cell.className);
+                        const hasOnLeave = overlappingTasks.some(t => t.type === 'onleave');
+                        cell.className = hasOnLeave ? 'onleave' : 'mtc';
+                        console.log('Added non-project cell with class:', cell.className);
                         
-                        // Add text content for multiple tasks
+                        // Add text content for multiple tasks (e.g., 2+)
                         if (overlappingTasks.length > 1) {
                             cell.textContent = `${overlappingTasks.length}+`;
                             cell.style.fontSize = '0.75rem';
