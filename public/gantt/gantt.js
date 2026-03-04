@@ -431,8 +431,9 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
         let projectTr = null;
         let nonProjectTr = null;
 
-        // Only create project row if filter Project aktif dan ada task project
-        if (showProject && projectTasks.length > 0) {
+        // Only create project row if filter Project aktif dan (ada task project ATAU onleave)
+        const hasOnLeave = nonProjectTasks.some(task => task.type === 'onleave');
+        if (showProject && (projectTasks.length > 0 || hasOnLeave)) {
             projectTr = document.createElement('tr');
         }
         // Only create non-project row jika filter Non-Project aktif dan ada task non-project
@@ -477,23 +478,27 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
                     const dayDateStr = `${year}-${month}-${dayNum}`;
                     const isHoliday = holidays.includes(dayDateStr);
                     
-                    // Find overlapping project tasks for this day
-                    const overlappingTasks = projectTasks.filter(task => {
+                    const dayStart = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                    const dayEnd = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                    
+                    const isOverlapping = (task) => {
                         const taskStart = new Date(task.start + 'T00:00:00');
                         const taskEnd = new Date(task.end + 'T00:00:00');
-                        const dayStart = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
-                        const dayEnd = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
-                        
-                        // For single-day tasks, check exact date match
                         if (taskStart.getTime() === taskEnd.getTime()) {
                             return taskStart.toDateString() === dayStart.toDateString();
                         }
-                        
-                        // For multi-day tasks, use overlap function
                         return overlaps(taskStart, taskEnd, dayStart, dayEnd);
-                    });
+                    };
+
+                    // Find overlapping tasks for this day
+                    const overlappingTasks = projectTasks.filter(isOverlapping);
+                    const overlappingOnLeave = nonProjectTasks.filter(t => t.type === 'onleave' && isOverlapping(t));
+                    const overlappingMtc = nonProjectTasks.filter(t => t.type === 'mtc' && isOverlapping(t));
                     
-                    if (overlappingTasks.length > 0) {
+                    if (isHoliday) {
+                        cell.className = 'holiday';
+                        cell.addEventListener('click', () => showHolidayDetailPopup(dayDateStr, holidays));
+                    } else if (overlappingTasks.length > 0) {
                         // Check if any overlapping task has overtime
                         const hasOvertimeTask = overlappingTasks.some(task => task.has_overtime);
                         cell.className = hasOvertimeTask ? 'project-overtime' : 'project';
@@ -509,15 +514,11 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
                             cell.style.position = 'relative';
                             cell.appendChild(badge);
                         }
-                        // We keep a single colored cell even if multiple tasks overlap
-                        // (avoid showing “2+” so overtime overlay doesn’t create duplicates)
 
-                        // Filter tasks for tooltip/popup: if overtime cell, show only overtime tasks
                         const displayTasks = hasOvertimeTask
                             ? overlappingTasks.filter(t => t.has_overtime)
                             : overlappingTasks;
 
-                        // Add tooltip functionality
                         cell.addEventListener('mouseenter', () => {
                             showTooltip(tooltip, cell, displayTasks);
                         });
@@ -526,17 +527,23 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
                             hideTooltip(tooltip);
                         });
 
-                        // Add click functionality for popup detail
                         cell.addEventListener('click', () => {
                             showDetailPopup(displayTasks);
                         });
-                    } else if (isHoliday) {
-                        // Show holiday if no task on this day
-                        cell.className = 'holiday';
+                    } else if (overlappingOnLeave.length > 0) {
+                        cell.className = 'onleave';
+                        console.log('Added project cell with class:', cell.className);
                         
-                        // Add click functionality for holiday detail
+                        cell.addEventListener('mouseenter', () => {
+                            showTooltip(tooltip, cell, overlappingOnLeave);
+                        });
+                        
+                        cell.addEventListener('mouseleave', () => {
+                            hideTooltip(tooltip);
+                        });
+
                         cell.addEventListener('click', () => {
-                            showHolidayDetailPopup(dayDateStr, holidays);
+                            showDetailPopup(overlappingOnLeave);
                         });
                     }
                     
@@ -560,55 +567,67 @@ function renderGantt(container, data, year, showProject = true, showNonProject =
                     const dayDateStr = `${year}-${month}-${dayNum}`;
                     const isHoliday = holidays.includes(dayDateStr);
                     
-                    // Find overlapping non-project / on-leave tasks for this day
-                    const overlappingTasks = nonProjectTasks.filter(task => {
+                    const dayStart = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                    const dayEnd = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                    
+                    const isOverlapping = (task) => {
                         const taskStart = new Date(task.start + 'T00:00:00');
                         const taskEnd = new Date(task.end + 'T00:00:00');
-                        const dayStart = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
-                        const dayEnd = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
-                        
-                        // For single-day tasks, check exact date match
                         if (taskStart.getTime() === taskEnd.getTime()) {
                             return taskStart.toDateString() === dayStart.toDateString();
                         }
-                        
-                        // For multi-day tasks, use overlap function
                         return overlaps(taskStart, taskEnd, dayStart, dayEnd);
-                    });
-                    
-                    if (overlappingTasks.length > 0) {
-                        const hasOnLeave = overlappingTasks.some(t => t.type === 'onleave');
-                        cell.className = hasOnLeave ? 'onleave' : 'mtc';
-                        console.log('Added non-project cell with class:', cell.className);
-                        
-                        // Add text content for multiple tasks (e.g., 2+)
-                        if (overlappingTasks.length > 1) {
-                            cell.textContent = `${overlappingTasks.length}+`;
-                            cell.style.fontSize = '0.75rem';
-                            cell.style.fontWeight = '600';
-                        }
-                        
-                        // Add tooltip functionality
-                        cell.addEventListener('mouseenter', () => {
-                            showTooltip(tooltip, cell, overlappingTasks);
-                        });
-                        
-                        cell.addEventListener('mouseleave', () => {
-                            hideTooltip(tooltip);
-                        });
+                    };
 
-                        // Add click functionality for popup detail
-                        cell.addEventListener('click', () => {
-                            showDetailPopup(overlappingTasks);
-                        });
-                    } else if (isHoliday) {
-                        // Show holiday if no task on this day
+                    // Find overlapping non-project / on-leave tasks for this day
+                    const overlappingTasks = nonProjectTasks.filter(isOverlapping);
+                    const overlappingProjectTasks = projectTasks.filter(isOverlapping);
+                    
+                    if (isHoliday) {
                         cell.className = 'holiday';
+                        cell.addEventListener('click', () => showHolidayDetailPopup(dayDateStr, holidays));
+                    } else if (overlappingTasks.length > 0) {
+                        const mtcTasks = overlappingTasks.filter(t => t.type === 'mtc');
+                        const onLeaveTasks = overlappingTasks.filter(t => t.type === 'onleave');
                         
-                        // Add click functionality for holiday detail
-                        cell.addEventListener('click', () => {
-                            showHolidayDetailPopup(dayDateStr, holidays);
-                        });
+                        const hasProject = overlappingProjectTasks.length > 0;
+                        const hasOnLeave = onLeaveTasks.length > 0;
+                        const hasMtc = mtcTasks.length > 0;
+                        
+                        if (hasProject) {
+                            cell.className = hasOnLeave ? 'onleave' : (hasMtc ? 'mtc' : '');
+                        } else {
+                            if (hasMtc) {
+                                cell.className = 'mtc';
+                            } else if (hasOnLeave) {
+                                cell.className = 'onleave';
+                            }
+                        }
+
+                        if (cell.className !== '') {
+                            console.log('Added non-project cell with class:', cell.className);
+                            
+                            // Add text content for multiple mtc tasks (e.g., 2+)
+                            if (cell.className === 'mtc' && mtcTasks.length > 1) {
+                                cell.textContent = `${mtcTasks.length}+`;
+                                cell.style.fontSize = '0.75rem';
+                                cell.style.fontWeight = '600';
+                            }
+                            
+                            // Add tooltip functionality
+                            cell.addEventListener('mouseenter', () => {
+                                showTooltip(tooltip, cell, overlappingTasks);
+                            });
+                            
+                            cell.addEventListener('mouseleave', () => {
+                                hideTooltip(tooltip);
+                            });
+
+                            // Add click functionality for popup detail
+                            cell.addEventListener('click', () => {
+                                showDetailPopup(overlappingTasks);
+                            });
+                        }
                     }
                     
                     nonProjectTr.appendChild(cell);

@@ -546,7 +546,8 @@ class EmployeeGantt extends Page
             $currEnd = null;
 
             for ($d = $s->copy(); $d->lte($e); $d->addDay()) {
-                if (in_array($d->dayOfWeekIso, [6, 7], true)) {
+                $dateKey = $d->format('Y-m-d');
+                if (in_array($d->dayOfWeekIso, [6, 7], true) || in_array($dateKey, $holidays, true)) {
                     if ($currStart) {
                         $segments[] = [$currStart->copy(), $currEnd->copy()];
                         $currStart = $currEnd = null;
