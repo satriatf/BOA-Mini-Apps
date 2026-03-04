@@ -8,6 +8,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Hidden;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use App\Models\Holiday;
 
 class OnLeaveForm
 {
@@ -31,6 +33,23 @@ class OnLeaveForm
                 ->displayFormat('d/m/Y')
                 ->closeOnDateSelection()
                 ->live()
+                ->disabledDates(function () {
+                    // Block all weekends and holidays
+                    $disabledDates = [];
+                    $startDate = Carbon::now()->subYear();
+                    $endDate = Carbon::now()->addYears(5);
+                    $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+
+                    while ($startDate <= $endDate) {
+                        $formatted = $startDate->format('Y-m-d');
+                        if ($startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                            $disabledDates[] = $formatted;
+                        }
+                        $startDate->addDay();
+                    }
+
+                    return $disabledDates;
+                })
                 ->afterStateUpdated(function ($state, callable $set, $get) {
                     if ($get('end_date') && $state && $get('end_date') < $state) {
                         $set('end_date', null);
@@ -46,6 +65,23 @@ class OnLeaveForm
                 ->closeOnDateSelection()
                 ->live()
                 ->disabled(fn ($get) => !$get('start_date'))
+                ->disabledDates(function () {
+                    // Block all weekends and holidays
+                    $disabledDates = [];
+                    $startDate = Carbon::now()->subYear();
+                    $endDate = Carbon::now()->addYears(5);
+                    $holidayDates = Holiday::pluck('date')->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+
+                    while ($startDate <= $endDate) {
+                        $formatted = $startDate->format('Y-m-d');
+                        if ($startDate->isWeekend() || in_array($formatted, $holidayDates, true)) {
+                            $disabledDates[] = $formatted;
+                        }
+                        $startDate->addDay();
+                    }
+
+                    return $disabledDates;
+                })
                 ->rules(['after_or_equal:start_date']),
         ]);
     }
