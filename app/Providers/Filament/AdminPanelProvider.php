@@ -53,6 +53,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->brandName('Team Management') 
             ->login(\App\Filament\Pages\Auth\Login::class)
+            ->passwordReset(\App\Filament\Pages\Auth\ForgotPassword::class)
             ->darkMode(false)
             ->colors([
                 'primary' => Color::Amber,

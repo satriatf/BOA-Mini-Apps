@@ -9,6 +9,25 @@ use Illuminate\Validation\ValidationException;
 
 class Login extends BaseLogin
 {
+    public function hasRememberMe(): bool
+    {
+        return false;
+    }
+
+    protected function getRememberFormComponent(): \Filament\Schemas\Components\Component
+    {
+        return \Filament\Forms\Components\Hidden::make('remember');
+    }
+
+    public function form(\Filament\Schemas\Schema $schema): \Filament\Schemas\Schema
+    {
+        return $schema
+            ->components([
+                $this->getEmailFormComponent(),
+                $this->getPasswordFormComponent(),
+            ]);
+    }
+
     protected function getEmailFormComponent(): TextInput
     {
         return TextInput::make('employee_nik')
@@ -23,6 +42,15 @@ class Login extends BaseLogin
                 'pattern' => '[0-9]*',
                 'oninput' => "this.value=this.value.replace(/[^0-9]/g,'');",
             ]);
+    }
+
+    protected function getPasswordFormComponent(): \Filament\Schemas\Components\Component
+    {
+        return parent::getPasswordFormComponent()
+            ->hint(null)
+            ->helperText(new \Illuminate\Support\HtmlString(
+                \Illuminate\Support\Facades\Blade::render('<x-filament::link :href="filament()->getRequestPasswordResetUrl()" tabindex="3"> {{ __(\'filament-panels::auth/pages/login.actions.request_password_reset.label\') }}</x-filament::link>')
+            ));
     }
 
     protected function getCredentialsFromFormData(array $data): array
