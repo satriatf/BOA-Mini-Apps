@@ -36,9 +36,9 @@ class ForgotPassword extends BaseRequestPasswordReset
 
         $user = User::where('employee_nik', $data['employee_nik'])->first();
 
-        if (! $user) {
+        if (! $user) { 
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'data.employee_nik' => 'NIK is wrong or not registered.',
+                'data.employee_nik' => 'Identity verification failed. Please try again.',
             ]);
         }
 
@@ -46,20 +46,26 @@ class ForgotPassword extends BaseRequestPasswordReset
         $user->password = Hash::make($user->employee_nik);
         $user->save();
 
-        // Send Notification Email
+        // Send Notification Email  
         try {
             if ($user->employee_email) {
-                Mail::raw("Hello {$user->employee_name},\n\nYour password has been reset to your NIK: {$user->employee_nik}.\nPlease login using your NIK and this new password.", function ($message) use ($user) {
+                $mailContent = "Hello {$user->employee_name},\n\n"
+                        . "Your password has been reset to your NIK: {$user->employee_nik}.\n"
+                        . "Please login using your NIK and this new password.\n\n"
+                        . "---\n"
+                        . "This is an automated message from the MHC Management System. Please do not reply to this email.";
+
+                Mail::raw($mailContent, function ($message) use ($user) {
                     $message->to($user->employee_email)
-                        ->subject('Password Reset - Management System');
+                        ->subject('Password Reset - MHC Management System');
                 });
             }
         } catch (\Exception $e) {
-            // Silently fail if mail is not configured, but notification was successful in DB
+            // Silently fail if mail is not configured
         }
 
         Notification::make()
-            ->title('Password has been reset to your NIK and a notification has been sent.')
+            ->title('Password reset request processed. If the record is registered, a notification has been sent.')
             ->success()
             ->send();
 
